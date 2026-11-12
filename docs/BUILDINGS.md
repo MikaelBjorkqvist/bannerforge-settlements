@@ -4,6 +4,21 @@ Status: **approved** (v2, 2026-11-12, Mikael). Source of truth for building and 
 Editable working copy: the claude.ai doc "BannerForge Settlements — Buildings & NPC Plan (v2)". Changes are agreed
 there first, then copied here. All numbers are placeholders until play-testing.
 
+## Implementation status (2026-11-12)
+Implemented in `src/scripts/settlements/buildings.ts` (data) and `rules.ts` (logic, unit-tested):
+- the catalogue, tier caps, the Town Hall exception and promotion;
+- prerequisites, repeatable limits, population and housing;
+- prosperity, which is derived from levels, so rebalancing updates existing worlds;
+- the Stonemason and Woodcarver discounts.
+
+Emerald costs are placeholders set in `buildings.ts` (this plan gives no prices yet).
+
+Not yet implemented:
+- 1-day construction and builders (with structures, M2);
+- Docks "near water" check (M2);
+- perimeter placement (M3): until then, gates and towers are repeatable with interim limits (Village 2/2, Town 3/4, City 4/6);
+- NPCs and repair/respawn fees (M1+).
+
 ## Building rules
 
 Every building follows these rules, so new buildings can be added as data without new code.
