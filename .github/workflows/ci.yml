@@ -36,8 +36,8 @@ jobs:
         # Creator Tools is still pre-release, so its findings are reported but don't fail the build yet.
         continue-on-error: true
         run: |
-          ADDON=$(ls dist/*.mcaddon)
-          npx -y @minecraft/creator-tools@latest validate addon -if "$ADDON" 2>&1 | tee creator-tools-report.txt
+          mkdir -p ct-input && cp -r dist/*_BP dist/*_RP ct-input/
+          npx -y @minecraft/creator-tools@latest validate addon -i ct-input -o ct-out 2>&1 | tee creator-tools-report.txt
 
       - name: Script API drift check
         # Warns when Mojang has released a newer stable Script API than config/mod.json pins.
