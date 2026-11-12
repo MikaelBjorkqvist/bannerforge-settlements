@@ -26,28 +26,30 @@ bannerforge.claim.cannot_afford=§cThe steward asks for a founding fee you canno
 bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
 
-## Steward
-bannerforge.steward.faction=Faction
-bannerforge.steward.tier=Status
+## Steward / ledger
 bannerforge.steward.prosperity=Prosperity
 bannerforge.steward.population=Population
-bannerforge.steward.unstaffed=%s posts unfilled - build more houses
+bannerforge.steward.population_limit=Population limit
+bannerforge.steward.jobs_waiting=%s jobs are waiting for homes - build or upgrade houses
 bannerforge.steward.next_tier=To become a
-bannerforge.steward.promotes=upgrade it to be promoted
-bannerforge.steward.upgrades=Commission Works
-bannerforge.steward.close=Close
+bannerforge.steward.promote_hint=Then upgrade the
+bannerforge.ledger.hint=Choose what to build or improve. Costs are paid from your inventory.
+bannerforge.ledger.build=Build
+bannerforge.ledger.upgrade=Upgrade
+bannerforge.ledger.upgrade_one=Upgrade a
+bannerforge.ledger.built=Built
+bannerforge.ledger.upgraded=Upgraded
 
 ## Currency (bannerforge.currency.<namespace>.<item>)
 bannerforge.currency.minecraft.emerald=Emeralds
 
-## Building categories
-bannerforge.category.core=Core
-bannerforge.category.housing=Housing
-bannerforge.category.economy=Economy
-bannerforge.category.crafts=Crafts
-bannerforge.category.civic=Civic
+## Ledger sections
+bannerforge.category.centre=Town Centre
+bannerforge.category.homes=Homes
+bannerforge.category.trade=Trade
+bannerforge.category.food=Food
+bannerforge.category.crafts=Craftsmen
 bannerforge.category.defence=Defence
-bannerforge.category.military=Military
 
 ## Buildings and levels
 bannerforge.building.town_hall=Town Hall
@@ -65,22 +67,15 @@ bannerforge.building.stonemason=Stonemason
 bannerforge.building.woodcarver=Woodcarver
 bannerforge.building.shrine=Shrine
 bannerforge.building.stables=Stables
-bannerforge.building.walls=Walls
-bannerforge.building.gates=Gates
-bannerforge.building.towers=Towers
+bannerforge.building.defences=Defences (walls, gates, towers)
 bannerforge.building.barracks=Barracks
 bannerforge.level.0=Not built
 bannerforge.level.1=Basic
 bannerforge.level.2=Improved
 bannerforge.level.3=Advanced
 
-## Commission Works
-bannerforge.upgrade.title=Commission Works
-bannerforge.upgrade.body=Choose what to build or improve. Costs are paid from your inventory.
-bannerforge.upgrade.back=Back
-bannerforge.upgrade.build_new=Build new
+## Purchases
 bannerforge.upgrade.cannot_afford=§cYou cannot afford that. Needed:
-bannerforge.upgrade.done=§a%s:
 
 ## Why something can't be built (bannerforge.rule.<reason>)
 bannerforge.rule.needs_building=Needs %s %s

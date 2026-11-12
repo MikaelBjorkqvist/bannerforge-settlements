@@ -9,12 +9,15 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Ring a village bell to call its steward. At an unclaimed village the steward offers to found a settlement:
   pick a name and a faction banner. Founding costs 10 emeralds. At your own settlement, ringing the bell opens the steward's menu.
 - Steward menu showing the settlement's faction, status and prosperity.
-- Commission Works follows the approved plan (docs/BUILDINGS.md): 19 buildings in 7 categories, each with 3 levels.
-  - The settlement's tier caps building levels (Village 1, Town 2, City 3).
-  - Prerequisites, e.g. Barracks needs Walls. Some buildings need a Town, e.g. Keep and Stables.
-  - Houses, gates and towers can be built several times, up to a limit per tier.
-  - Houses give population; buildings need population to staff their NPCs.
-  - Promotion: upgrade the Town Hall once prosperity, population and key buildings meet the next tier's needs.
-  - The steward's report shows status, prosperity, population and what's missing for the next tier.
-  - Locked buildings show why they're locked. The result of each purchase is shown in the menu.
-  - Buildings don't appear in the world yet.
+- The steward's ledger: one screen that updates in place.
+  - Settlement status at the top, plus a checklist of what the next tier needs.
+  - Every building is listed by section: Town Centre, Homes, Trade, Food, Craftsmen, Defence.
+  - Buttons say what they do ("Build Tavern (Basic) - 8 Emeralds", "Upgrade Tavern: Basic → Improved").
+  - Locked buttons are greyed out with the reason.
+- Settlement rules from the approved plan (docs/BUILDINGS.md):
+  - 17 buildings with 3 levels each, capped by tier.
+  - Prerequisites and a house limit per tier.
+  - Population and population limit.
+  - Promotion through the Town Hall.
+- Walls, gates and towers are one item, Defences, that upgrades the whole perimeter.
+- Buildings don't appear in the world yet.

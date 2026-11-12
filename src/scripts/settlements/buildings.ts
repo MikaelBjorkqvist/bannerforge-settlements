@@ -9,7 +9,9 @@ export interface Cost {
   amount: number;
 }
 
-export type Category = "core" | "housing" | "economy" | "crafts" | "civic" | "defence" | "military";
+/** Player-facing groups in the steward ledger (lang: bannerforge.category.<id>). */
+export type Category = "centre" | "homes" | "trade" | "food" | "crafts" | "defence";
+export const CATEGORIES: Category[] = ["centre", "homes", "trade", "food", "crafts", "defence"];
 export type Plot = "S" | "M" | "L" | "perimeter";
 
 /** A requirement on another building: `id` must exist at `level` or higher. */
@@ -42,37 +44,35 @@ export interface BuildingDef {
 }
 
 export const BUILDINGS: BuildingDef[] = [
-  // Core
-  { id: "town_hall", category: "core", plot: "M", emeralds: [8, 20, 40], prosperity: [5, 10, 15], npcs: [0, 0, 0], promotes: true },
-  { id: "keep", category: "core", plot: "L", emeralds: [16, 32, 56], prosperity: [6, 10, 15], npcs: [1, 3, 3], minTier: "town", requires: [{ id: "walls", level: 1 }] },
-  // Housing
-  { id: "house", category: "housing", plot: "M", emeralds: [3, 6, 10], prosperity: [1, 2, 3], npcs: [0, 0, 0], housing: [2, 3, 4], perTier: { village: 4, town: 8, city: 12 } },
-  // Economy
-  { id: "market", category: "economy", plot: "M", emeralds: [6, 14, 28], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
-  { id: "tavern", category: "economy", plot: "M", emeralds: [8, 16, 32], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
-  { id: "warehouse", category: "economy", plot: "L", emeralds: [6, 12, 24], prosperity: [2, 3, 5], npcs: [1, 1, 1] },
-  { id: "farmstead", category: "economy", plot: "L", emeralds: [6, 14, 28], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "docks", category: "economy", plot: "L", emeralds: [8, 16, 32], prosperity: [3, 5, 8], npcs: [1, 1, 1] },
-  // Crafts
+  // Town centre
+  { id: "town_hall", category: "centre", plot: "M", emeralds: [8, 20, 40], prosperity: [5, 10, 15], npcs: [0, 0, 0], promotes: true },
+  { id: "keep", category: "centre", plot: "L", emeralds: [16, 32, 56], prosperity: [6, 10, 15], npcs: [1, 3, 3], minTier: "town", requires: [{ id: "defences", level: 1 }] },
+  { id: "shrine", category: "centre", plot: "S", emeralds: [8, 18, 36], prosperity: [4, 6, 10], npcs: [1, 1, 1] },
+  // Homes
+  { id: "house", category: "homes", plot: "M", emeralds: [3, 6, 10], prosperity: [1, 2, 3], npcs: [0, 0, 0], housing: [2, 3, 4], perTier: { village: 4, town: 8, city: 12 } },
+  // Trade
+  { id: "market", category: "trade", plot: "M", emeralds: [6, 14, 28], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
+  { id: "tavern", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
+  { id: "stables", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [2, 4, 6], npcs: [1, 1, 1], minTier: "town" },
+  { id: "warehouse", category: "trade", plot: "L", emeralds: [6, 12, 24], prosperity: [2, 3, 5], npcs: [1, 1, 1] },
+  // Food
+  { id: "farmstead", category: "food", plot: "L", emeralds: [6, 14, 28], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
+  { id: "docks", category: "food", plot: "L", emeralds: [8, 16, 32], prosperity: [3, 5, 8], npcs: [1, 1, 1] },
+  // Craftsmen
   { id: "blacksmith", category: "crafts", plot: "M", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
   { id: "fletcher", category: "crafts", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
   { id: "alchemist", category: "crafts", plot: "S", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
   { id: "stonemason", category: "crafts", plot: "M", emeralds: [6, 14, 28], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
   { id: "woodcarver", category: "crafts", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  // Civic
-  { id: "shrine", category: "civic", plot: "S", emeralds: [8, 18, 36], prosperity: [4, 6, 10], npcs: [1, 1, 1] },
-  { id: "stables", category: "civic", plot: "M", emeralds: [8, 16, 32], prosperity: [2, 4, 6], npcs: [1, 1, 1], minTier: "town" },
-  // Defence (perimeter). Gates/towers are repeatable until the perimeter system places them (roadmap M3).
-  { id: "walls", category: "defence", plot: "perimeter", emeralds: [10, 20, 40], prosperity: [2, 4, 6], npcs: [0, 0, 0] },
-  { id: "gates", category: "defence", plot: "perimeter", emeralds: [4, 8, 16], prosperity: [1, 2, 3], npcs: [0, 2, 2], perTier: { village: 2, town: 3, city: 4 }, requires: [{ id: "walls", level: 1 }] },
-  { id: "towers", category: "defence", plot: "perimeter", emeralds: [4, 8, 16], prosperity: [1, 2, 3], npcs: [0, 1, 1], perTier: { village: 2, town: 4, city: 6 }, requires: [{ id: "walls", level: 1 }] },
-  // Military
-  { id: "barracks", category: "military", plot: "L", emeralds: [12, 24, 48], prosperity: [3, 5, 7], npcs: [3, 5, 5], requires: [{ id: "walls", level: 1 }] },
+  // Defence. Walls, gates and towers upgrade together as one perimeter (owner decision, 2026-11-12);
+  // gates go where roads cross the wall (placement: roadmap M3). NPCs: gate guards + tower archers.
+  { id: "defences", category: "defence", plot: "perimeter", emeralds: [16, 32, 64], prosperity: [4, 7, 10], npcs: [0, 4, 4] },
+  { id: "barracks", category: "defence", plot: "L", emeralds: [12, 24, 48], prosperity: [3, 5, 7], npcs: [3, 5, 5], requires: [{ id: "defences", level: 1 }] },
 ];
 
 /** Level 3 of `from` gives `percent` off every level of the `to` buildings (BUILDINGS.md). */
 export const DISCOUNTS: { from: string; to: string[]; percent: number }[] = [
-  { from: "stonemason", to: ["walls", "gates", "towers"], percent: 20 },
+  { from: "stonemason", to: ["defences"], percent: 20 },
   { from: "woodcarver", to: ["house", "tavern"], percent: 20 },
 ];
 
@@ -84,8 +84,8 @@ export interface Promotion {
   requires: BuildingReq[];
 }
 export const PROMOTION: Record<"town" | "city", Promotion> = {
-  town: { townHallLevel: 2, prosperity: 30, population: 6, requires: [{ id: "walls", level: 1 }] },
-  city: { townHallLevel: 3, prosperity: 120, population: 16, requires: [{ id: "walls", level: 2 }, { id: "barracks", level: 2 }] },
+  town: { townHallLevel: 2, prosperity: 30, population: 6, requires: [{ id: "defences", level: 1 }] },
+  city: { townHallLevel: 3, prosperity: 120, population: 16, requires: [{ id: "defences", level: 2 }, { id: "barracks", level: 2 }] },
 };
 
 /** Highest level a normal building may reach in each tier (the Town Hall may go one higher). */

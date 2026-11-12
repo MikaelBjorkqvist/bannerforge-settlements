@@ -1,6 +1,6 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
-import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { BUILDINGS, FOUNDING_COST, PROMOTION, type BuildingDef, type Category, type Cost } from "./buildings.js";
+import { CustomForm, ModalFormData, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
+import { BUILDINGS, CATEGORIES, FOUNDING_COST, PROMOTION, type BuildingDef, type Cost } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
 import { newSettlementId, saveSettlement, settlementNear } from "./registry.js";
 import { apply, check, highest, housing, instances, npcDemand, population, prosperity, tier, type Action, type Reason } from "./rules.js";
@@ -11,7 +11,6 @@ const BELL_ID = "minecraft:bell";
 const BELL_COOLDOWN_TICKS = 20;
 /** A bell within this horizontal distance of an existing settlement belongs to it. */
 const SETTLEMENT_RADIUS = 48;
-const CATEGORIES: Category[] = ["core", "housing", "economy", "crafts", "civic", "defence", "military"];
 
 // ---------- text helpers ----------
 
@@ -39,17 +38,16 @@ function costText(costs: Cost[]): RawMessage {
   return raw(...parts);
 }
 
-function reasonText(r: Reason): RawMessage {
-  const key = `bannerforge.rule.${r.key}`;
-  if (!r.args.length) return { translate: key };
-  return { translate: key, with: raw(...r.args.map((a, i) => (r.translateArgs?.includes(i) ? { translate: a } : { text: a }))) };
-}
-
 function reasonsText(reasons: Reason[]): RawMessage {
   const parts: RawMessage[] = [];
   reasons.forEach((r, i) => {
     if (i > 0) parts.push({ text: ", " });
-    parts.push(reasonText(r));
+    const key = `bannerforge.rule.${r.key}`;
+    parts.push(
+      r.args.length
+        ? { translate: key, with: raw(...r.args.map((a, j) => (r.translateArgs?.includes(j) ? { translate: a } : { text: a }))) }
+        : { translate: key },
+    );
   });
   return raw(...parts);
 }
@@ -62,8 +60,8 @@ const levelName = (level: number) => t(`bannerforge.level.${level}`);
 /**
  * Option B (owner decision, 2026-11-12): ringing a village bell calls the steward.
  * - Unclaimed bell: the (neutral) steward answers and offers to found a settlement for a fee.
- * - Bell of an existing settlement: the steward answers with the settlement menu.
- * Until the steward NPC exists (roadmap M1), the steward's menus open straight from the bell.
+ * - Bell of an existing settlement: the steward answers with the settlement ledger.
+ * Until the steward NPC exists (roadmap M1), the steward's screens open straight from the bell.
  */
 export function registerBellSteward(): void {
   const lastRing = new Map<string, number>();
@@ -78,7 +76,7 @@ export function registerBellSteward(): void {
     const dimensionId = event.block.dimension.id;
     const existing = settlementNear(dimensionId, { x, y, z }, SETTLEMENT_RADIUS);
     if (existing) {
-      void showStewardMenu(player, existing);
+      showLedger(player, existing);
     } else {
       say(player, "bannerforge.bell.steward_arrives");
       void showClaimForm(player, dimensionId, { x, y, z });
@@ -125,142 +123,154 @@ async function showClaimForm(player: Player, dimensionId: string, bell: { x: num
   };
   saveSettlement(settlement);
   world.sendMessage(raw(t("bannerforge.claim.announce", player.name, name)));
-  await showStewardMenu(player, settlement);
+  showLedger(player, settlement);
 }
 
-// ---------- steward report ----------
+// ---------- the steward's ledger: one live screen ----------
 
-/** The steward's report: status, population and progress toward the next tier. */
-function reportText(s: Settlement): RawMessage {
+/** Status block: faction, tier, prosperity, population vs limit, and the checklist for the next tier. */
+function statusText(s: Settlement): RawMessage {
   const tr = tier(s);
   const parts: RawMessage[] = [
-    t("bannerforge.steward.faction"), { text: ": " }, t(`bannerforge.faction.${s.faction}`), { text: "\n" },
-    t("bannerforge.steward.tier"), { text: ": " }, t(`bannerforge.tier.${tr}`), { text: "\n" },
-    t("bannerforge.steward.prosperity"), { text: `: ${prosperity(s)}\n` },
-    t("bannerforge.steward.population"), { text: `: ${population(s)} / ${housing(s)}` },
+    t(`bannerforge.faction.${s.faction}`), { text: " · " }, t(`bannerforge.tier.${tr}`), { text: "\n" },
+    t("bannerforge.steward.prosperity"), { text: `: ${prosperity(s)}   ` },
+    t("bannerforge.steward.population"), { text: `: ${population(s)}   ` },
+    t("bannerforge.steward.population_limit"), { text: `: ${housing(s)}` },
   ];
-  const unstaffed = npcDemand(s) - population(s);
-  if (unstaffed > 0) parts.push({ text: " §6(" }, t("bannerforge.steward.unstaffed", String(unstaffed)), { text: ")§r" });
+  const waiting = npcDemand(s) - population(s);
+  if (waiting > 0) parts.push({ text: "\n§6" }, t("bannerforge.steward.jobs_waiting", String(waiting)), { text: "§r" });
 
   const nextTier = tr === "village" ? "town" : tr === "town" ? "city" : undefined;
   if (nextTier) {
     const promo = PROMOTION[nextTier];
-    const mark = (ok: boolean): RawMessage => ({ text: ok ? " §a✔§r" : " §c✘§r" });
-    parts.push({ text: "\n\n" }, t("bannerforge.steward.next_tier"), { text: " " }, t(`bannerforge.tier.${nextTier}`), { text: ":\n" });
-    parts.push({ text: "- " }, t("bannerforge.steward.prosperity"), { text: ` ${prosperity(s)} / ${promo.prosperity}` }, mark(prosperity(s) >= promo.prosperity), { text: "\n" });
-    parts.push({ text: "- " }, t("bannerforge.steward.population"), { text: ` ${population(s)} / ${promo.population}` }, mark(population(s) >= promo.population), { text: "\n" });
+    const mark = (ok: boolean): RawMessage => ({ text: ok ? "§a✔ " : "§c✘ " });
+    parts.push({ text: "\n\n§r" }, t("bannerforge.steward.next_tier"), { text: " " }, t(`bannerforge.tier.${nextTier}`), { text: "\n" });
+    parts.push(mark(prosperity(s) >= promo.prosperity), { text: "§r" }, t("bannerforge.steward.prosperity"), { text: ` ${prosperity(s)}/${promo.prosperity}   ` });
+    parts.push(mark(population(s) >= promo.population), { text: "§r" }, t("bannerforge.steward.population"), { text: ` ${population(s)}/${promo.population}` });
     for (const r of promo.requires) {
-      parts.push({ text: "- " }, buildingName(r.id), { text: " " }, levelName(r.level), mark(highest(s, r.id) >= r.level), { text: "\n" });
+      parts.push({ text: "   " }, mark(highest(s, r.id) >= r.level), { text: "§r" }, buildingName(r.id), { text: " " }, levelName(r.level));
     }
-    parts.push({ text: "- " }, buildingName("town_hall"), { text: " " }, levelName(promo.townHallLevel), { text: " §7(" }, t("bannerforge.steward.promotes"), { text: ")§r" });
+    parts.push({ text: "\n§7" }, t("bannerforge.steward.promote_hint"), { text: " " }, buildingName("town_hall"), { text: " → " }, levelName(promo.townHallLevel), { text: "§r" });
   }
   return raw(...parts);
 }
 
-async function showStewardMenu(player: Player, s: Settlement, notice?: RawMessage): Promise<void> {
-  const body = notice ? raw(notice, { text: "\n\n" }, reportText(s)) : reportText(s);
-  const form = new ActionFormData()
-    .title(raw({ text: s.name }))
-    .body(body)
-    .button(t("bannerforge.steward.upgrades"))
-    .button(t("bannerforge.steward.close"));
-  const response = await form.show(player);
-  if (response.canceled) return;
-  if (response.selection === 0) await showCategoryMenu(player, s);
+/** The action a building's row performs right now. Houses: build a new one, or upgrade the lowest one. */
+function rowActions(s: Settlement, def: BuildingDef): Action[] {
+  const list = instances(s, def.id);
+  if (!def.perTier) return [list.length ? { kind: "upgrade", id: def.id, index: 0 } : { kind: "build", id: def.id }];
+  const actions: Action[] = [{ kind: "build", id: def.id }];
+  if (list.length) {
+    let lowest = 0;
+    list.forEach((level, i) => {
+      if (level < list[lowest]) lowest = i;
+    });
+    actions.push({ kind: "upgrade", id: def.id, index: lowest });
+  }
+  return actions;
 }
 
-// ---------- commission works ----------
+/**
+ * One row's button text, written as the action it takes:
+ *   "Build Tavern (Basic) - 8 Emeralds" / "Upgrade Tavern: Basic → Improved - 16 Emeralds" / "Tavern: Advanced ✔"
+ * plus a second line with the reason when it's locked.
+ */
+function rowText(s: Settlement, def: BuildingDef, action: Action): { text: RawMessage; enabled: boolean } {
+  const list = instances(s, def.id);
+  const level = action.kind === "upgrade" ? list[action.index] ?? 0 : 0;
+  const c = check(s, action);
+  const name = buildingName(def.id);
 
-const withNotice = (notice: RawMessage | undefined, body: RawMessage) => (notice ? raw(notice, { text: "\n\n" }, body) : body);
+  if (level >= 3) return { text: raw(name, { text: ": " }, levelName(3), { text: " ✔" }), enabled: false };
 
-async function showCategoryMenu(player: Player, s: Settlement): Promise<void> {
-  const form = new ActionFormData().title(t("bannerforge.upgrade.title")).body(t("bannerforge.upgrade.body"));
-  for (const c of CATEGORIES) form.button(t(`bannerforge.category.${c}`));
-  form.button(t("bannerforge.upgrade.back"));
-
-  const response = await form.show(player);
-  if (response.canceled || response.selection === undefined) return;
-  const category = CATEGORIES[response.selection];
-  if (!category) return showStewardMenu(player, s);
-  await showBuildingList(player, s, category);
+  const next = level + 1;
+  const counter = def.perTier ? { text: ` (${list.length}/${def.perTier[tier(s)]})` } : { text: "" };
+  const head =
+    action.kind === "build"
+      ? raw(t("bannerforge.ledger.build"), { text: " " }, name, counter, { text: " (" }, levelName(1), { text: ")" })
+      : def.perTier
+        ? raw(t("bannerforge.ledger.upgrade_one"), { text: " " }, name, { text: ": " }, levelName(level), { text: " → " }, levelName(next))
+        : raw(t("bannerforge.ledger.upgrade"), { text: " " }, name, { text: ": " }, levelName(level), { text: " → " }, levelName(next));
+  if (c.ok) return { text: raw(head, { text: " - " }, costText(c.cost)), enabled: true };
+  return { text: raw(head, { text: "\n" }, reasonsText(c.reasons)), enabled: false };
 }
 
-/** One button per building in the category: current level, then the next step's cost or why it is locked. */
-async function showBuildingList(player: Player, s: Settlement, category: Category, notice?: RawMessage): Promise<void> {
-  const defs = BUILDINGS.filter((b) => b.category === category);
-  const form = new ActionFormData().title(t(`bannerforge.category.${category}`)).body(withNotice(notice, t("bannerforge.upgrade.body")));
+interface Row {
+  def: BuildingDef;
+  slot: number; // which of rowActions() this button performs
+  label: ObservableUIRawMessage;
+  disabled: ObservableBoolean;
+}
 
-  for (const def of defs) {
-    if (def.perTier) {
-      const n = instances(s, def.id).length;
-      form.button(raw(buildingName(def.id), { text: ` §8(${n}/${def.perTier[tier(s)]})` }));
-    } else {
-      form.button(buildingButton(s, def, uniqueAction(s, def)));
+/**
+ * The steward's ledger: status at the top, then every building grouped by section, each a button that says
+ * exactly what it does. Buying updates the screen in place (DDUI observables), so the player never leaves it.
+ */
+export function showLedger(player: Player, s: Settlement): void {
+  const status = new ObservableUIRawMessage(statusText(s));
+  const notice = new ObservableUIRawMessage(t("bannerforge.ledger.hint"));
+  const rows: Row[] = [];
+
+  const form = new CustomForm(player, raw({ text: s.name }));
+  form.label(status).divider().label(notice);
+
+  for (const category of CATEGORIES) {
+    form.header(t(`bannerforge.category.${category}`));
+    for (const def of BUILDINGS.filter((b) => b.category === category)) {
+      const slots = def.perTier ? 2 : 1;
+      for (let slot = 0; slot < slots; slot++) {
+        const row: Row = { def, slot, label: new ObservableUIRawMessage({ text: "" }), disabled: new ObservableBoolean(true) };
+        rows.push(row);
+        form.button(row.label, () => onRowClicked(player, s, row, refresh, notice), { disabled: row.disabled });
+      }
     }
   }
-  form.button(t("bannerforge.upgrade.back"));
+  form.closeButton();
 
-  const response = await form.show(player);
-  if (response.canceled || response.selection === undefined) return;
-  const def = defs[response.selection];
-  if (!def) return showCategoryMenu(player, s);
-  if (def.perTier) return showInstanceList(player, s, def);
-  await showBuildingList(player, s, category, perform(player, s, def, uniqueAction(s, def)));
+  function refresh(): void {
+    status.setData(statusText(s));
+    for (const row of rows) {
+      const action = rowActions(s, row.def)[row.slot];
+      if (!action) {
+        // "Upgrade a House" before any house exists.
+        row.label.setData(raw(t("bannerforge.ledger.upgrade_one"), { text: " " }, buildingName(row.def.id)));
+        row.disabled.setData(true);
+        continue;
+      }
+      const { text, enabled } = rowText(s, row.def, action);
+      row.label.setData(text);
+      row.disabled.setData(!enabled);
+    }
+  }
+  refresh();
+  form.show().catch((e) => console.warn(`[BannerForge] ledger: ${e}`));
 }
 
-const uniqueAction = (s: Settlement, def: BuildingDef): Action =>
-  instances(s, def.id).length ? { kind: "upgrade", id: def.id, index: 0 } : { kind: "build", id: def.id };
-
-/** Repeatable buildings (houses, gates, towers): one button per instance plus "build new". */
-async function showInstanceList(player: Player, s: Settlement, def: BuildingDef, notice?: RawMessage): Promise<void> {
-  const count = instances(s, def.id).length;
-  const form = new ActionFormData().title(buildingName(def.id)).body(withNotice(notice, t("bannerforge.upgrade.body")));
-  const actions: Action[] = [];
-  for (let index = 0; index < count; index++) actions.push({ kind: "upgrade", id: def.id, index });
-  actions.push({ kind: "build", id: def.id });
-  actions.forEach((a, i) => form.button(buildingButton(s, def, a, i < count ? i + 1 : undefined)));
-  form.button(t("bannerforge.upgrade.back"));
-
-  const response = await form.show(player);
-  if (response.canceled || response.selection === undefined) return;
-  const action = actions[response.selection];
-  if (!action) return showBuildingList(player, s, def.category);
-  await showInstanceList(player, s, def, perform(player, s, def, action));
-}
-
-function buildingButton(s: Settlement, def: BuildingDef, action: Action, number?: number): RawMessage {
-  const level = action.kind === "upgrade" ? instances(s, def.id)[action.index] ?? 0 : 0;
-  const title: RawMessage[] =
-    action.kind === "build" && def.perTier
-      ? [t("bannerforge.upgrade.build_new")]
-      : [buildingName(def.id), { text: number ? ` #${number} - ` : " - " }, levelName(level)];
+function onRowClicked(player: Player, s: Settlement, row: Row, refresh: () => void, notice: ObservableUIRawMessage): void {
+  const action = rowActions(s, row.def)[row.slot];
+  if (!action) return;
   const c = check(s, action);
-  const detail: RawMessage = c.ok
-    ? raw({ text: "\n§8" }, levelName(c.newLevel), { text: ": " }, costText(c.cost))
-    : raw({ text: "\n§4" }, reasonsText(c.reasons));
-  return raw(...title, detail);
-}
-
-/** Checks, pays and applies an action. Returns the result text for the reopened menu. */
-function perform(player: Player, s: Settlement, def: BuildingDef, action: Action): RawMessage {
-  const c = check(s, action);
-  if (!c.ok) return raw({ text: "§c" }, reasonsText(c.reasons));
+  if (!c.ok) {
+    notice.setData(raw({ text: "§c" }, reasonsText(c.reasons)));
+    return;
+  }
   if (!canAfford(player, c.cost) || !pay(player, c.cost)) {
-    return raw(t("bannerforge.upgrade.cannot_afford"), { text: " " }, costText(c.cost));
+    notice.setData(raw(t("bannerforge.upgrade.cannot_afford"), { text: " " }, costText(c.cost)));
+    return;
   }
   const oldTier = tier(s);
   apply(s, action, c.newLevel);
   saveSettlement(s);
 
-  // Structures are not placed yet (roadmap M2): for now the upgrade is recorded and reported.
-  const result: RawMessage[] = [
-    t("bannerforge.upgrade.done", s.name), { text: " " }, buildingName(def.id), { text: " → " }, levelName(c.newLevel),
-    { text: "\n§7" }, t("bannerforge.steward.prosperity"), { text: `: ${prosperity(s)}` },
-  ];
+  // Structures are not placed yet (roadmap M2): for now the purchase is recorded and reported here.
+  const verb = action.kind === "build" ? "bannerforge.ledger.built" : "bannerforge.ledger.upgraded";
+  const parts: RawMessage[] = [{ text: "§a" }, t(verb), { text: " " }, buildingName(row.def.id), { text: " (" }, levelName(c.newLevel), { text: ")" }];
   if (tier(s) !== oldTier) {
     const promoted = raw(t("bannerforge.tier.promoted", s.name), { text: " " }, t(`bannerforge.tier.${tier(s)}`), { text: "!" });
-    result.push({ text: "\n" }, promoted);
+    parts.push({ text: "\n" }, promoted);
     world.sendMessage(promoted); // everyone else hears about it in chat
   }
-  return raw(...result);
+  notice.setData(raw(...parts));
+  refresh();
 }
+

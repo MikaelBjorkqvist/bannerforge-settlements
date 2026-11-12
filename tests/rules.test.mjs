@@ -28,7 +28,7 @@ assert.equal(keys(R.check(s, { kind: "build", id: "house" })), "limit");
 assert.equal(R.housing(s), 8); // 4 houses x +2
 
 // Fill the village, then promote.
-for (const id of ["walls", "tavern", "warehouse", "farmstead", "blacksmith", "fletcher", "alchemist", "shrine", "barracks"]) act({ kind: "build", id });
+for (const id of ["defences", "tavern", "warehouse", "farmstead", "blacksmith", "fletcher", "alchemist", "shrine", "barracks"]) act({ kind: "build", id });
 assert.ok(R.prosperity(s) >= 30);
 assert.equal(R.population(s), 8); // demand 11, capped by housing 8
 act({ kind: "upgrade", id: "town_hall", index: 0 });
@@ -36,6 +36,9 @@ assert.equal(R.tier(s), "town");
 assert.equal(keys(R.check(s, { kind: "build", id: "keep" })), "ok");
 assert.equal(keys(R.check(s, { kind: "upgrade", id: "market", index: 0 })), "ok");
 
-// Stonemason L3 gives 20% off walls.
+// Stonemason L3 gives 20% off defences.
 s.buildings.stonemason = [3];
-assert.equal(R.costFor(s, { id: "walls", emeralds: [10, 20, 40] }, 2)[0].amount, 16);
+assert.equal(R.costFor(s, { id: "defences", emeralds: [16, 32, 64] }, 2)[0].amount, 26);
+
+// Houses: building more raises the population limit; NPC demand beyond it waits for homes.
+assert.ok(R.npcDemand(s) > R.housing(s) || R.population(s) === R.npcDemand(s));

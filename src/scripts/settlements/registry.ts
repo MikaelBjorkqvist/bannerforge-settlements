@@ -16,20 +16,32 @@ interface SettlementV1 {
 const V1_RENAMES: Record<string, string> = { houses: "house", stores: "market" };
 
 function migrate(raw: Settlement | SettlementV1): Settlement {
+  let s = raw as Settlement;
+  let changed = false;
   if (raw.schema === 1) {
+    // v1 (M0): one level per id, old ids, stored prosperity/tier (now derived).
     const old = raw as SettlementV1;
     const buildings: Settlement["buildings"] = {};
     for (const [id, level] of Object.entries(old.buildings ?? {})) {
       if (level > 0) buildings[V1_RENAMES[id] ?? id] = [Math.min(3, level) as 1 | 2 | 3];
     }
-    delete old.prosperity; // derived now (rules.ts)
+    delete old.prosperity;
     delete old.tier;
-    const upgraded = { ...(old as object), buildings, schema: SCHEMA } as Settlement;
-    saveSettlement(upgraded);
-    return upgraded;
+    s = { ...(old as object), buildings, schema: 2 } as Settlement;
+    changed = true;
   }
-  const s = raw as Settlement;
+  if (s.schema === 2) {
+    // v2 -> v3: walls, gates and towers became one "defences" perimeter at the walls' level.
+    const walls = Math.max(0, ...(s.buildings.walls ?? []));
+    delete s.buildings.walls;
+    delete s.buildings.gates;
+    delete s.buildings.towers;
+    if (walls > 0) s.buildings.defences = [walls as 1 | 2 | 3];
+    s.schema = 3;
+    changed = true;
+  }
   s.buildings ??= {};
+  if (changed) saveSettlement(s);
   return s;
 }
 
