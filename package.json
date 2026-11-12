@@ -15,8 +15,8 @@
     "bump": "node tools/version.mjs"
   },
   "devDependencies": {
-    "@minecraft/server": "2.10.0",
-    "@minecraft/server-ui": "2.2.0",
+    "@minecraft/server": "2.11.0",
+    "@minecraft/server-ui": "2.3.0",
     "typescript": "^5.9.0"
   },
   "engines": {

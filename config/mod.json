@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for this mod. Manifests are generated from this file at build time — never edit dist/ manifests by hand.",
+  "$comment": "Single source of truth for this mod. Manifests are generated from this file at build time \u2014 never edit dist/ manifests by hand.",
   "namespace": "bannerforge",
   "id": "settlements",
   "displayName": "BannerForge: Settlements",
@@ -8,10 +8,10 @@
     "BannerForge"
   ],
   "version": "0.1.0",
-  "minEngineVersion": "1.26.50",
+  "minEngineVersion": "1.26.60",
   "scriptModules": {
-    "@minecraft/server": "2.10.0",
-    "@minecraft/server-ui": "2.2.0"
+    "@minecraft/server": "2.11.0",
+    "@minecraft/server-ui": "2.3.0"
   },
   "uuids": {
     "bpHeader": "a684db6d-8c86-4f2a-8eaf-01b90f5fb789",

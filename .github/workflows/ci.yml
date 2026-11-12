@@ -10,9 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -37,7 +37,7 @@ jobs:
         continue-on-error: true
         run: |
           ADDON=$(ls dist/*.mcaddon)
-          npx -y @minecraft/creator-tools@latest validate addon -if "$ADDON" -show 2>&1 | tee creator-tools-report.txt
+          npx -y @minecraft/creator-tools@latest validate addon -if "$ADDON" 2>&1 | tee creator-tools-report.txt
 
       - name: Script API drift check
         # Warns when Mojang has released a newer stable Script API than config/mod.json pins.
@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build
           path: |
