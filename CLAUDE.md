@@ -28,6 +28,8 @@ Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md
 - `config/mod.json` — name, version, engine + API versions, UUIDs.
 - `packs/BP`, `packs/RP` — pack sources (no manifest.json; files starting with `_` or `.` and `*.md` are not shipped).
 - `src/scripts/**/*.ts` — TypeScript; `main.ts` is the entry. Use `.js` in relative import paths.
+- Textures live under our own folder: `RP/textures/bannerforge/{items,blocks,entity}/` (Mojang cooperative add-on rule:
+  never put files directly in shared folders like `textures/items/`). Same idea for sounds: `RP/sounds/bannerforge/`.
 - `assets-src/` — editable sources (.bbmodel, layered art, texture generators). Shipped textures go in `packs/RP`.
 - `tools/` — build, check, package, deploy, version.
 - `docs/` — DESIGN, ROADMAP, ASSETS, decisions/ (ADRs: one file per decision, never rewritten, only superseded).

@@ -50,7 +50,7 @@ if (hasScripts) {
 }
 const rpManifest = {
   format_version: 2,
-  header: { name: "pack.name", description: "pack.description", uuid: cfg.uuids.rpHeader, version, min_engine_version: minEngine },
+  header: { name: "pack.name", description: "pack.description", uuid: cfg.uuids.rpHeader, version, min_engine_version: minEngine, pack_scope: "world" },
   modules: [{ type: "resources", uuid: cfg.uuids.rpResources, version }],
   dependencies: [{ uuid: cfg.uuids.bpHeader, version }],
   metadata,
