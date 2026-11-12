@@ -12,3 +12,4 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Commission Works: pay emeralds to build and upgrade houses, stores, tavern, walls, gates, towers and barracks
   (Basic → Improved → Advanced). Each level raises prosperity. A settlement becomes a Town at 30 prosperity
   and a City at 80. Buildings don't appear in the world yet.
+  The result of each purchase is shown at the top of the menu, so it can be read without leaving it.
