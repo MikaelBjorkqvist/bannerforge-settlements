@@ -21,6 +21,8 @@ bannerforge.claim.name_label=Settlement name
 bannerforge.claim.name_placeholder=e.g. Oakmere
 bannerforge.claim.faction_label=Raise the banner of
 bannerforge.claim.submit=Raise the banner
+bannerforge.claim.cost=Founding cost:
+bannerforge.claim.cannot_afford=§cThe steward asks for a founding fee you cannot pay. Needed:
 bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
 

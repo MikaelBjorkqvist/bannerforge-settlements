@@ -21,6 +21,7 @@ shops and missions.
 | 2026-11-12 | Factions: Amberwood Order (green), Kingscross Guild (blue), Brimstone Legion (red), with themes as listed below. |
 | 2026-11-12 | Each village biome gets its own style per faction (future). |
 | 2026-11-12 | Steward's Charter dropped. Ringing a village bell calls the steward (option B), who lives near the bell until the Town Hall is built. |
+| 2026-11-12 | Founding costs 10 emeralds, paid to the steward. Founding happens by talking to the steward, who is neutral (no faction look) until the settlement is founded. |
 | 2026-11-12 | Buildings & NPC plan v2 approved, see `BUILDINGS.md`. It covers tier caps, promotion via the Town Hall, 1-day construction, population, repairs, NPC respawn and fees. |
 | 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
 

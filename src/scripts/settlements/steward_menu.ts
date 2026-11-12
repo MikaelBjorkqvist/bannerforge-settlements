@@ -1,6 +1,6 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { BUILDINGS, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
+import { BUILDINGS, FOUNDING_COST, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
 import { newSettlementId, saveSettlement, settlementNear } from "./registry.js";
 import { FACTIONS, type BuildingLevel, type Settlement } from "./types.js";
@@ -61,9 +61,13 @@ export function registerBellSteward(): void {
 }
 
 async function showClaimForm(player: Player, dimensionId: string, bell: { x: number; y: number; z: number }): Promise<void> {
+  if (!canAfford(player, FOUNDING_COST)) {
+    player.sendMessage({ rawtext: [t("bannerforge.claim.cannot_afford"), { text: " " }, costText(FOUNDING_COST)] });
+    return;
+  }
   const form = new ModalFormData()
     .title(t("bannerforge.claim.title"))
-    .textField(t("bannerforge.claim.name_label"), t("bannerforge.claim.name_placeholder"))
+    .textField({ rawtext: [t("bannerforge.claim.name_label"), { text: "\n§7" }, t("bannerforge.claim.cost"), { text: " " }, costText(FOUNDING_COST)] }, t("bannerforge.claim.name_placeholder"))
     .dropdown(t("bannerforge.claim.faction_label"), FACTIONS.map(factionWithColour))
     .submitButton(t("bannerforge.claim.submit"));
 
@@ -74,6 +78,12 @@ async function showClaimForm(player: Player, dimensionId: string, bell: { x: num
   const name = String(rawName ?? "").trim().slice(0, 32);
   if (!name) {
     say(player, "bannerforge.claim.name_required");
+    return;
+  }
+
+  // Pay on submit: the player may have dropped emeralds while the form was open.
+  if (!pay(player, FOUNDING_COST)) {
+    player.sendMessage({ rawtext: [t("bannerforge.claim.cannot_afford"), { text: " " }, costText(FOUNDING_COST)] });
     return;
   }
 
@@ -116,10 +126,15 @@ async function showStewardMenu(player: Player, s: Settlement): Promise<void> {
   if (response.selection === 0) await showUpgradeMenu(player, s);
 }
 
-async function showUpgradeMenu(player: Player, s: Settlement): Promise<void> {
-  const form = new ActionFormData()
-    .title(t("bannerforge.upgrade.title"))
-    .body(t("bannerforge.upgrade.body"));
+/**
+ * The upgrade list. `notice` is the result of the last action (bought, too expensive, ...). It is shown at the top
+ * of the reopened menu so the player can read it there; chat messages are hidden behind the menu.
+ */
+async function showUpgradeMenu(player: Player, s: Settlement, notice?: RawMessage): Promise<void> {
+  const body: RawMessage = notice
+    ? { rawtext: [notice, { text: "\n\n" }, t("bannerforge.upgrade.body")] }
+    : t("bannerforge.upgrade.body");
+  const form = new ActionFormData().title(t("bannerforge.upgrade.title")).body(body);
 
   for (const b of BUILDINGS) {
     const level = levelOf(s, b.id);
@@ -135,20 +150,16 @@ async function showUpgradeMenu(player: Player, s: Settlement): Promise<void> {
   if (response.canceled || response.selection === undefined) return;
   const building = BUILDINGS[response.selection];
   if (!building) return showStewardMenu(player, s);
-  upgrade(player, s, building);
-  await showUpgradeMenu(player, s);
+  await showUpgradeMenu(player, s, upgrade(player, s, building));
 }
 
-function upgrade(player: Player, s: Settlement, b: BuildingDef): void {
+/** Tries to buy the next level. Returns the result text for the menu. */
+function upgrade(player: Player, s: Settlement, b: BuildingDef): RawMessage {
   const level = levelOf(s, b.id);
   const cost = nextCost(b, level);
-  if (!cost) {
-    say(player, "bannerforge.upgrade.already_max");
-    return;
-  }
+  if (!cost) return t("bannerforge.upgrade.already_max");
   if (!canAfford(player, cost) || !pay(player, cost)) {
-    player.sendMessage({ rawtext: [t("bannerforge.upgrade.cannot_afford"), { text: " " }, costText(cost)] });
-    return;
+    return { rawtext: [t("bannerforge.upgrade.cannot_afford"), { text: " " }, costText(cost)] };
   }
 
   const newLevel = (level + 1) as BuildingLevel;
@@ -158,14 +169,16 @@ function upgrade(player: Player, s: Settlement, b: BuildingDef): void {
   s.tier = tierFor(s.prosperity);
   saveSettlement(s);
 
-  // Structures are not placed yet (roadmap M2): for now the upgrade is recorded and announced.
-  player.sendMessage({
-    rawtext: [
-      t("bannerforge.upgrade.done", s.name), { text: " " },
-      t(`bannerforge.building.${b.id}`), { text: " → " }, t(`bannerforge.level.${newLevel}`),
-    ],
-  });
+  // Structures are not placed yet (roadmap M2): for now the upgrade is recorded and reported.
+  const result: RawMessage[] = [
+    t("bannerforge.upgrade.done", s.name), { text: " " },
+    t(`bannerforge.building.${b.id}`), { text: " → " }, t(`bannerforge.level.${newLevel}`),
+    { text: `\n§7` }, t("bannerforge.steward.prosperity"), { text: `: ${s.prosperity}` },
+  ];
   if (s.tier !== oldTier) {
-    world.sendMessage({ rawtext: [t("bannerforge.tier.promoted", s.name), { text: " " }, t(`bannerforge.tier.${s.tier}`), { text: "!" }] });
+    const promoted: RawMessage = { rawtext: [t("bannerforge.tier.promoted", s.name), { text: " " }, t(`bannerforge.tier.${s.tier}`), { text: "!" }] };
+    result.push({ text: "\n" }, promoted);
+    world.sendMessage(promoted); // everyone else hears about it in chat
   }
+  return { rawtext: result };
 }

@@ -20,6 +20,9 @@ export interface BuildingDef {
 
 const emeralds = (amount: number): Cost[] => [{ item: "minecraft:emerald", amount }];
 
+/** Paid to the (still neutral) steward when founding a settlement. Owner decision, 2026-11-12. */
+export const FOUNDING_COST: Cost[] = emeralds(10);
+
 export const BUILDINGS: BuildingDef[] = [
   { id: "houses", costs: [emeralds(4), emeralds(10), emeralds(20)], prosperity: [3, 5, 8] },
   { id: "stores", costs: [emeralds(6), emeralds(14), emeralds(28)], prosperity: [4, 6, 10] },
