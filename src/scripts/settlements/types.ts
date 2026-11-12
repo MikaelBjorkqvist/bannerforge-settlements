@@ -1,7 +1,7 @@
 // Data model for settlements. Stored as JSON in world dynamic properties.
 // Bump SCHEMA and add a migration in registry.ts whenever this shape changes.
 
-export const SCHEMA = 2;
+export const SCHEMA = 3;
 
 /** The founding player picks one of these when founding (owner decision, 2026-11-12). */
 export type FactionId = "green" | "red" | "blue";
@@ -34,7 +34,7 @@ export interface Settlement {
   foundedAt: number;
   /**
    * Building id -> level of each built instance. Unique buildings have at most one entry;
-   * repeatable ones (houses, gates, towers) have one per instance. Prosperity, population and tier are
+   * repeatable ones (houses) have one per instance. Prosperity, population and tier are
    * derived from this (see rules.ts), so rebalancing numbers also updates existing worlds.
    */
   buildings: Record<string, BuildingLevel[]>;
