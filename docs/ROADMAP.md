@@ -8,7 +8,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Use the charter near a village bell → claim form (name + faction) → steward menu (faction, tier, prosperity)
 - [x] Settlements saved per world (dynamic properties, schema v1)
 - [x] Upgrade ledger: steward lets you buy building levels 1–3 for emeralds; prosperity and tier (village/town/city) update
-- [ ] Loaded in-game on the owner's PC; CI green on GitHub
+- [x] Loaded in-game on the owner's PC; CI green on GitHub; Mojang Creator Tools validation clean
 
 ## M1 — The steward
 - [ ] `bannerforge:steward` NPC spawned at the bell on claim; interacting opens the steward menu
