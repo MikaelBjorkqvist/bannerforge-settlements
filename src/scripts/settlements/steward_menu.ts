@@ -1,6 +1,6 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { BUILDINGS, levelOf, tierFor, type BuildingDef, type Cost } from "./buildings.js";
+import { BUILDINGS, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
 import { findNearestBell } from "./find_bell.js";
 import { newSettlementId, saveSettlement, settlementNear } from "./registry.js";
@@ -115,7 +115,8 @@ async function showUpgradeMenu(player: Player, s: Settlement): Promise<void> {
   for (const b of BUILDINGS) {
     const level = levelOf(s, b.id);
     const line: RawMessage[] = [t(`bannerforge.building.${b.id}`), { text: " - " }, t(`bannerforge.level.${level}`)];
-    if (level < 3) line.push({ text: "\n§8" }, t(`bannerforge.level.${level + 1}`), { text: ": " }, costText(b.costs[level]));
+    const cost = nextCost(b, level);
+    if (cost) line.push({ text: "\n§8" }, t(`bannerforge.level.${level + 1}`), { text: ": " }, costText(cost));
     else line.push({ text: "\n§8" }, t("bannerforge.upgrade.max"));
     form.button({ rawtext: line });
   }
@@ -131,11 +132,11 @@ async function showUpgradeMenu(player: Player, s: Settlement): Promise<void> {
 
 function upgrade(player: Player, s: Settlement, b: BuildingDef): void {
   const level = levelOf(s, b.id);
-  if (level >= 3) {
+  const cost = nextCost(b, level);
+  if (!cost) {
     say(player, "bannerforge.upgrade.already_max");
     return;
   }
-  const cost = b.costs[level];
   if (!canAfford(player, cost) || !pay(player, cost)) {
     player.sendMessage({ rawtext: [t("bannerforge.upgrade.cannot_afford"), { text: " " }, costText(cost)] });
     return;
@@ -143,7 +144,7 @@ function upgrade(player: Player, s: Settlement, b: BuildingDef): void {
 
   const newLevel = (level + 1) as BuildingLevel;
   s.buildings[b.id] = newLevel;
-  s.prosperity += b.prosperity[level];
+  s.prosperity += prosperityGain(b, level);
   const oldTier = s.tier;
   s.tier = tierFor(s.prosperity);
   saveSettlement(s);

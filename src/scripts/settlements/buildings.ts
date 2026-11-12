@@ -44,3 +44,13 @@ export function tierFor(prosperity: number): Tier {
 export function levelOf(s: Settlement, id: string): BuildingLevel {
   return s.buildings[id] ?? 0;
 }
+
+/** Cost of the next level, or undefined when the building is already Advanced. */
+export function nextCost(b: BuildingDef, level: BuildingLevel): Cost[] | undefined {
+  return level === 3 ? undefined : b.costs[level];
+}
+
+/** Prosperity gained by going from `level` to the next one. */
+export function prosperityGain(b: BuildingDef, level: BuildingLevel): number {
+  return level === 3 ? 0 : b.prosperity[level];
+}
