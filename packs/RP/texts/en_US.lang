@@ -2,7 +2,6 @@
 item.bannerforge:steward_charter=Steward's Charter
 
 ## Factions (names are placeholders until the faction design is settled)
-bannerforge.faction.unaligned=Unaligned
 bannerforge.faction.green=Ironwood Clan
 bannerforge.faction.red=Red Faction
 bannerforge.faction.blue=Blue Faction
@@ -11,6 +10,7 @@ bannerforge.faction.blue=Blue Faction
 bannerforge.tier.village=Village
 bannerforge.tier.town=Town
 bannerforge.tier.city=City
+bannerforge.tier.promoted=§6%s has grown into a
 
 ## Charter / claiming
 bannerforge.charter.searching=§7The charter stirs... searching for a village bell nearby.
@@ -18,7 +18,7 @@ bannerforge.charter.no_village=§cNo village bell within reach. Stand near a vil
 bannerforge.claim.title=Found a Settlement
 bannerforge.claim.name_label=Settlement name
 bannerforge.claim.name_placeholder=e.g. Oakmere
-bannerforge.claim.faction_label=Banner (faction)
+bannerforge.claim.faction_label=Raise the banner of
 bannerforge.claim.submit=Raise the banner
 bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
@@ -30,4 +30,28 @@ bannerforge.steward.prosperity=Prosperity
 bannerforge.steward.greeting=How may I serve the settlement, my liege?
 bannerforge.steward.upgrades=Upgrades
 bannerforge.steward.close=Close
-bannerforge.steward.upgrades_soon=§7Builders are still drawing up plans. (Upgrades arrive in a later version.)
+
+## Currency (bannerforge.currency.<namespace>.<item>)
+bannerforge.currency.minecraft.emerald=Emeralds
+
+## Buildings and levels
+bannerforge.building.houses=Houses
+bannerforge.building.stores=Stores
+bannerforge.building.tavern=Tavern
+bannerforge.building.walls=Walls
+bannerforge.building.gates=Gates
+bannerforge.building.towers=Towers
+bannerforge.building.barracks=Barracks
+bannerforge.level.0=Not built
+bannerforge.level.1=Basic
+bannerforge.level.2=Improved
+bannerforge.level.3=Advanced
+
+## Upgrades
+bannerforge.upgrade.title=Commission Works
+bannerforge.upgrade.body=Choose a building to build or improve. Costs are paid from your inventory.
+bannerforge.upgrade.max=Fully upgraded
+bannerforge.upgrade.back=Back
+bannerforge.upgrade.already_max=§7That building is already Advanced.
+bannerforge.upgrade.cannot_afford=§cYou cannot afford that. Needed:
+bannerforge.upgrade.done=§a%s:

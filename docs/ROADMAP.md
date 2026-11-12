@@ -7,6 +7,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Steward's Charter item (craft: paper + emerald + feather)
 - [x] Use the charter near a village bell → claim form (name + faction) → steward menu (faction, tier, prosperity)
 - [x] Settlements saved per world (dynamic properties, schema v1)
+- [x] Upgrade ledger: steward lets you buy building levels 1–3 for emeralds; prosperity and tier (village/town/city) update
 - [ ] Loaded in-game on the owner's PC; CI green on GitHub
 
 ## M1 — The steward
@@ -17,7 +18,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 ## M2 — First building, three levels
 - [ ] Plot system: choose a plot, level it, place structure in slices
 - [ ] One building (e.g. watchtower) with Basic / Improved / Advanced structures
-- [ ] Upgrade costs and prosperity gain
+- [ ] Upgrade costs and prosperity gain balanced (placeholders exist since M0)
 
 ## M3 — Walls and gates
 ## M4 — Civic buildings: houses, tavern, stores (+ shopkeepers)

@@ -7,6 +7,7 @@ const PREFIX = "bannerforge:settlement:";
 
 function migrate(raw: Settlement): Settlement {
   // Future: if (raw.schema === 1) { ...convert to 2... }
+  raw.buildings ??= {};
   return raw;
 }
 

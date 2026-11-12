@@ -3,11 +3,15 @@
 
 export const SCHEMA = 1;
 
-export type FactionId = "unaligned" | "green" | "red" | "blue";
-export const FACTIONS: FactionId[] = ["unaligned", "green", "red", "blue"];
+/** The founding player picks one of these when claiming a village (owner decision, 2026-11-12). */
+export type FactionId = "green" | "red" | "blue";
+export const FACTIONS: FactionId[] = ["green", "red", "blue"];
 
-/** Settlement tiers grow with buildings and prosperity. Names are lang keys: bannerforge.tier.<tier> */
+/** Settlement tiers grow with prosperity. Names are lang keys: bannerforge.tier.<tier> */
 export type Tier = "village" | "town" | "city";
+
+/** Building level: 0 = not built, 1 = Basic, 2 = Improved, 3 = Advanced. */
+export type BuildingLevel = 0 | 1 | 2 | 3;
 
 export interface Vec3 {
   x: number;
@@ -29,4 +33,6 @@ export interface Settlement {
   /** Player id (not name) of whoever founded it. */
   foundedBy: string;
   foundedAt: number;
+  /** Building id -> current level. Missing = 0. */
+  buildings: Record<string, BuildingLevel>;
 }

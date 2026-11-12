@@ -8,11 +8,17 @@ walls, gates, towers and civic buildings through the village steward. Growth bri
 shops and missions.
 
 ## Core loop
-1. Claim a village with a **Steward's Charter**. The village is either already tied to a faction, or the player picks one *(open question)*.
-2. Talk to the **steward** to commission or upgrade buildings, using resources and currency *(open question)*.
+1. Claim a village with a **Steward's Charter**. The founding player **chooses the faction** (Green, Red or Blue) when founding the settlement.
+2. Talk to the **steward** to commission or upgrade buildings, paying in **emeralds**. Other resources are added later.
 3. Buildings appear around the village and add **prosperity**.
 4. Prosperity and buildings raise the **settlement tier**: Village → Town → City (more tiers possible).
 5. Higher tiers unlock NPCs (shopkeepers, guards, adventurers), patrols and missions.
+
+## Decisions log
+| Date | Decision |
+| --- | --- |
+| 2026-11-12 | The player chooses the faction when founding a settlement. There is no "unaligned" option. |
+| 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
 
 ## Factions
 Three factions: **Green**, **Red** and **Blue**. Each has a name (e.g. *Ironwood Clan*). Final names, lore and
@@ -50,9 +56,9 @@ Shopkeepers, military (guards, patrols), adventurers and mission givers. The exa
 - **Performance budget.** Nothing per-tick over every settlement. Work happens only near players or on events.
 
 ## Open questions
-1. Is a village's faction pre-assigned (by biome or world seed) or chosen by the claiming player? Can it change, through conquest or diplomacy?
+1. ~~Who picks the faction?~~ The founder does (decided). Still open: can it change later, through conquest or diplomacy?
 2. Faction names, colours and banner patterns, and whether factions play differently.
-3. Cost of upgrades: vanilla resources, emeralds, a custom currency, or a mix?
+3. ~~Upgrade currency?~~ Emeralds (decided). Still open: which other resources get added, and when?
 4. Tier thresholds and the tier list beyond City (Castle? Capital?).
 5. Multiplayer: can several players own or contribute to one settlement?
 6. Can enemies (raids, rival factions) damage buildings or lower prosperity?
