@@ -18,11 +18,30 @@ shops and missions.
 | Date | Decision |
 | --- | --- |
 | 2026-11-12 | The player chooses the faction when founding a settlement. There is no "unaligned" option. |
+| 2026-11-12 | Factions: Amberwood Order (green), Kingscross Guild (blue), Brimstone Legion (red), with themes as listed below. |
+| 2026-11-12 | Each village biome gets its own style per faction (future). |
 | 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
 
 ## Factions
-Three factions: **Green**, **Red** and **Blue**. Each has a name (e.g. *Ironwood Clan*). Final names, lore and
-any gameplay differences are open.
+Each faction's buildings, NPCs and banners follow its theme and visuals.
+
+| Faction | Colour | Theme | Visuals |
+| --- | --- | --- | --- |
+| **Amberwood Order** | Green | Elvish(ish), nature-bound, elemental, mystical, ancient, organic, harmonious, forest-dwelling, spiritual, agile | Lush, mossy, overgrown, timber, canopy, living wood, vine-draped, emerald, earthen, rustic elegance |
+| **Kingscross Guild** | Blue | Human(ish), classic medieval, grounded, neutral, industrious, mercantile, frontier, adaptable, communal, pragmatic | Timber-framed, cobblestone, thatch, brick, banner-draped, windmills, harbours, watchtowers, weathered, practical |
+| **Brimstone Legion** | Red | Stout, dwarven(ish)-inspired, proud, elite, hierarchical, honourable, traditional, unyielding, wealthy, stoic | Monumental, carved stone, monolithic, fortress, subterranean, deepslate, granite, gilded, heavy masonry, grand halls |
+
+### Biome styles (future)
+Every village biome gets its own style for each faction. Vanilla villages generate in five biomes: plains,
+desert, savanna, taiga and snowy. For example, a Brimstone Legion town in a desert should look different from one in a taiga.
+
+*Tech:* full coverage means 3 factions × 5 biomes × 7 buildings × 3 levels = **315 structures**. Plan:
+- The structure path includes faction and biome: `structures/bannerforge/<faction>/<biome>/<building>/level_<n>.mcstructure`.
+  When a biome variant doesn't exist yet, the game falls back to `<faction>/default/`. Biome styles can then be added
+  one at a time without code changes.
+- First build the **default** style for each faction (the biome-neutral look described above). Add biome variants later,
+  probably in the order plains → taiga → desert → savanna → snowy.
+- The biome is recorded when a settlement is founded, so its style doesn't change later.
 
 ## Buildings
 Each building has 3 levels: **1 Basic → 2 Improved → 3 Advanced**.
@@ -57,7 +76,7 @@ Shopkeepers, military (guards, patrols), adventurers and mission givers. The exa
 
 ## Open questions
 1. ~~Who picks the faction?~~ The founder does (decided). Still open: can it change later, through conquest or diplomacy?
-2. Faction names, colours and banner patterns, and whether factions play differently.
+2. ~~Faction names?~~ Decided. Still open: banner patterns, and whether factions play differently (bonuses, unique buildings or NPCs).
 3. ~~Upgrade currency?~~ Emeralds (decided). Still open: which other resources get added, and when?
 4. Tier thresholds and the tier list beyond City (Castle? Capital?).
 5. Multiplayer: can several players own or contribute to one settlement?

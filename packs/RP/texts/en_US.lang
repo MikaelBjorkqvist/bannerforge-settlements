@@ -1,10 +1,10 @@
 ## Display names (item.<id>, tile.<id>.name, entity.<id>.name, UI strings bannerforge.*)
 item.bannerforge:steward_charter=Steward's Charter
 
-## Factions (names are placeholders until the faction design is settled)
-bannerforge.faction.green=Ironwood Clan
-bannerforge.faction.red=Red Faction
-bannerforge.faction.blue=Blue Faction
+## Factions
+bannerforge.faction.green=Amberwood Order
+bannerforge.faction.red=Brimstone Legion
+bannerforge.faction.blue=Kingscross Guild
 
 ## Settlement tiers
 bannerforge.tier.village=Village
