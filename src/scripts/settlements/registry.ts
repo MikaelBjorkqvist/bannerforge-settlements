@@ -5,10 +5,32 @@ import { SCHEMA, type Settlement, type Vec3 } from "./types.js";
 // and lets us add/remove settlements without rewriting the others.
 const PREFIX = "bannerforge:settlement:";
 
-function migrate(raw: Settlement): Settlement {
-  // Future: if (raw.schema === 1) { ...convert to 2... }
-  raw.buildings ??= {};
-  return raw;
+/** Schema 1 (M0): one level per building id, old ids, stored prosperity/tier. */
+interface SettlementV1 {
+  schema: 1;
+  buildings?: Record<string, number>;
+  prosperity?: number;
+  tier?: string;
+}
+
+const V1_RENAMES: Record<string, string> = { houses: "house", stores: "market" };
+
+function migrate(raw: Settlement | SettlementV1): Settlement {
+  if (raw.schema === 1) {
+    const old = raw as SettlementV1;
+    const buildings: Settlement["buildings"] = {};
+    for (const [id, level] of Object.entries(old.buildings ?? {})) {
+      if (level > 0) buildings[V1_RENAMES[id] ?? id] = [Math.min(3, level) as 1 | 2 | 3];
+    }
+    delete old.prosperity; // derived now (rules.ts)
+    delete old.tier;
+    const upgraded = { ...(old as object), buildings, schema: SCHEMA } as Settlement;
+    saveSettlement(upgraded);
+    return upgraded;
+  }
+  const s = raw as Settlement;
+  s.buildings ??= {};
+  return s;
 }
 
 export function allSettlements(): Settlement[] {

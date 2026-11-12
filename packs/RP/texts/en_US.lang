@@ -30,17 +30,41 @@ bannerforge.claim.announce=§6%s has raised a banner over %s!
 bannerforge.steward.faction=Faction
 bannerforge.steward.tier=Status
 bannerforge.steward.prosperity=Prosperity
-bannerforge.steward.greeting=How may I serve the settlement, my liege?
-bannerforge.steward.upgrades=Upgrades
+bannerforge.steward.population=Population
+bannerforge.steward.unstaffed=%s posts unfilled - build more houses
+bannerforge.steward.next_tier=To become a
+bannerforge.steward.promotes=upgrade it to be promoted
+bannerforge.steward.upgrades=Commission Works
 bannerforge.steward.close=Close
 
 ## Currency (bannerforge.currency.<namespace>.<item>)
 bannerforge.currency.minecraft.emerald=Emeralds
 
+## Building categories
+bannerforge.category.core=Core
+bannerforge.category.housing=Housing
+bannerforge.category.economy=Economy
+bannerforge.category.crafts=Crafts
+bannerforge.category.civic=Civic
+bannerforge.category.defence=Defence
+bannerforge.category.military=Military
+
 ## Buildings and levels
-bannerforge.building.houses=Houses
-bannerforge.building.stores=Stores
+bannerforge.building.town_hall=Town Hall
+bannerforge.building.keep=Keep
+bannerforge.building.house=House
+bannerforge.building.market=Market Stalls
 bannerforge.building.tavern=Tavern
+bannerforge.building.warehouse=Warehouse
+bannerforge.building.farmstead=Farmstead
+bannerforge.building.docks=Docks
+bannerforge.building.blacksmith=Blacksmith
+bannerforge.building.fletcher=Fletcher
+bannerforge.building.alchemist=Alchemist
+bannerforge.building.stonemason=Stonemason
+bannerforge.building.woodcarver=Woodcarver
+bannerforge.building.shrine=Shrine
+bannerforge.building.stables=Stables
 bannerforge.building.walls=Walls
 bannerforge.building.gates=Gates
 bannerforge.building.towers=Towers
@@ -50,11 +74,21 @@ bannerforge.level.1=Basic
 bannerforge.level.2=Improved
 bannerforge.level.3=Advanced
 
-## Upgrades
+## Commission Works
 bannerforge.upgrade.title=Commission Works
-bannerforge.upgrade.body=Choose a building to build or improve. Costs are paid from your inventory.
-bannerforge.upgrade.max=Fully upgraded
+bannerforge.upgrade.body=Choose what to build or improve. Costs are paid from your inventory.
 bannerforge.upgrade.back=Back
-bannerforge.upgrade.already_max=§7That building is already Advanced.
+bannerforge.upgrade.build_new=Build new
 bannerforge.upgrade.cannot_afford=§cYou cannot afford that. Needed:
 bannerforge.upgrade.done=§a%s:
+
+## Why something can't be built (bannerforge.rule.<reason>)
+bannerforge.rule.needs_building=Needs %s %s
+bannerforge.rule.needs_tier=Needs a %s
+bannerforge.rule.tier_cap=Become a %s first
+bannerforge.rule.limit=Limit %s per %s
+bannerforge.rule.already_built=Already built
+bannerforge.rule.max_level=Fully upgraded
+bannerforge.rule.promo_prosperity=Prosperity %s/%s
+bannerforge.rule.promo_population=Population %s/%s
+bannerforge.rule.unknown=Unknown building %s

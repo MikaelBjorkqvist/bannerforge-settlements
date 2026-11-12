@@ -10,6 +10,11 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Upgrade ledger: steward lets you buy building levels 1–3 for emeralds; prosperity and tier (village/town/city) update
 - [x] Loaded in-game on the owner's PC; CI green on GitHub; Mojang Creator Tools validation clean
 
+## M0.5 — Settlement rules
+- [x] Approved plan (docs/BUILDINGS.md) as data: 19 buildings, tier caps, prerequisites, repeatables, population, promotion via Town Hall
+- [x] Rules engine with unit tests (`npm test`, runs in CI)
+- [ ] Play-tested and tuned
+
 ## M1 — The steward
 - [x] Ringing a village bell opens founding / the steward menu (charter dropped)
 - [x] Founding fee: 10 emeralds

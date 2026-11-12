@@ -11,8 +11,9 @@
     "package": "node tools/package.mjs",
     "deploy": "node tools/deploy.mjs",
     "dev": "npm run check && npm run build && npm run deploy",
-    "release": "npm run check && npm run typecheck && npm run build && npm run package",
-    "bump": "node tools/version.mjs"
+    "release": "npm run check && npm run typecheck && npm test && npm run build && npm run package",
+    "bump": "node tools/version.mjs",
+    "test": "node tools/test.mjs"
   },
   "devDependencies": {
     "@minecraft/server": "2.11.0",
