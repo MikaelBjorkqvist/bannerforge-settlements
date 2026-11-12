@@ -5,6 +5,9 @@ item.bannerforge:steward_charter=Steward's Charter
 bannerforge.faction.green=Amberwood Order
 bannerforge.faction.red=Brimstone Legion
 bannerforge.faction.blue=Kingscross Guild
+bannerforge.colour.green=Green
+bannerforge.colour.red=Red
+bannerforge.colour.blue=Blue
 
 ## Settlement tiers
 bannerforge.tier.village=Village

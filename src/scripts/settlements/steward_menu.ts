@@ -17,6 +17,11 @@ function say(player: Player, key: string, ...args: string[]): void {
   player.sendMessage({ rawtext: [t(key, ...args)] });
 }
 
+/** "Amberwood Order (Green)" — used where the player picks a faction. */
+function factionWithColour(f: string): RawMessage {
+  return { rawtext: [t(`bannerforge.faction.${f}`), { text: " (" }, t(`bannerforge.colour.${f}`), { text: ")" }] };
+}
+
 /** "12 Emeralds" style text for a cost list. */
 function costText(costs: Cost[]): RawMessage {
   const parts: RawMessage[] = [];
@@ -55,7 +60,7 @@ async function showClaimForm(player: Player, dimensionId: string, bell: { x: num
   const form = new ModalFormData()
     .title(t("bannerforge.claim.title"))
     .textField(t("bannerforge.claim.name_label"), t("bannerforge.claim.name_placeholder"))
-    .dropdown(t("bannerforge.claim.faction_label"), FACTIONS.map((f) => t(`bannerforge.faction.${f}`)))
+    .dropdown(t("bannerforge.claim.faction_label"), FACTIONS.map(factionWithColour))
     .submitButton(t("bannerforge.claim.submit"));
 
   const response = await form.show(player);
