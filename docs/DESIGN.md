@@ -8,7 +8,7 @@ walls, gates, towers and civic buildings through the village steward. Growth bri
 shops and missions.
 
 ## Core loop
-1. Claim a village with a **Steward's Charter**. The founding player **chooses the faction** (Green, Red or Blue) when founding the settlement.
+1. **Ring the village bell** to call the steward, who offers to found a settlement. The founding player **chooses the faction** (Green, Red or Blue). The steward lives near the bell until the Town Hall is built, then moves there.
 2. Talk to the **steward** to commission or upgrade buildings, paying in **emeralds**. Other resources are added later.
 3. Buildings appear around the village and add **prosperity**.
 4. Prosperity and buildings raise the **settlement tier**: Village → Town → City (more tiers possible).
@@ -20,6 +20,7 @@ shops and missions.
 | 2026-11-12 | The player chooses the faction when founding a settlement. There is no "unaligned" option. |
 | 2026-11-12 | Factions: Amberwood Order (green), Kingscross Guild (blue), Brimstone Legion (red), with themes as listed below. |
 | 2026-11-12 | Each village biome gets its own style per faction (future). |
+| 2026-11-12 | Steward's Charter dropped. Ringing a village bell calls the steward (option B), who lives near the bell until the Town Hall is built. |
 | 2026-11-12 | Buildings & NPC plan v2 approved, see `BUILDINGS.md`. It covers tier caps, promotion via the Town Hall, 1-day construction, population, repairs, NPC respawn and fees. |
 | 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
 

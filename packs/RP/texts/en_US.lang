@@ -1,5 +1,4 @@
 ## Display names (item.<id>, tile.<id>.name, entity.<id>.name, UI strings bannerforge.*)
-item.bannerforge:steward_charter=Steward's Charter
 
 ## Factions
 bannerforge.faction.green=Amberwood Order
@@ -15,9 +14,8 @@ bannerforge.tier.town=Town
 bannerforge.tier.city=City
 bannerforge.tier.promoted=§6%s has grown into a
 
-## Charter / claiming
-bannerforge.charter.searching=§7The charter stirs... searching for a village bell nearby.
-bannerforge.charter.no_village=§cNo village bell within reach. Stand near a village bell and use the charter again.
+## Bell / founding
+bannerforge.bell.steward_arrives=§7The bell's peal carries across the village... a steward hurries over.
 bannerforge.claim.title=Found a Settlement
 bannerforge.claim.name_label=Settlement name
 bannerforge.claim.name_placeholder=e.g. Oakmere
