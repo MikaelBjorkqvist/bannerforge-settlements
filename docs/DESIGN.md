@@ -20,6 +20,7 @@ shops and missions.
 | 2026-11-12 | The player chooses the faction when founding a settlement. There is no "unaligned" option. |
 | 2026-11-12 | Factions: Amberwood Order (green), Kingscross Guild (blue), Brimstone Legion (red), with themes as listed below. |
 | 2026-11-12 | Each village biome gets its own style per faction (future). |
+| 2026-11-12 | Buildings & NPC plan v2 approved, see `BUILDINGS.md`. It covers tier caps, promotion via the Town Hall, 1-day construction, population, repairs, NPC respawn and fees. |
 | 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
 
 ## Factions
@@ -43,19 +44,9 @@ desert, savanna, taiga and snowy. For example, a Brimstone Legion town in a dese
   probably in the order plains → taiga → desert → savanna → snowy.
 - The biome is recorded when a settlement is founded, so its style doesn't change later.
 
-## Buildings
-Each building has 3 levels: **1 Basic → 2 Improved → 3 Advanced**.
-
-| Category | Buildings (first list) |
-| --- | --- |
-| Defence | Walls, gates, towers, barracks |
-| Civic / economy | Houses, tavern, stores |
-
-## Settlement tiers and prosperity
-Village → Town → City. Prosperity comes from building count and level. Exact thresholds are open.
-
-## NPCs and AI
-Shopkeepers, military (guards, patrols), adventurers and mission givers. The exact roster is open.
+## Buildings, NPCs and tiers
+The approved plan is in **[`BUILDINGS.md`](BUILDINGS.md)**: 19 buildings, 22 NPC roles, building and NPC rules, and the
+Village → Town → City tiers. It is the source of truth for game data.
 
 ## Tech notes (Claude)
 - **Finding villages.** The Script API has no "village" object. A vanilla village is identified by its **bell**
@@ -75,11 +66,8 @@ Shopkeepers, military (guards, patrols), adventurers and mission givers. The exa
 - **Performance budget.** Nothing per-tick over every settlement. Work happens only near players or on events.
 
 ## Open questions
-1. ~~Who picks the faction?~~ The founder does (decided). Still open: can it change later, through conquest or diplomacy?
-2. ~~Faction names?~~ Decided. Still open: banner patterns, and whether factions play differently (bonuses, unique buildings or NPCs).
-3. ~~Upgrade currency?~~ Emeralds (decided). Still open: which other resources get added, and when?
-4. Tier thresholds and the tier list beyond City (Castle? Capital?).
+1. Can a settlement's faction change later, through conquest or diplomacy?
+2. Banner patterns per faction, and whether factions play differently (bonuses, NPCs).
+3. Which other resources join emeralds as upgrade costs, and when?
+4. The tier beyond City (Capital / Stronghold): requirements and limits.
 5. Multiplayer: can several players own or contribute to one settlement?
-6. Can enemies (raids, rival factions) damage buildings or lower prosperity?
-7. Is the steward spawned at claim time (new NPC at the bell) or converted from an existing villager? *Tech:
-   a new NPC is the additive-safe option.*
