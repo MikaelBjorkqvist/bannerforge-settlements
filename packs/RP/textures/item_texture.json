@@ -1,9 +1,5 @@
 {
   "resource_pack_name": "bannerforge",
   "texture_name": "atlas.items",
-  "texture_data": {
-    "bannerforge_steward_charter": {
-      "textures": "textures/bannerforge/items/steward_charter"
-    }
-  }
+  "texture_data": {}
 }

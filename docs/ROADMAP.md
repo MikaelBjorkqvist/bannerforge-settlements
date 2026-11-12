@@ -11,7 +11,8 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Loaded in-game on the owner's PC; CI green on GitHub; Mojang Creator Tools validation clean
 
 ## M1 — The steward
-- [ ] `bannerforge:steward` NPC spawned at the bell on claim; interacting opens the steward menu
+- [x] Ringing a village bell opens founding / the steward menu (charter dropped)
+- [ ] `bannerforge:steward` NPC: appears at the bell when rung, lives near the bell until the Town Hall exists; interacting opens the steward menu
 - [ ] Faction banner placed at the bell; faction names/colours decided
 - [ ] Settlement boundary visualised (particles) and stored
 

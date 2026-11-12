@@ -2,11 +2,12 @@ import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
 import { BUILDINGS, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
-import { findNearestBell } from "./find_bell.js";
 import { newSettlementId, saveSettlement, settlementNear } from "./registry.js";
 import { FACTIONS, type BuildingLevel, type Settlement } from "./types.js";
 
-export const CHARTER_ID = "bannerforge:steward_charter";
+const BELL_ID = "minecraft:bell";
+/** Ignore repeat interactions from the same player within this many ticks (holding "use" fires repeatedly). */
+const BELL_COOLDOWN_TICKS = 20;
 /** A bell within this horizontal distance of an existing settlement belongs to it. */
 const SETTLEMENT_RADIUS = 48;
 
@@ -32,28 +33,31 @@ function costText(costs: Cost[]): RawMessage {
   return { rawtext: parts };
 }
 
-export function registerStewardCharter(): void {
-  world.afterEvents.itemUse.subscribe((event) => {
-    if (event.itemStack.typeId !== CHARTER_ID) return;
-    void openCharter(event.source);
+/**
+ * Option B (owner decision, 2026-11-12): ringing a village bell calls the steward.
+ * - Unclaimed bell: the steward answers and offers to found a settlement.
+ * - Bell of an existing settlement: the steward answers with the settlement menu.
+ * Until the steward NPC exists (roadmap M1), the steward's menus open straight from the bell.
+ */
+export function registerBellSteward(): void {
+  const lastRing = new Map<string, number>();
+  world.afterEvents.playerInteractWithBlock.subscribe((event) => {
+    if (event.block.typeId !== BELL_ID) return;
+    const player = event.player;
+    const now = system.currentTick;
+    if (now - (lastRing.get(player.id) ?? -BELL_COOLDOWN_TICKS) < BELL_COOLDOWN_TICKS) return;
+    lastRing.set(player.id, now);
+
+    const { x, y, z } = event.block.location;
+    const dimensionId = event.block.dimension.id;
+    const existing = settlementNear(dimensionId, { x, y, z }, SETTLEMENT_RADIUS);
+    if (existing) {
+      void showStewardMenu(player, existing);
+    } else {
+      say(player, "bannerforge.bell.steward_arrives");
+      void showClaimForm(player, dimensionId, { x, y, z });
+    }
   });
-}
-
-async function openCharter(player: Player): Promise<void> {
-  const dimension = player.dimension;
-  const existing = settlementNear(dimension.id, player.location, SETTLEMENT_RADIUS);
-  if (existing) {
-    await showStewardMenu(player, existing);
-    return;
-  }
-
-  say(player, "bannerforge.charter.searching");
-  const bell = await findNearestBell(dimension, player.location);
-  if (!bell) {
-    say(player, "bannerforge.charter.no_village");
-    return;
-  }
-  await showClaimForm(player, dimension.id, bell);
 }
 
 async function showClaimForm(player: Player, dimensionId: string, bell: { x: number; y: number; z: number }): Promise<void> {
