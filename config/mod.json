@@ -1,0 +1,23 @@
+{
+  "$comment": "Single source of truth for this mod. Manifests are generated from this file at build time — never edit dist/ manifests by hand.",
+  "namespace": "bannerforge",
+  "id": "settlements",
+  "displayName": "BannerForge: Settlements",
+  "description": "Claim, govern and grow villages into towns and cities.",
+  "authors": [
+    "BannerForge"
+  ],
+  "version": "0.1.0",
+  "minEngineVersion": "1.26.50",
+  "scriptModules": {
+    "@minecraft/server": "2.10.0",
+    "@minecraft/server-ui": "2.2.0"
+  },
+  "uuids": {
+    "bpHeader": "a684db6d-8c86-4f2a-8eaf-01b90f5fb789",
+    "bpData": "ab05a146-d668-4642-8e11-a09e636802e2",
+    "bpScript": "a9a84bea-a034-4f9f-9a35-d328f6b583d6",
+    "rpHeader": "d29740ee-347d-476e-bc38-8d83738d5513",
+    "rpResources": "e618ea14-4cb8-4f14-ade5-ea894d62efac"
+  }
+}

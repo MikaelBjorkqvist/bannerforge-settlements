@@ -1,0 +1,25 @@
+{
+  "name": "bannerforge-settlements",
+  "private": true,
+  "type": "module",
+  "description": "BannerForge Minecraft Bedrock add-on",
+  "scripts": {
+    "init": "node tools/init.mjs",
+    "check": "node tools/check.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node tools/build.mjs",
+    "package": "node tools/package.mjs",
+    "deploy": "node tools/deploy.mjs",
+    "dev": "npm run check && npm run build && npm run deploy",
+    "release": "npm run check && npm run typecheck && npm run build && npm run package",
+    "bump": "node tools/version.mjs"
+  },
+  "devDependencies": {
+    "@minecraft/server": "2.10.0",
+    "@minecraft/server-ui": "2.2.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

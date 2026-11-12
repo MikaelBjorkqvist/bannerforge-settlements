@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+
+      - name: Validate (BannerForge rules)
+        run: npm run check
+
+      - name: Type-check scripts
+        run: npm run typecheck
+
+      - name: Build packs
+        run: npm run build
+
+      - name: Package .mcaddon
+        run: npm run package
+
+      - name: Mojang Creator Tools validation (add-on suite)
+        # Creator Tools is still pre-release, so its findings are reported but don't fail the build yet.
+        continue-on-error: true
+        run: |
+          ADDON=$(ls dist/*.mcaddon)
+          npx -y @minecraft/creator-tools@latest validate addon -if "$ADDON" -show 2>&1 | tee creator-tools-report.txt
+
+      - name: Script API drift check
+        # Warns when Mojang has released a newer stable Script API than config/mod.json pins.
+        run: |
+          for MOD in $(node -e "console.log(Object.keys(require('./config/mod.json').scriptModules).join(' '))"); do
+            PINNED=$(node -e "console.log(require('./config/mod.json').scriptModules['$MOD'])")
+            LATEST=$(npm view "$MOD" dist-tags.latest 2>/dev/null || echo unknown)
+            echo "$MOD pinned=$PINNED latest-stable=$LATEST"
+            if [ "$LATEST" != "unknown" ] && [ "$LATEST" != "$PINNED" ]; then
+              echo "::warning title=Script API update available::$MOD $PINNED -> $LATEST (review docs/decisions/0002 before bumping)"
+            fi
+          done
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            dist/
+            creator-tools-report.txt
+          if-no-files-found: error

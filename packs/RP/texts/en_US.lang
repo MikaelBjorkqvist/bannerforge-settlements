@@ -1,0 +1,33 @@
+## Display names (item.<id>, tile.<id>.name, entity.<id>.name, UI strings bannerforge.*)
+item.bannerforge:steward_charter=Steward's Charter
+
+## Factions (names are placeholders until the faction design is settled)
+bannerforge.faction.unaligned=Unaligned
+bannerforge.faction.green=Ironwood Clan
+bannerforge.faction.red=Red Faction
+bannerforge.faction.blue=Blue Faction
+
+## Settlement tiers
+bannerforge.tier.village=Village
+bannerforge.tier.town=Town
+bannerforge.tier.city=City
+
+## Charter / claiming
+bannerforge.charter.searching=§7The charter stirs... searching for a village bell nearby.
+bannerforge.charter.no_village=§cNo village bell within reach. Stand near a village bell and use the charter again.
+bannerforge.claim.title=Found a Settlement
+bannerforge.claim.name_label=Settlement name
+bannerforge.claim.name_placeholder=e.g. Oakmere
+bannerforge.claim.faction_label=Banner (faction)
+bannerforge.claim.submit=Raise the banner
+bannerforge.claim.name_required=§cA settlement needs a name.
+bannerforge.claim.announce=§6%s has raised a banner over %s!
+
+## Steward
+bannerforge.steward.faction=Faction
+bannerforge.steward.tier=Status
+bannerforge.steward.prosperity=Prosperity
+bannerforge.steward.greeting=How may I serve the settlement, my liege?
+bannerforge.steward.upgrades=Upgrades
+bannerforge.steward.close=Close
+bannerforge.steward.upgrades_soon=§7Builders are still drawing up plans. (Upgrades arrive in a later version.)
