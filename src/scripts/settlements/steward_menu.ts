@@ -1,6 +1,6 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { BUILDINGS, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
+import { BUILDINGS, FOUNDING_COST, levelOf, nextCost, prosperityGain, tierFor, type BuildingDef, type Cost } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
 import { newSettlementId, saveSettlement, settlementNear } from "./registry.js";
 import { FACTIONS, type BuildingLevel, type Settlement } from "./types.js";
@@ -61,9 +61,13 @@ export function registerBellSteward(): void {
 }
 
 async function showClaimForm(player: Player, dimensionId: string, bell: { x: number; y: number; z: number }): Promise<void> {
+  if (!canAfford(player, FOUNDING_COST)) {
+    player.sendMessage({ rawtext: [t("bannerforge.claim.cannot_afford"), { text: " " }, costText(FOUNDING_COST)] });
+    return;
+  }
   const form = new ModalFormData()
     .title(t("bannerforge.claim.title"))
-    .textField(t("bannerforge.claim.name_label"), t("bannerforge.claim.name_placeholder"))
+    .textField({ rawtext: [t("bannerforge.claim.name_label"), { text: "\n§7" }, t("bannerforge.claim.cost"), { text: " " }, costText(FOUNDING_COST)] }, t("bannerforge.claim.name_placeholder"))
     .dropdown(t("bannerforge.claim.faction_label"), FACTIONS.map(factionWithColour))
     .submitButton(t("bannerforge.claim.submit"));
 
@@ -74,6 +78,12 @@ async function showClaimForm(player: Player, dimensionId: string, bell: { x: num
   const name = String(rawName ?? "").trim().slice(0, 32);
   if (!name) {
     say(player, "bannerforge.claim.name_required");
+    return;
+  }
+
+  // Pay on submit: the player may have dropped emeralds while the form was open.
+  if (!pay(player, FOUNDING_COST)) {
+    player.sendMessage({ rawtext: [t("bannerforge.claim.cannot_afford"), { text: " " }, costText(FOUNDING_COST)] });
     return;
   }
 
