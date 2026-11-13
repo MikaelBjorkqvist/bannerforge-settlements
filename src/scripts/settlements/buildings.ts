@@ -10,8 +10,8 @@ export interface Cost {
 }
 
 /** Player-facing groups in the steward ledger (lang: bannerforge.category.<id>). */
-export type Category = "centre" | "homes" | "trade" | "food" | "crafts" | "defence";
-export const CATEGORIES: Category[] = ["centre", "homes", "trade", "food", "crafts", "defence"];
+export type Category = "centre" | "population" | "trade" | "food" | "defence";
+export const CATEGORIES: Category[] = ["centre", "population", "trade", "food", "defence"];
 export type Plot = "S" | "M" | "L" | "perimeter";
 
 /** A requirement on another building: `id` must exist at `level` or higher. */
@@ -39,31 +39,33 @@ export interface BuildingDef {
   minTier?: Tier;
   /** Buildings needed before level 1. */
   requires?: BuildingReq[];
+  /** Optional sub-heading inside its section (lang: bannerforge.group.<id>), e.g. Craftsmen under Trade. */
+  group?: "craftsmen";
   /** Town Hall only: may be one level above the tier cap, because upgrading it is the promotion step. */
   promotes?: true;
 }
 
 export const BUILDINGS: BuildingDef[] = [
-  // Town centre
+  // Town centre (name to be decided by the owner)
   { id: "town_hall", category: "centre", plot: "M", emeralds: [8, 20, 40], prosperity: [5, 10, 15], npcs: [0, 0, 0], promotes: true },
   { id: "keep", category: "centre", plot: "L", emeralds: [16, 32, 56], prosperity: [6, 10, 15], npcs: [1, 3, 3], minTier: "town", requires: [{ id: "defences", level: 1 }] },
   { id: "shrine", category: "centre", plot: "S", emeralds: [8, 18, 36], prosperity: [4, 6, 10], npcs: [1, 1, 1] },
-  // Homes
-  { id: "house", category: "homes", plot: "M", emeralds: [3, 6, 10], prosperity: [1, 2, 3], npcs: [0, 0, 0], housing: [2, 3, 4], perTier: { village: 4, town: 8, city: 12 } },
+  { id: "warehouse", category: "centre", plot: "L", emeralds: [6, 12, 24], prosperity: [2, 3, 5], npcs: [1, 1, 1] },
+  // Population (houses raise the population limit)
+  { id: "house", category: "population", plot: "M", emeralds: [3, 6, 10], prosperity: [1, 2, 3], npcs: [0, 0, 0], housing: [2, 3, 4], perTier: { village: 4, town: 8, city: 12 } },
   // Trade
   { id: "market", category: "trade", plot: "M", emeralds: [6, 14, 28], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
   { id: "tavern", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
   { id: "stables", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [2, 4, 6], npcs: [1, 1, 1], minTier: "town" },
-  { id: "warehouse", category: "trade", plot: "L", emeralds: [6, 12, 24], prosperity: [2, 3, 5], npcs: [1, 1, 1] },
+  // Trade › Craftsmen
+  { id: "blacksmith", category: "trade", group: "craftsmen", plot: "M", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
+  { id: "fletcher", category: "trade", group: "craftsmen", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
+  { id: "alchemist", category: "trade", group: "craftsmen", plot: "S", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
+  { id: "stonemason", category: "trade", group: "craftsmen", plot: "M", emeralds: [6, 14, 28], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
+  { id: "woodcarver", category: "trade", group: "craftsmen", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
   // Food
   { id: "farmstead", category: "food", plot: "L", emeralds: [6, 14, 28], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
   { id: "docks", category: "food", plot: "L", emeralds: [8, 16, 32], prosperity: [3, 5, 8], npcs: [1, 1, 1] },
-  // Craftsmen
-  { id: "blacksmith", category: "crafts", plot: "M", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "fletcher", category: "crafts", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  { id: "alchemist", category: "crafts", plot: "S", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "stonemason", category: "crafts", plot: "M", emeralds: [6, 14, 28], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  { id: "woodcarver", category: "crafts", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
   // Defence. Walls, gates and towers upgrade together as one perimeter (owner decision, 2026-11-12);
   // gates go where roads cross the wall (placement: roadmap M3). NPCs: gate guards + tower archers.
   { id: "defences", category: "defence", plot: "perimeter", emeralds: [16, 32, 64], prosperity: [4, 7, 10], npcs: [0, 4, 4] },

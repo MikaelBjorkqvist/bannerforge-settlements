@@ -5,6 +5,10 @@ Editable working copy: the claude.ai doc "BannerForge Settlements — Buildings 
 there first, then copied here. All numbers are placeholders until play-testing.
 
 ## Implementation status (2026-11-12)
+Changed after play-test 2 (owner, 2026-11-13): a building or upgrade that adds workers needs free population slots;
+Craftsmen moved under Trade, Homes renamed Population, Warehouse moved to Town Centre. Steward UI: see the design canvas
+"BannerForge Steward UI v2" (Overview → Section → Building).
+
 Changed after play-test 1 (owner): walls, gates and towers merged into Defences; ledger sections renamed for players;
 "population" in the House row is now the population limit.
 
@@ -50,27 +54,27 @@ Every NPC belongs to one settlement and one building, and looks like its faction
 5. **Interaction.** Using an NPC opens a menu for its role: trades, hiring, missions or reports.
 6. **Daily routine.** NPCs work at their building by day and go indoors at night. Guards and patrols stay out at night.
 7. **Names.** Each NPC gets a name from its faction's name list, e.g. an Amberwood steward "Elowen Thornleaf".
-8. **Population limit caps NPCs.** Population is the number of BannerForge NPCs living in the settlement; vanilla villagers don't count. Houses set the **population limit**, and every NPC that comes from a building (shopkeepers, crafters, soldiers) takes one population slot. If the cap is full, that NPC stays unfilled until there's housing. The steward is always free. There is also a hard performance cap of 24 NPCs per settlement (tunable).
+8. **Population limit caps NPCs.** Population is the number of BannerForge NPCs living in the settlement; vanilla villagers don't count. Houses set the **population limit**, and every NPC that comes from a building (shopkeepers, crafters, soldiers) takes one population slot. **A building or upgrade that adds workers can't be bought unless there are enough free population slots** (owner rule, 2026-11-13). The steward is always free. There is also a hard performance cap of 24 NPCs per settlement (tunable).
 
 ## Building catalogue
 
-There are 17 buildings in 6 ledger sections (Town Centre, Homes, Trade, Food, Craftsmen, Defence). Plot sizes are defined in rule 7; "Perimeter" means part of the wall system (rule 8). Prosperity is the points each level adds; for example, 5 / 10 / 15 means a Town Hall at Level 3 has given 30 in total. All numbers are placeholders for play-testing.
+There are 17 buildings in 5 ledger sections: Town Centre (name to be decided), Population, Trade (with Craftsmen), Food and Defence. Plot sizes are defined in rule 7; "Perimeter" means part of the wall system (rule 8). Prosperity is the points each level adds; for example, 5 / 10 / 15 means a Town Hall at Level 3 has given 30 in total. All numbers are placeholders for play-testing.
 
 | Building | Category | Plot | L1 Basic | L2 Improved | L3 Advanced | Prosperity L1 / L2 / L3 | Requires |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Town Hall | Town Centre | M | Steward's office: reports, commission works, faction banner | Treasury (deposit emeralds for the settlement), notice board with missions | Council hall: faction-wide announcements, settlement policies | 5 / 10 / 15 | Unique. Can be one level above the tier cap. L2 needed for Town, L3 for City |
 | Keep | Town Centre | L | Fortified manor: home for one or more players (beds, chests), lord's banner | Keep tower with a garrison of 2; rally point during raids | Castle with inner bailey and throne hall; needed for a future Capital | 6 / 10 / 15 | Unique. Town, Defences L1 |
-| House | Homes | M | +2 population limit | +3 population limit, gardens | +4 population limit, NPC families | 1 / 2 / 3 each | Repeatable: 4 per Village, 8 per Town, 12 per City |
+| House | Population | M | +2 population limit | +3 population limit, gardens | +4 population limit, NPC families | 1 / 2 / 3 each | Repeatable: 4 per Village, 8 per Town, 12 per City |
 | Market stalls | Trade | M | General store: basic trades, food, cheaper items | More stalls: butcher, baker, farm produce; better prices | Merchant: rare and faction goods, weekly special offers | 4 / 6 / 8 | Unique |
 | Tavern | Trade | M | Innkeeper: rest (set spawn), rumours, food | Hire adventurers | Bard, mission board, faction events | 4 / 6 / 8 | Unique |
-| Warehouse | Trade | L | Real, physical shared storage (chests) inside the building; opened only there | Double capacity; collects Farmstead and Docks output automatically | Supplies upgrades: building costs can be paid from stock (once materials are in) | 2 / 3 / 5 | Unique |
+| Warehouse | Town Centre | L | Real, physical shared storage (chests) inside the building; opened only there | Double capacity; collects Farmstead and Docks output automatically | Supplies upgrades: building costs can be paid from stock (once materials are in) | 2 / 3 / 5 | Unique |
 | Farmstead | Food | L | Fields: varying food stock | Livestock pens | Granary: stores farm products automatically | 3 / 5 / 7 | Unique |
 | Docks | Food | L | Fishing pier | Trade boats | Harbour | 3 / 5 / 8 | Unique. Only near water |
-| Blacksmith | Craftsmen | M | Iron tools, weapons and chain armour trades; repairs | Diamond-tier gear, armour trims, upgrades | Master smith: faction weapons and armour | 3 / 5 / 7 | Unique |
-| Fletcher | Craftsmen | S | Bows, arrows, leather armour | Crossbows, tipped arrows, saddles | Faction ranged weapons, enchanted bows | 2 / 4 / 6 | Unique |
-| Alchemist | Craftsmen | S | Basic potions (healing, night vision), brewing ingredients | Splash and long-lasting potions, low-level enchanted books | Lingering potions, high-level enchanted books, faction elixirs | 3 / 5 / 7 | Unique |
-| Stonemason | Craftsmen | M | Stone blocks: cobblestone, bricks, smooth stone | Polished and decorative stone, deepslate | Faction decorative stone; −20% on Defences upgrades | 2 / 4 / 6 | Unique |
-| Woodcarver | Craftsmen | S | Logs, planks, basic wooden items | Decorative wood, boats, chests, furniture | Faction decorative wood; −20% on House and Tavern upgrades | 2 / 4 / 6 | Unique |
+| Blacksmith | Trade › Craftsmen | M | Iron tools, weapons and chain armour trades; repairs | Diamond-tier gear, armour trims, upgrades | Master smith: faction weapons and armour | 3 / 5 / 7 | Unique |
+| Fletcher | Trade › Craftsmen | S | Bows, arrows, leather armour | Crossbows, tipped arrows, saddles | Faction ranged weapons, enchanted bows | 2 / 4 / 6 | Unique |
+| Alchemist | Trade › Craftsmen | S | Basic potions (healing, night vision), brewing ingredients | Splash and long-lasting potions, low-level enchanted books | Lingering potions, high-level enchanted books, faction elixirs | 3 / 5 / 7 | Unique |
+| Stonemason | Trade › Craftsmen | M | Stone blocks: cobblestone, bricks, smooth stone | Polished and decorative stone, deepslate | Faction decorative stone; −20% on Defences upgrades | 2 / 4 / 6 | Unique |
+| Woodcarver | Trade › Craftsmen | S | Logs, planks, basic wooden items | Decorative wood, boats, chests, furniture | Faction decorative wood; −20% on House and Tavern upgrades | 2 / 4 / 6 | Unique |
 | Shrine | Town Centre | S | Grove shrine / chapel / ancestor hall (by faction): healing | Blessings (short buffs) | Faction relic: large prosperity bonus | 4 / 6 / 10 | Unique |
 | Stables | Trade | M | Horse trades | Mount upgrades (armour) | Faction mounts | 2 / 4 / 6 | Unique. Town |
 | Defences (walls, gates, towers) | Defence | Perimeter | Palisade / hedge / low stone wall (by faction), gates with doors, lookouts | Full stone wall, gatehouses with 2 guards each, archer posts | Fortified wall with walkway, portcullis gates, signal towers (raid warning) | 4 / 7 / 10 | Unique. One purchase upgrades the whole perimeter; gates go where roads cross |

@@ -26,7 +26,8 @@ for (const file of scriptFiles) {
   });
   const target = path.join(bpOut, "scripts", path.relative(srcDir, file).replace(/\.ts$/, ".js"));
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, out.outputText);
+  // Scripts can reference the resource pack (e.g. UI images) through this placeholder.
+  fs.writeFileSync(target, out.outputText.replaceAll("__RP_PACK_ID__", cfg.uuids.rpHeader));
 }
 const hasScripts = scriptFiles.length > 0;
 

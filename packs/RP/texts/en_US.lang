@@ -26,56 +26,124 @@ bannerforge.claim.cannot_afford=§cThe steward asks for a founding fee you canno
 bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
 
-## Steward / ledger
+## Steward's ledger
+bannerforge.ledger.title=Steward's Ledger
+bannerforge.ledger.back=← Back
+bannerforge.ledger.legend=▲ can be built or upgraded now · ✔ done for this tier · Locked = needs something first
+bannerforge.ledger.can_upgrade=%s can upgrade
+bannerforge.ledger.built_count=%s/%s built
+bannerforge.ledger.row_can=Build/upgrade
+bannerforge.ledger.locked=Locked
+bannerforge.ledger.build=Build
+bannerforge.ledger.build_new=Build a new one
+bannerforge.ledger.upgrade=Upgrade
+bannerforge.ledger.upgrade_lowest=Upgrade one
+bannerforge.ledger.built=built:
+bannerforge.ledger.upgraded=upgraded to
+bannerforge.ledger.not_built=Not built
+bannerforge.ledger.now=Now:
+bannerforge.ledger.next=Next:
+bannerforge.ledger.each_level=Each house:
+bannerforge.ledger.house_count=%s of %s houses
+bannerforge.ledger.ready=Ready to build
+bannerforge.ledger.cost=Cost
+bannerforge.ledger.you_have=You have %s Emeralds
+bannerforge.ledger.cannot_afford=You cannot afford that. Needed:
+bannerforge.ledger.go_population=Go to Population →
 bannerforge.steward.prosperity=Prosperity
 bannerforge.steward.population=Population
 bannerforge.steward.population_limit=Population limit
-bannerforge.steward.jobs_waiting=%s jobs are waiting for homes - build or upgrade houses
-bannerforge.steward.next_tier=To become a
-bannerforge.steward.promote_hint=Then upgrade the
-bannerforge.ledger.hint=Choose what to build or improve. Costs are paid from your inventory.
-bannerforge.ledger.build=Build
-bannerforge.ledger.upgrade=Upgrade
-bannerforge.ledger.upgrade_one=Upgrade a
-bannerforge.ledger.built=Built
-bannerforge.ledger.upgraded=Upgraded
+bannerforge.steward.jobs_waiting=%s jobs are waiting for homes
+bannerforge.steward.next=Next:
+bannerforge.steward.then_town_hall=Then upgrade the Town Hall
+bannerforge.steward.top_tier=Your settlement has reached the highest tier.
 
 ## Currency (bannerforge.currency.<namespace>.<item>)
 bannerforge.currency.minecraft.emerald=Emeralds
 
-## Ledger sections
+## Ledger sections (Town Centre: name to be decided)
 bannerforge.category.centre=Town Centre
-bannerforge.category.homes=Homes
+bannerforge.category.population=Population
 bannerforge.category.trade=Trade
 bannerforge.category.food=Food
-bannerforge.category.crafts=Craftsmen
 bannerforge.category.defence=Defence
+bannerforge.group.craftsmen=Craftsmen
 
 ## Buildings and levels
 bannerforge.building.town_hall=Town Hall
 bannerforge.building.keep=Keep
+bannerforge.building.shrine=Shrine
+bannerforge.building.warehouse=Warehouse
 bannerforge.building.house=House
 bannerforge.building.market=Market Stalls
 bannerforge.building.tavern=Tavern
-bannerforge.building.warehouse=Warehouse
-bannerforge.building.farmstead=Farmstead
-bannerforge.building.docks=Docks
+bannerforge.building.stables=Stables
 bannerforge.building.blacksmith=Blacksmith
 bannerforge.building.fletcher=Fletcher
 bannerforge.building.alchemist=Alchemist
 bannerforge.building.stonemason=Stonemason
 bannerforge.building.woodcarver=Woodcarver
-bannerforge.building.shrine=Shrine
-bannerforge.building.stables=Stables
-bannerforge.building.defences=Defences (walls, gates, towers)
+bannerforge.building.farmstead=Farmstead
+bannerforge.building.docks=Docks
+bannerforge.building.defences=Defences
 bannerforge.building.barracks=Barracks
 bannerforge.level.0=Not built
 bannerforge.level.1=Basic
 bannerforge.level.2=Improved
 bannerforge.level.3=Advanced
 
-## Purchases
-bannerforge.upgrade.cannot_afford=§cYou cannot afford that. Needed:
+## What each level gives (bannerforge.desc.<building>.<level>), from docs/BUILDINGS.md
+bannerforge.desc.town_hall.1=Steward's office: reports, commissions, faction banner
+bannerforge.desc.town_hall.2=Treasury and notice board with missions. Makes you a Town
+bannerforge.desc.town_hall.3=Council hall and settlement policies. Makes you a City
+bannerforge.desc.keep.1=Fortified manor: home for one or more players
+bannerforge.desc.keep.2=Keep tower with a garrison of 2; rally point in raids
+bannerforge.desc.keep.3=Castle with inner bailey and throne hall
+bannerforge.desc.shrine.1=Healing
+bannerforge.desc.shrine.2=Blessings (short buffs)
+bannerforge.desc.shrine.3=Faction relic: large prosperity bonus
+bannerforge.desc.warehouse.1=Shared storage chests inside the building
+bannerforge.desc.warehouse.2=Double storage; collects farm and dock output
+bannerforge.desc.warehouse.3=Building costs can be paid from its stock
+bannerforge.desc.house.1=+2 population limit
+bannerforge.desc.house.2=+3 population limit, gardens
+bannerforge.desc.house.3=+4 population limit, NPC families
+bannerforge.desc.market.1=General store: basic trades, food, cheaper items
+bannerforge.desc.market.2=Butcher, baker and farm stalls; better prices
+bannerforge.desc.market.3=Merchant: rare and faction goods, weekly offers
+bannerforge.desc.tavern.1=Innkeeper: rest, rumours, food
+bannerforge.desc.tavern.2=Hire adventurers
+bannerforge.desc.tavern.3=Bard, mission board, faction events
+bannerforge.desc.stables.1=Horse trades
+bannerforge.desc.stables.2=Mount upgrades (armour)
+bannerforge.desc.stables.3=Faction mounts
+bannerforge.desc.blacksmith.1=Iron tools, weapons, chain armour; repairs
+bannerforge.desc.blacksmith.2=Diamond-tier gear, armour trims, upgrades
+bannerforge.desc.blacksmith.3=Master smith: faction weapons and armour
+bannerforge.desc.fletcher.1=Bows, arrows, leather armour
+bannerforge.desc.fletcher.2=Crossbows, tipped arrows, saddles
+bannerforge.desc.fletcher.3=Faction ranged weapons, enchanted bows
+bannerforge.desc.alchemist.1=Basic potions and brewing ingredients
+bannerforge.desc.alchemist.2=Splash and long potions, low-level enchanted books
+bannerforge.desc.alchemist.3=Lingering potions, high-level books, faction elixirs
+bannerforge.desc.stonemason.1=Stone blocks: cobblestone, bricks, smooth stone
+bannerforge.desc.stonemason.2=Polished and decorative stone, deepslate
+bannerforge.desc.stonemason.3=Faction stone; Defences upgrades 20 percent cheaper
+bannerforge.desc.woodcarver.1=Logs, planks, basic wooden items
+bannerforge.desc.woodcarver.2=Decorative wood, boats, chests, furniture
+bannerforge.desc.woodcarver.3=Faction wood; House and Tavern upgrades 20 percent cheaper
+bannerforge.desc.farmstead.1=Fields: varying food stock
+bannerforge.desc.farmstead.2=Livestock pens
+bannerforge.desc.farmstead.3=Granary stores farm products automatically
+bannerforge.desc.docks.1=Fishing pier
+bannerforge.desc.docks.2=Trade boats
+bannerforge.desc.docks.3=Harbour
+bannerforge.desc.defences.1=Palisade or low wall, gates with doors, lookouts
+bannerforge.desc.defences.2=Stone wall, gatehouses with guards, archer posts
+bannerforge.desc.defences.3=Fortified wall with walkway, portcullis, signal towers
+bannerforge.desc.barracks.1=Captain (recruitment) and 2 militia guards
+bannerforge.desc.barracks.2=4 soldiers and patrols between towers
+bannerforge.desc.barracks.3=Elite soldiers and a barracks tower
 
 ## Why something can't be built (bannerforge.rule.<reason>)
 bannerforge.rule.needs_building=Needs %s %s
@@ -86,4 +154,5 @@ bannerforge.rule.already_built=Already built
 bannerforge.rule.max_level=Fully upgraded
 bannerforge.rule.promo_prosperity=Prosperity %s/%s
 bannerforge.rule.promo_population=Population %s/%s
+bannerforge.rule.needs_population=Needs %s free population slot(s), you have %s
 bannerforge.rule.unknown=Unknown building %s
