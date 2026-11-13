@@ -20,6 +20,15 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
+      - name: PROBE dump server-ui option interfaces
+        run: |
+          F=node_modules/@minecraft/server-ui/index.d.ts
+          for I in ButtonOptions ImageDetails ImageOptions TextOptions DividerOptions SpacingOptions CustomFormOptions; do
+            echo "=== $I"; awk "/^export interface $I /,/^}/" $F | grep -v '^\s*\*\|/\*\*' ; done
+          echo "=== CustomForm methods"; awk '/^export class CustomForm /,/^}/' $F | grep -E '^\s+[a-zA-Z]+\(' 
+          echo "=== ActionFormData methods"; awk '/^export class ActionFormData /,/^}/' $F | grep -E '^\s+[a-zA-Z]+\('
+          echo "=== server onScreenDisplay"; grep -n "setActionBar\|setTitle(" node_modules/@minecraft/server/index.d.ts | head -5
+
       - name: Validate (BannerForge rules)
         run: npm run check
 
