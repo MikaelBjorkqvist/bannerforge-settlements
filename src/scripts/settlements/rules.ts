@@ -58,6 +58,11 @@ export function npcDemand(s: Settlement): number {
   return total;
 }
 
+/** Free population slots: population limit minus the NPCs the buildings already employ (can be negative on old saves). */
+export function freeSlots(s: Settlement): number {
+  return housing(s) - npcDemand(s);
+}
+
 /** Population = NPCs actually living there: as many as are wanted, up to the housing cap. */
 export function population(s: Settlement): number {
   return Math.min(npcDemand(s), housing(s));
@@ -133,6 +138,12 @@ export function check(s: Settlement, action: Action): Check {
     if (p < promo.prosperity) reasons.push({ key: "promo_prosperity", args: [String(p), String(promo.prosperity)] });
     if (pop < promo.population) reasons.push({ key: "promo_population", args: [String(pop), String(promo.population)] });
     reasons.push(...unmet(s, promo.requires));
+  }
+
+  // A building's new workers need free population slots (owner rule, 2026-11-13).
+  const extraNpcs = def.npcs[next - 1] - (current > 0 ? def.npcs[current - 1] : 0);
+  if (extraNpcs > 0 && freeSlots(s) < extraNpcs) {
+    reasons.push({ key: "needs_population", args: [String(extraNpcs), String(Math.max(0, freeSlots(s)))] });
   }
 
   if (reasons.length) return { ok: false, reasons };
