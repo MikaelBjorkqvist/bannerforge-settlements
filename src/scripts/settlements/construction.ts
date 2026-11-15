@@ -14,9 +14,9 @@ import {
   system,
   world,
 } from "@minecraft/server";
-import { placeholderBlueprint, type Blueprint } from "./blueprint.js";
+import { blueprintByKey, blueprintFor as designFor, blueprintKeys, topHeightFor, type Blueprint } from "./blueprint.js";
 import { buildingById } from "./buildings.js";
-import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
+import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, footprintInFront, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
 import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
@@ -32,22 +32,22 @@ const BLOCKS_PER_YIELD = 48;
 export const footprintOf = (site: Site): Footprint => ({ x: site.x, z: site.z, w: site.w, rot: site.rot });
 
 /** Height of the building's tallest level, for clearing and protection. */
-function topHeight(defId: string): number {
+function topHeight(defId: string, faction: string, variant: string | undefined): number {
   const def = buildingById(defId);
-  const plot = !def || def.plot === "perimeter" ? "S" : def.plot;
-  return PLACEHOLDER_HEIGHT[plot][2];
+  return def ? topHeightFor(def, faction, variant) : PLACEHOLDER_HEIGHT.S[2];
 }
 
-function blueprintFor(defId: string, level: BuildingLevel, site: Site): Blueprint | undefined {
-  const def = buildingById(defId);
+function blueprintFor(a: { defId: string; faction: string }, level: BuildingLevel, site: Site): Blueprint | undefined {
+  const def = buildingById(a.defId);
   if (!def || level < 1) return undefined;
-  return placeholderBlueprint(def, level as 1 | 2 | 3, site.w, site.rot);
+  return designFor(def, a.faction, site.variant, level as 1 | 2 | 3, site.w, site.rot);
 }
 
 // ---------- active sites (cache for protection and work) ----------
 
 interface ActiveSite {
   sid: string;
+  faction: string;
   defId: string;
   index: number;
   dim: string;
@@ -63,8 +63,8 @@ export function refreshActiveSites(): void {
     for (const [defId, sites] of Object.entries(s.sites ?? {})) {
       sites.forEach((site, index) => {
         if (!site?.build) return;
-        const box = { x0: site.x, x1: site.x + site.w - 1, y0: site.y - FILL_MAX, y1: site.y + topHeight(defId) + 2, z0: site.z, z1: site.z + site.w - 1 };
-        list.push({ sid: s.id, defId, index, dim: s.dimension, site, box });
+        const box = { x0: site.x, x1: site.x + site.w - 1, y0: site.y - FILL_MAX, y1: site.y + topHeight(defId, s.faction, site.variant) + 2, z0: site.z, z1: site.z + site.w - 1 };
+        list.push({ sid: s.id, faction: s.faction, defId, index, dim: s.dimension, site, box });
       });
     }
   }
@@ -124,7 +124,7 @@ function* runStep(dim: Dimension, a: ActiveSite, step: number): Generator<void, 
   let ok = false;
   try {
     const level = a.site.build!.to;
-    const bp = blueprintFor(a.defId, level, a.site);
+    const bp = blueprintFor(a, level, a.site);
     if (!bp) return;
     if (step === 0) {
       yield* prepare(dim, a, bp);
@@ -227,7 +227,7 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
     }
     yield;
   }
-  const clearTop = site.y + Math.max(topHeight(a.defId), cut) + 1;
+  const clearTop = site.y + Math.max(topHeight(a.defId, a.faction, site.variant), cut) + 1;
   const { surface, fill } = localGround(dim, f, floor);
 
   // 1. Keep stored items: empty every container in the way.
@@ -255,7 +255,7 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
   // 1b. Upgrades: blocks the player added to the old building are packed up too (owner decision B,
   //     2026-11-15). Anything that differs from the old level's blueprint counts as added.
   if (site.built > 0) {
-    const old = blueprintFor(a.defId, site.built, site);
+    const old = blueprintFor(a, site.built, site);
     if (old) {
       for (let ly = 0; ly <= clearTop - site.y; ly++) {
         for (let lx = 0; lx < f.w; lx++) {
@@ -434,6 +434,10 @@ function registerProtection(): void {
  */
 function registerDevCommands(): void {
   system.afterEvents.scriptEventReceive.subscribe((e) => {
+    if (e.id === "bannerforge:preview") {
+      if (e.sourceEntity?.typeId === "minecraft:player") previewBlueprint(e.sourceEntity as Player, e.message.trim());
+      return;
+    }
     if (e.id !== "bannerforge:build_finish" && e.id !== "bannerforge:build_next") return;
     const player = e.sourceEntity;
     if (!player) return;
@@ -453,4 +457,52 @@ function registerDevCommands(): void {
     refreshActiveSites();
     if (player.typeId === "minecraft:player") (player as Player).sendMessage(`[BannerForge] ${e.id}: ${touched.size} site(s)`);
   });
+}
+
+/**
+ * /scriptevent bannerforge:preview blue/house/a/2
+ * Places a designed blueprint instantly in front of you, entrance facing you, on the ground you stand on
+ * (step 5 of docs/STRUCTURES.md). No cost, no construction, no foundation: for looking only.
+ * Without a key it lists the available blueprints.
+ */
+function previewBlueprint(player: Player, k: string): void {
+  if (!k) {
+    player.sendMessage(`[BannerForge] blueprints: ${blueprintKeys().join(", ") || "none"}`);
+    return;
+  }
+  const probe = blueprintByKey(k, 0);
+  if (!probe) {
+    player.sendMessage(`[BannerForge] unknown blueprint "${k}". Try: ${blueprintKeys().join(", ")}`);
+    return;
+  }
+  const v = player.getViewDirection();
+  const f = footprintInFront(player.location.x, player.location.z, v.x, v.z, probe.w, 0);
+  const bp = blueprintByKey(k, f.rot)!;
+  const groundY = Math.floor(player.location.y) - 1;
+  const dim = player.dimension;
+  system.runJob(
+    (function* () {
+      try {
+        for (let y = groundY + 1; y <= groundY + bp.height + 1; y++) {
+          dim.fillBlocks(new BlockVolume({ x: f.x, y, z: f.z }, { x: f.x + f.w - 1, y, z: f.z + f.w - 1 }), "minecraft:air");
+          yield;
+        }
+        let n = 0;
+        for (let ly = 0; ly < bp.height; ly++) {
+          for (let lx = 0; lx < f.w; lx++) {
+            for (let lz = 0; lz < f.w; lz++) {
+              const spec = bp.at(lx, ly, lz);
+              if (!spec) continue;
+              const p = toWorld(f, lx, lz);
+              set(dim, p.x, groundY + ly, p.z, spec.id, spec.states);
+              if (++n % BLOCKS_PER_YIELD === 0) yield;
+            }
+          }
+        }
+        player.sendMessage(`[BannerForge] placed ${k} (${n} blocks). Skipped blocks, if any, are in the content log.`);
+      } catch (err) {
+        player.sendMessage(`[BannerForge] preview failed: ${String(err)}`);
+      }
+    })(),
+  );
 }

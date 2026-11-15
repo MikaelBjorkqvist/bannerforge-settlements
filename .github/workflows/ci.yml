@@ -20,6 +20,13 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
+      - name: Structures (QA + generated blueprints are up to date)
+        # docs/STRUCTURES.md: the generators are the source; the committed generated module must match them.
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 assets-src/structures/build_all.py
+          git diff --exit-code -- src/scripts/settlements/generated || (echo "::error::Run python3 assets-src/structures/build_all.py and commit the result"; exit 1)
+
       - name: Validate (BannerForge rules)
         run: npm run check
 

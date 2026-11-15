@@ -1,8 +1,12 @@
 // What a building looks like, block by block, in plot-local coordinates (see plots.ts).
-// M2a: placeholder boxes. M2b replaces these with real designs (.mcstructure files) behind the same interface.
+// Designed buildings come from the structure pipeline (docs/STRUCTURES.md, generated/blueprints.ts);
+// buildings without a design yet (or for a faction without one) use the M2a placeholder boxes.
 
+import { ALPHABET, type BlueprintData } from "./blueprint_data.js";
 import type { BuildingDef, Category } from "./buildings.js";
+import { BLUEPRINTS, VARIANTS } from "./generated/blueprints.js";
 import { PLACEHOLDER_HEIGHT, type Rot } from "./plots.js";
+import { rotateStates } from "./rotate.js";
 
 export interface BlockSpec {
   id: string;
@@ -60,3 +64,52 @@ export function placeholderBlueprint(def: BuildingDef, level: 1 | 2 | 3, w: numb
     },
   };
 }
+
+// ---------- designed buildings ----------
+
+const key = (faction: string, building: string, variant: string, level: number) => `${faction}/${building}/${variant}/${level}`;
+
+/** Variants designed for a building in a faction's style (empty = placeholder). */
+export const variantsFor = (faction: string, building: string): string[] => VARIANTS[`${faction}/${building}`] ?? [];
+
+/** A random variant, so a village doesn't fill up with copies of one house. */
+export function pickVariant(faction: string, building: string): string | undefined {
+  const list = variantsFor(faction, building);
+  return list.length ? list[Math.floor(Math.random() * list.length)] : undefined;
+}
+
+function dataBlueprint(data: BlueprintData, rot: Rot): Blueprint {
+  const [w, height] = data.size;
+  const turned = data.palette.map((p) => ({ id: p.id, states: rotateStates(p.id, p.states, rot) }));
+  return {
+    w,
+    height,
+    at(lx, ly, lz) {
+      const ch = data.layers[ly]?.[lz]?.[lx];
+      if (!ch || ch === ".") return undefined;
+      return turned[ALPHABET.indexOf(ch)];
+    },
+  };
+}
+
+/** The blueprint to build: the designed one if it exists for this faction, plot width and variant, else a placeholder. */
+export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, rot: Rot): Blueprint {
+  const data = variant ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
+  if (data && data.size[0] === w && data.size[2] === w) return dataBlueprint(data, rot);
+  return placeholderBlueprint(def, level, w, rot);
+}
+
+/** Height of the tallest level, for checking room above and protecting the site. */
+export function topHeightFor(def: BuildingDef, faction: string, variant: string | undefined): number {
+  const plot = def.plot === "perimeter" ? "S" : def.plot;
+  const designed = variant ? [1, 2, 3].map((l) => BLUEPRINTS[key(faction, def.id, variant, l)]?.size[1] ?? 0) : [];
+  return Math.max(PLACEHOLDER_HEIGHT[plot][2], ...designed);
+}
+
+/** Any designed blueprint by its full key (developer preview command). */
+export function blueprintByKey(k: string, rot: Rot): Blueprint | undefined {
+  const data = BLUEPRINTS[k];
+  return data ? dataBlueprint(data, rot) : undefined;
+}
+
+export const blueprintKeys = (): string[] => Object.keys(BLUEPRINTS);

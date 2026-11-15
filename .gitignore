@@ -7,3 +7,4 @@ Thumbs.db
 ct-input/
 ct-out/
 .test-build/
+__pycache__/
