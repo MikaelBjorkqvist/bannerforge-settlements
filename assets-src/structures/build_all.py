@@ -3,6 +3,7 @@ Usage: python3 assets-src/structures/build_all.py        (from the repo root)
 Exit code 1 if any QA error. Add new buildings to BUILDINGS below.
 """
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -18,10 +19,25 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUT_TS = os.path.join(ROOT, "src", "scripts", "settlements", "generated", "blueprints.ts")
 PREVIEWS = os.path.join(HERE, "previews")
 
-# faction, building id, variant, generator, plot width, height limit, palette, required contents per level
+# The plot width comes from the game's building catalogue, so a design can never silently miss its plot
+# (play-test 2026-11-15: 9x9 houses on 13x13 house plots fell back to placeholder boxes).
+PLOT_WIDTH = {"S": 9, "M": 13, "L": 17}
+CATALOGUE = os.path.join(ROOT, "src", "scripts", "settlements", "buildings.ts")
+
+
+def plot_width(building: str) -> int:
+    src = open(CATALOGUE).read()
+    m = re.search(r'id: "' + re.escape(building) + r'",[^}]*?plot: "(\w+)"', src)
+    if not m or m.group(1) not in PLOT_WIDTH:
+        raise SystemExit(f"ERROR building {building!r}: no S/M/L plot in {os.path.relpath(CATALOGUE, ROOT)}")
+    return PLOT_WIDTH[m.group(1)]
+
+
+# faction, building id, variant, generator, height limit, palette, required contents per level
+HOUSE_NEEDS = {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}
 BUILDINGS = [
-    ("blue", "house", "a", ks_house.blueprints_a, 9, 14, KS_ALLOWED, {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}),
-    ("blue", "house", "b", ks_house.blueprints_b, 9, 14, KS_ALLOWED, {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}),
+    ("blue", "house", "a", ks_house.blueprints_a, 16, KS_ALLOWED, HOUSE_NEEDS),
+    ("blue", "house", "b", ks_house.blueprints_b, 16, KS_ALLOWED, HOUSE_NEEDS),
 ]
 
 
@@ -29,7 +45,8 @@ def main():
     os.makedirs(PREVIEWS, exist_ok=True)
     os.makedirs(os.path.dirname(OUT_TS), exist_ok=True)
     entries, variants, errors = {}, {}, []
-    for faction, building, variant, gen, plot_w, max_h, allowed, needs in BUILDINGS:
+    for faction, building, variant, gen, max_h, allowed, needs in BUILDINGS:
+        plot_w = plot_width(building)
         bps = gen()
         for bp in bps:
             e, w = qa.check(bp, plot_w, max_h, allowed, needs.get(bp.level, {}))

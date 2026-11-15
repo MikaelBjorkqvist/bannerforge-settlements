@@ -96,6 +96,7 @@ function dataBlueprint(data: BlueprintData, rot: Rot): Blueprint {
 export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, rot: Rot): Blueprint {
   const data = variant ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
   if (data && data.size[0] === w && data.size[2] === w) return dataBlueprint(data, rot);
+  if (data) console.warn(`[BannerForge] design ${key(faction, def.id, variant!, level)} is ${data.size[0]}x${data.size[2]}, plot is ${w}x${w}: placeholder used`);
   return placeholderBlueprint(def, level, w, rot);
 }
 

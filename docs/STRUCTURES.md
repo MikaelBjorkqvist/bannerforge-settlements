@@ -12,7 +12,7 @@ references and rules; the owner reviews (QA); the process must be repeatable and
    `assets-src/references/<faction>/` with a note on what each one is for. **References are never shipped and
    never copied block for block** (original assets only, CLAUDE.md rule 3).
 2. **Building brief** (once per building): `docs/structures/<faction>/<building>.md`, from
-   `docs/structures/_brief_template.md`. Lot size, what each level adds, entrance, required contents (beds,
+   `docs/structures/_brief_template.md`. Lot size (**from the building catalogue, `buildings.ts`**), what each level adds, entrance, required contents (beds,
    workstations), NPC spots, variants planned.
 3. **Generate**: `assets-src/structures/<faction>/<building>.py`, built from the shared toolkit
    (`bfstruct.py`) and the faction palette (`<faction>/palette.py`). One function per variant returns the
@@ -59,3 +59,4 @@ references and rules; the owner reviews (QA); the process must be repeatable and
 | --- | --- | --- |
 | 2026-11-15 | Pipeline v1 | Toolkit, QA, previews, generated module, in-game preview command, variants. Draft Kingscross house A as the pipeline test. |
 | 2026-11-15 | Kingscross house A + B v1 | Style guide v1 from web references; shared Kingscross kit (timber walls, gable roofs with stone verges, chimney, awning, flag, crops); lesson: on narrow fronts use corner posts only, or the plaster disappears. |
+| 2026-11-15 | Kingscross house A + B v2 | Houses are on M 13×13 plots (the 9×9 v1 silently fell back to placeholders). build_all.py now reads plot sizes from buildings.ts and fails on a mismatch; the game logs a warning instead of building a box quietly. |
