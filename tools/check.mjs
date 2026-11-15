@@ -11,7 +11,10 @@ const warn = (m) => warnings.push(m);
 const rel = (p) => path.relative(ROOT, p).replaceAll("\\", "/");
 
 const cfg = loadConfig();
-const ns = cfg.namespace + ":";
+// Content identifiers (entities, items, blocks) and resource names use "<namespace>_<mod id>"
+// (Mojang cooperative add-on rule, docs/decisions/0004).
+const contentNs = `${cfg.namespace}_${cfg.id}`;
+const ns = contentNs + ":";
 const BP = path.join(ROOT, "packs", "BP");
 const RP = path.join(ROOT, "packs", "RP");
 
@@ -107,6 +110,27 @@ for (const f of walk(path.join(ROOT, "src", "scripts")).filter((x) => x.endsWith
 // 7. Pack icon
 for (const [name, dir] of [["BP", BP], ["RP", RP]]) {
   if (!fs.existsSync(path.join(dir, "pack_icon.png"))) warn(`${name}: no pack_icon.png`);
+}
+
+// 8. Cooperative add-on naming: resource names and our texture folder (docs/decisions/0004)
+const resourceName = { "minecraft:geometry": "geometry.", animations: "animation.", animation_controllers: "controller.animation.", render_controllers: "controller.render." };
+for (const [f, data] of parsed) {
+  if (!f.startsWith(RP)) continue;
+  for (const g of data["minecraft:geometry"] ?? []) {
+    const id = g.description?.identifier ?? "";
+    if (!id.startsWith(`geometry.${contentNs}.`)) err(`${rel(f)}: geometry ${id} must start with geometry.${contentNs}.`);
+  }
+  for (const key of ["animations", "animation_controllers", "render_controllers"]) {
+    for (const id of Object.keys(data[key] ?? {})) {
+      if (!id.startsWith(`${resourceName[key]}${contentNs}.`)) err(`${rel(f)}: ${id} must start with ${resourceName[key]}${contentNs}.`);
+    }
+  }
+}
+const texRoot = path.join(RP, "textures", cfg.namespace);
+if (fs.existsSync(texRoot)) {
+  for (const d of fs.readdirSync(texRoot)) {
+    if (d !== cfg.id && d !== "common" && !d.startsWith(".")) err(`${rel(path.join(texRoot, d))}: textures go in textures/${cfg.namespace}/${cfg.id}/ (only one game folder allowed)`);
+  }
 }
 
 for (const w of warnings) console.log(`warn  ${w}`);

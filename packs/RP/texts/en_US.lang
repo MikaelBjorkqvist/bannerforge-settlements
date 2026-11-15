@@ -15,7 +15,7 @@ bannerforge.tier.city=City
 bannerforge.tier.promoted=§6%s has grown into a
 
 ## Bell / founding
-entity.bannerforge:steward.name=Steward
+entity.bannerforge_settlements:steward.name=Steward
 bannerforge.bell.steward_arrives=§7The bell's peal carries across the village... %s hurries over. Talk to them to found a settlement.
 bannerforge.bell.neutral_waiting=§7%s is waiting by the bell. Talk to them to found a settlement.
 bannerforge.bell.steward_coming=§7%s hurries to the bell.

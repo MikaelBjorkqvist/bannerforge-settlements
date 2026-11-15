@@ -2,13 +2,13 @@
   "format_version": "1.21.0",
   "minecraft:entity": {
     "description": {
-      "identifier": "bannerforge:steward",
+      "identifier": "bannerforge_settlements:steward",
       "is_spawnable": false,
       "is_summonable": true,
       "properties": {
-        "bannerforge:skin": { "type": "int", "range": [0, 3], "default": 0, "client_sync": true },
-        "bannerforge:outfit": { "type": "int", "range": [0, 3], "default": 0, "client_sync": true },
-        "bannerforge:rank": { "type": "int", "range": [0, 0], "default": 0, "client_sync": true }
+        "bannerforge_settlements:skin": { "type": "int", "range": [0, 3], "default": 0, "client_sync": true },
+        "bannerforge_settlements:outfit": { "type": "int", "range": [0, 3], "default": 0, "client_sync": true },
+        "bannerforge_settlements:rank": { "type": "int", "range": [0, 0], "default": 0, "client_sync": true }
       }
     },
     "components": {

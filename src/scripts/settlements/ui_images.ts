@@ -23,20 +23,20 @@ const VARIANTS: Record<string, Variant> = {
   name: { label: "E: name 'bannerforge'", pack: "bannerforge", ext: "" },
 };
 const PROPERTY = "bannerforge:ui_image_variant";
-const UI = "textures/bannerforge/ui/";
+const UI = "textures/bannerforge/settlements/ui/";
 
 function variant(): Variant {
   const key = world.getDynamicProperty(PROPERTY);
   return (typeof key === "string" && VARIANTS[key]) || VARIANTS.uuid_png;
 }
 
-/** Image path + pack for an icon in textures/bannerforge/ui/. */
+/** Image path + pack for an icon in textures/bannerforge/settlements/ui/. */
 export function uiImage(name: string): { src: string; pack: string } {
   const v = variant();
   return { src: UI + name + v.ext, pack: v.pack };
 }
 
-/** Button icon details for an icon in textures/bannerforge/ui/. */
+/** Button icon details for an icon in textures/bannerforge/settlements/ui/. */
 export function uiIcon(name: string): { imagePackId: string; imageSrc: string } {
   const { src, pack } = uiImage(name);
   return { imagePackId: pack, imageSrc: src };

@@ -1,5 +1,5 @@
 """Original BannerForge NPC textures, drawn in layers like vanilla villagers (64x64, humanoid box layout of
-geometry.bannerforge.npc). The game stacks four layers at runtime:
+geometry.bannerforge_settlements.npc). The game stacks four layers at runtime:
 
   1. skin_<n>.png        skin tone, face and hair            (picked per NPC: variety)
   2. outfit_<id>.png     clothes: neutral, then faction/biome (picked by settlement faction, later biome)

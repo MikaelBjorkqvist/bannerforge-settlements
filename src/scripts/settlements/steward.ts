@@ -15,7 +15,7 @@ import { OUTFIT_INDEX, type Settlement, type Vec3 } from "./types.js";
  *   ringing the bell meanwhile says how long that will take.
  */
 
-export const STEWARD_ID = "bannerforge:steward";
+export const STEWARD_ID = "bannerforge_settlements:steward";
 /**
  * Profession title in the name tag. Name tags are plain strings and cannot be translated,
  * so this is a documented exception to the lang rule (docs/DESIGN.md, NPC names).
@@ -124,7 +124,7 @@ function onTalk(player: Player, steward: Entity): void {
     }
     // The settlement's data is gone (e.g. removed by an admin): the steward is neutral again.
     steward.setDynamicProperty(P_SETTLEMENT, undefined);
-    steward.setProperty("bannerforge:outfit", OUTFIT_INDEX.neutral);
+    steward.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX.neutral);
   }
   const bell = parseVec(steward.getDynamicProperty(P_BELL)) ?? floorVec(steward.location);
   const dimensionId = steward.dimension.id;
@@ -135,9 +135,9 @@ function onTalk(player: Player, steward: Entity): void {
   void showClaimForm(player, dimensionId, bell, (s) => {
     if (steward.isValid) {
       steward.setDynamicProperty(P_SETTLEMENT, s.id);
-      steward.setProperty("bannerforge:outfit", OUTFIT_INDEX[s.faction]);
+      steward.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[s.faction]);
       const name = steward.getDynamicProperty(P_NAME);
-      const skin = steward.getProperty("bannerforge:skin");
+      const skin = steward.getProperty("bannerforge_settlements:skin");
       s.steward = { name: typeof name === "string" ? name : pickName(s.id), skin: typeof skin === "number" ? skin : 0, entityId: steward.id };
     }
   });
@@ -194,8 +194,8 @@ function findSteward(dim: Dimension, bell: Vec3, match: (e: Entity) => boolean, 
 function spawnSteward(dim: Dimension, bell: Vec3, name: string, skin: number, outfit: number, settlementId?: string): Entity {
   const e = dim.spawnEntity(STEWARD_ID, standingSpotNear(dim, bell));
   e.nameTag = nameTagFor(name);
-  e.setProperty("bannerforge:skin", skin);
-  e.setProperty("bannerforge:outfit", outfit);
+  e.setProperty("bannerforge_settlements:skin", skin);
+  e.setProperty("bannerforge_settlements:outfit", outfit);
   e.setDynamicProperty(P_BELL, JSON.stringify(bell));
   e.setDynamicProperty(P_NAME, name);
   if (settlementId) e.setDynamicProperty(P_SETTLEMENT, settlementId);

@@ -58,13 +58,13 @@ Village → Town → City tiers. It is the source of truth for game data.
 - **Names:** "Profession, Name" (e.g. "Steward, Edric"). The personal name comes from the pool in
   `src/scripts/settlements/npc.ts`. Name tags are plain strings and can't be translated, so the profession word in
   them is a documented exception to the lang rule. Everything else the NPC says uses lang keys.
-- **Layers** (`assets-src/entity/make_npc.py`, drawn on our own `geometry.bannerforge.npc`), stacked at runtime with
+- **Layers** (`assets-src/entity/make_npc.py`, drawn on our own `geometry.bannerforge_settlements.npc`), stacked at runtime with
   the vanilla `villager_v2_masked` material, the same way villagers stack biome and profession:
-  1. **Skin** (`skin_<n>`): skin tone, face, hair. Picked per NPC for variety (entity property `bannerforge:skin`).
+  1. **Skin** (`skin_<n>`): skin tone, face, hair. Picked per NPC for variety (entity property `bannerforge_settlements:skin`).
   2. **Outfit** (`outfit_<id>`): neutral before founding, then the faction's; later one per faction and biome
-     (`bannerforge:outfit`).
+     (`bannerforge_settlements:outfit`).
   3. **Profession** (`prof_<id>`): what the job adds, e.g. the steward's tabard, chain of office and cap.
-  4. **Rank** (`rank_<n>`): badge, empty for now (`bannerforge:rank`).
+  4. **Rank** (`rank_<n>`): badge, empty for now (`bannerforge_settlements:rank`).
 - With layers, 5 biomes × 3 factions need about 15 outfits plus one overlay per profession, not one texture per combination.
 
 ## Tech notes (Claude)
