@@ -29,15 +29,13 @@ bannerforge.claim.announce=§6%s has raised a banner over %s!
 ## Steward's ledger
 bannerforge.ledger.title=Steward's Ledger
 bannerforge.ledger.back=← Back
-bannerforge.ledger.legend=▲ can be built or upgraded now · ✔ done for this tier · Locked = needs something first
-bannerforge.ledger.can_upgrade=%s can upgrade
-bannerforge.ledger.built_count=%s/%s built
-bannerforge.ledger.row_can=Build/upgrade
+bannerforge.ledger.legend=+ build  ▲ upgrade  ✔ done  ✘ locked
 bannerforge.ledger.locked=Locked
+bannerforge.ledger.complete=Complete
 bannerforge.ledger.build=Build
-bannerforge.ledger.build_new=Build a new one
+bannerforge.ledger.build_new=New house
 bannerforge.ledger.upgrade=Upgrade
-bannerforge.ledger.upgrade_lowest=Upgrade one
+bannerforge.ledger.upgrade_lowest=Upgrade a house
 bannerforge.ledger.built=built:
 bannerforge.ledger.upgraded=upgraded to
 bannerforge.ledger.not_built=Not built

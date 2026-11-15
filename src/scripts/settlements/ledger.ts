@@ -9,13 +9,11 @@ import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } fro
 import { canAfford, countItem, pay } from "./economy.js";
 import { saveSettlement } from "./registry.js";
 import { apply, check, highest, housing, instances, npcDemand, population, prosperity, tier, type Action, type Check } from "./rules.js";
+import { uiIcon, uiImage } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, levelName, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
-/** Replaced with the resource pack's UUID at build time (tools/build.mjs). */
-const RP_PACK_ID = "__RP_PACK_ID__";
-const UI = "textures/bannerforge/ui/";
-const icon = (name: string) => ({ imagePackId: RP_PACK_ID, imageSrc: UI + name });
+const icon = uiIcon;
 
 const SECTION_ICON: Record<Category, string> = {
   centre: "section_centre",
@@ -64,20 +62,20 @@ function rowState(s: Settlement, def: BuildingDef): RowState {
   return "locked";
 }
 
-/** Row label, one line (buttons show one line): "Tavern · Basic ▲", "Stables · Locked", "Woodcarver · Build ▲". */
+const ROMAN = ["", "I", "II", "III"];
+const SYMBOL: Record<RowState, string> = { can: "▲", done: "✔", locked: "✘" };
+
+/**
+ * Row label, kept short because buttons show one line (owner: "less is more"):
+ *   "Tavern I  ▲"  can upgrade · "Woodcarver  +"  can build · "Blacksmith I  ✔"  done for this tier · "Stables  ✘"  locked
+ */
 function rowLabel(s: Settlement, def: BuildingDef): RawMessage {
   const state = rowState(s, def);
-  const list = instances(s, def.id);
   const level = highest(s, def.id);
   const name = buildingName(def.id);
-  const sep = txt(" · ");
-  if (def.perTier) {
-    const count = txt(` ×${list.length}`);
-    return raw(name, count, sep, state === "can" ? raw(t("bannerforge.ledger.row_can"), txt(" ▲")) : state === "done" ? txt("✔") : t("bannerforge.ledger.locked"));
-  }
-  if (level === 0) return raw(name, sep, state === "can" ? raw(t("bannerforge.ledger.build"), txt(" ▲")) : t("bannerforge.ledger.locked"));
-  const mark = state === "can" ? txt(" ▲") : state === "done" ? txt(" ✔") : raw(txt(" · "), t("bannerforge.ledger.locked"));
-  return raw(name, sep, levelName(level), mark);
+  if (def.perTier) return raw(name, txt(` ×${instances(s, def.id).length}  ${SYMBOL[state]}`));
+  if (level === 0) return raw(name, txt(state === "can" ? "  +" : `  ${SYMBOL[state]}`));
+  return raw(name, txt(` ${ROMAN[level]}  ${SYMBOL[state]}`));
 }
 
 // ---------- 1. Overview ----------
@@ -87,7 +85,8 @@ export function showOverview(player: Player, s: Settlement): void {
   const form = new CustomForm(player, t("bannerforge.ledger.title"));
 
   // Faction above the town name, in one element; the banner image sits right above it.
-  form.image(UI + `banner_${s.faction}`, RP_PACK_ID, { width: 0.18 });
+  const banner = uiImage(`banner_${s.faction}`);
+  form.image(banner.src, banner.pack, { width: 0.18 });
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name}`)));
 
   const waiting = npcDemand(s) - housing(s);
@@ -114,10 +113,8 @@ export function showOverview(player: Player, s: Settlement): void {
   form.divider();
   for (const category of CATEGORIES) {
     const defs = BUILDINGS.filter((b) => b.category === category);
-    const can = defs.filter((d) => rowState(s, d) === "can").length;
-    const built = defs.filter((d) => highest(s, d.id) > 0).length;
-    const summary = can > 0 ? raw(t("bannerforge.ledger.can_upgrade", String(can)), txt(" ▲")) : t("bannerforge.ledger.built_count", String(built), String(defs.length));
-    form.button(raw(t(`bannerforge.category.${category}`), txt(" · "), summary), () => go(form, () => showSection(player, s, category)), {
+    const anyCan = defs.some((d) => rowState(s, d) === "can");
+    form.button(raw(t(`bannerforge.category.${category}`), txt(anyCan ? "  ▲" : "")), () => go(form, () => showSection(player, s, category)), {
       imageDetails: icon(SECTION_ICON[category]),
     });
   }
@@ -164,7 +161,8 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   const buttons = Array.from({ length: slots }, () => ({ label: new ObservableUIRawMessage(txt("")), disabled: new ObservableBoolean(true), visible: new ObservableBoolean(true) }));
 
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showSection(player, s, def.category)));
-  form.image(UI + def.id, RP_PACK_ID, { width: 0.3 });
+  const art = uiImage(def.id);
+  form.image(art.src, art.pack, { width: 0.3 });
   form.label(now);
   form.label(next);
   form.label(needs);
@@ -214,13 +212,14 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       const verb = action.kind === "build" ? (def.perTier ? "bannerforge.ledger.build_new" : "bannerforge.ledger.build") : def.perTier ? "bannerforge.ledger.upgrade_lowest" : "bannerforge.ledger.upgrade";
       const current = action.kind === "upgrade" ? list[action.index] ?? 0 : 0;
       if (c.ok) {
-        b.label.setData(raw(t(verb), txt(" → "), levelName(c.newLevel), txt(" · "), costText(c.cost)));
+        // "Upgrade: 16 Emeralds" (the Next line above says what it becomes)
+        b.label.setData(raw(t(verb), txt(": "), costText(c.cost)));
         b.disabled.setData(false);
       } else if (current >= 3) {
-        b.label.setData(raw(levelName(3), txt(" ✔")));
+        b.label.setData(raw(t("bannerforge.ledger.complete"), txt(" ✔")));
         b.disabled.setData(true);
       } else {
-        b.label.setData(raw(t(verb), txt(" · "), t("bannerforge.ledger.locked")));
+        b.label.setData(raw(t("bannerforge.ledger.locked"), txt(" ✘")));
         b.disabled.setData(true);
       }
     });
