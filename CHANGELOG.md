@@ -14,6 +14,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Ringing the bell several times no longer spawns extra stewards.
 - Founding now completes after you pay (it took the emeralds and stopped before).
 - The steward renders with a head (simple placeholder textures for now).
+### Changed
+- The ledger no longer has a separate Close button; use the X in the top-right corner.
 
 ## [0.1.0] - 2026-11-15
 ### Added
