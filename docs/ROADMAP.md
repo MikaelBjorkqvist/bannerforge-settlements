@@ -29,7 +29,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [ ] Settlement boundary visualised (particles) and stored
 
 ## M2 — Buildings in the world
-### M2a — Placement with placeholder boxes (in play-test)
+### M2a — Placement with placeholder boxes (done, play-tested 2026-11-15)
 - [x] Town border that grows with the tier (village 40, town 64, city 96 blocks); "Show town border" in the ledger
 - [x] Free placement inside the border: plot follows the player, entrance faces the player; Sneak tap → Build / Rotate / Move / Cancel
 - [x] Green / orange / red survey with reasons: border, overlap, bell, water, hillside, steep, room above (level 3), vanilla houses (clear for a fee)
