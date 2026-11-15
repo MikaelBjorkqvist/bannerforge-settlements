@@ -86,7 +86,7 @@ export function showOverview(player: Player, s: Settlement): void {
 
   // Faction above the town name, in one element; the banner image sits right above it.
   const banner = uiImage(`banner_${s.faction}`);
-  form.image(banner.src, banner.pack, { width: 0.18 });
+  form.image(banner.src, banner.pack, { width: 0.08 });
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name}`)));
 
   const waiting = npcDemand(s) - housing(s);
@@ -167,6 +167,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   form.label(next);
   form.label(needs);
   form.label(feedback, { visible: feedbackVisible });
+  form.spacer();
   buttons.forEach((b, slot) => form.button(b.label, () => onBuy(slot), { disabled: b.disabled, visible: b.visible }));
   form.button(t("bannerforge.ledger.go_population"), () => go(form, () => showSection(player, s, "population")), { visible: goPopulation });
   form.closeButton();
