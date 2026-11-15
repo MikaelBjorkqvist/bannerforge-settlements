@@ -3,6 +3,13 @@
 All notable changes to this add-on. Format: [Keep a Changelog](https://keepachangelog.com/), versions: SemVer.
 
 ## [Unreleased]
+### Added
+- The steward is now a villager-like NPC who lives by the village bell, named "Steward, <name>".
+  - Ringing the bell calls the steward to it. It no longer opens a menu.
+  - At an unclaimed village a steward in plain clothes appears. Talk to them to found a settlement; they then wear your faction's colours.
+  - At your settlement, talk to the steward to open the ledger.
+  - The steward can die. The ledger is closed until they return one in-game day (20 minutes) later. Ringing the bell meanwhile tells you how long is left.
+- Settlements from v0.1.0 get a steward the next time you ring their bell.
 
 ## [0.1.0] - 2026-11-15
 ### Added
