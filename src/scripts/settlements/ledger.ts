@@ -143,10 +143,6 @@ export function showSection(player: Player, s: Settlement, category: Category): 
 
 // ---------- 3. Building ----------
 
-/** "Basic: Innkeeper: rest, rumours, food" */
-const levelLine = (def: BuildingDef, level: number) =>
-  level === 0 ? t("bannerforge.ledger.not_built") : raw(levelName(level), txt(": "), t(`bannerforge.desc.${def.id}.${level}`));
-
 export function showBuilding(player: Player, s: Settlement, def: BuildingDef): void {
   const form = new CustomForm(player, buildingName(def.id));
   const now = new ObservableUIRawMessage(txt(""));
