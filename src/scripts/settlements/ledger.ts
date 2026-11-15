@@ -9,7 +9,7 @@ import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } fro
 import { canAfford, countItem, pay } from "./economy.js";
 import { saveSettlement } from "./registry.js";
 import { apply, check, highest, housing, instances, npcDemand, population, prosperity, tier, type Action, type Check } from "./rules.js";
-import { uiIcon, uiImage } from "./ui_images.js";
+import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, levelName, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
@@ -84,9 +84,7 @@ export function showOverview(player: Player, s: Settlement): void {
   const tr = tier(s);
   const form = new CustomForm(player, t("bannerforge.ledger.title"));
 
-  // Faction above the town name, in one element; the banner image sits right above it.
-  const banner = uiImage(`banner_${s.faction}`);
-  form.image(banner.src, banner.pack, { width: 0.08 });
+  // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name}`)));
 
   const waiting = npcDemand(s) - housing(s);
@@ -161,14 +159,12 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   const buttons = Array.from({ length: slots }, () => ({ label: new ObservableUIRawMessage(txt("")), disabled: new ObservableBoolean(true), visible: new ObservableBoolean(true) }));
 
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showSection(player, s, def.category)));
-  const art = uiImage(def.id);
-  form.image(art.src, art.pack, { width: 0.3 });
   form.label(now);
   form.label(next);
   form.label(needs);
   form.label(feedback, { visible: feedbackVisible });
   form.spacer();
-  buttons.forEach((b, slot) => form.button(b.label, () => onBuy(slot), { disabled: b.disabled, visible: b.visible }));
+  buttons.forEach((b, slot) => form.button(b.label, () => onBuy(slot), { disabled: b.disabled, visible: b.visible, imageDetails: icon(def.id) }));
   form.button(t("bannerforge.ledger.go_population"), () => go(form, () => showSection(player, s, "population")), { visible: goPopulation });
   form.closeButton();
 
