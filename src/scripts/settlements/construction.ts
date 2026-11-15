@@ -97,7 +97,8 @@ const running = new Set<string>();
 const keyOf = (a: ActiveSite) => `${a.sid}:${a.defId}:${a.index}`;
 
 export function registerConstruction(): void {
-  refreshActiveSites();
+  // World data can't be read while scripts first load ("early execution"): start on the first tick.
+  system.run(refreshActiveSites);
   let ticks = 0;
   system.runInterval(() => {
     if (++ticks % 10 === 0) refreshActiveSites(); // picks up changes made elsewhere every 10 s
