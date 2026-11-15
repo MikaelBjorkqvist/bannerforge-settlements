@@ -16,7 +16,7 @@ import {
 } from "@minecraft/server";
 import { blueprintByKey, blueprintFor as designFor, blueprintKeys, topHeightFor, type Blueprint } from "./blueprint.js";
 import { buildingById } from "./buildings.js";
-import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, footprintInFront, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
+import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, STEP_TICKS, footprintInFront, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
 import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
@@ -129,10 +129,9 @@ function* runStep(dim: Dimension, a: ActiveSite, step: number): Generator<void, 
     if (step === 0) {
       yield* prepare(dim, a, bp);
       yield* placePhase(dim, a.site, bp, 1);
-    } else if (step < PHASES) {
-      yield* placePhase(dim, a.site, bp, step + 1);
     } else {
-      yield* removeScaffolding(dim, a.site, bp);
+      yield* placePhase(dim, a.site, bp, step + 1);
+      if (step === STEPS - 1) yield* removeScaffolding(dim, a.site, bp);
     }
     ok = true;
   } catch (e) {
@@ -313,8 +312,9 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
 
   forgetVanillaIn(a.sid, f);
 
-  // 5. Scaffolding at the four corners, as tall as the building will be.
-  for (const [lx, lz] of [[0, 0], [f.w - 1, 0], [0, f.w - 1], [f.w - 1, f.w - 1]]) {
+  // 5. Scaffolding in columns the design leaves empty, just outside the building's corners, so no block of the
+  //    building ever replaces it (play-test 2026-11-15: scaffolding at the lot corners broke when fence posts went in).
+  for (const [lx, lz] of scaffoldColumns(bp)) {
     const p = toWorld(f, lx, lz);
     for (let ly = 1; ly < bp.height; ly++) set(dim, p.x, site.y + ly, p.z, "minecraft:scaffolding");
   }
@@ -379,16 +379,60 @@ function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): voi
   });
 }
 
+/** Up to four columns that are empty above the ground in the whole design, near the building's corners. */
+function scaffoldColumns(bp: Blueprint): [number, number][] {
+  const free = (lx: number, lz: number) => {
+    for (let ly = 1; ly < bp.height; ly++) if (bp.at(lx, ly, lz)) return false;
+    return true;
+  };
+  // The building's body: columns with blocks from the third layer up.
+  let x0 = bp.w, x1 = -1, z0 = bp.w, z1 = -1;
+  for (let lx = 0; lx < bp.w; lx++) {
+    for (let lz = 0; lz < bp.w; lz++) {
+      for (let ly = 3; ly < bp.height; ly++) {
+        if (bp.at(lx, ly, lz)) {
+          x0 = Math.min(x0, lx); x1 = Math.max(x1, lx); z0 = Math.min(z0, lz); z1 = Math.max(z1, lz);
+          break;
+        }
+      }
+    }
+  }
+  if (x1 < 0) return [];
+  const picks: [number, number][] = [];
+  for (const [cx, cz] of [[x0 - 1, z0 - 1], [x1 + 1, z0 - 1], [x0 - 1, z1 + 1], [x1 + 1, z1 + 1]]) {
+    let best: [number, number] | undefined;
+    let bestD = Infinity;
+    for (let lx = 0; lx < bp.w; lx++) {
+      for (let lz = 0; lz < bp.w; lz++) {
+        const d = Math.abs(lx - cx) + Math.abs(lz - cz);
+        if (d < bestD && d <= 3 && free(lx, lz) && !picks.some(([px, pz]) => px === lx && pz === lz)) {
+          best = [lx, lz];
+          bestD = d;
+        }
+      }
+    }
+    if (best) picks.push(best);
+  }
+  return picks;
+}
+
+/** Removes all scaffolding on the plot (wherever it stands), top down so nothing drops. */
 function* removeScaffolding(dim: Dimension, site: Site, bp: Blueprint): Generator<void, void, void> {
   const f = footprintOf(site);
-  for (const [lx, lz] of [[0, 0], [f.w - 1, 0], [0, f.w - 1], [f.w - 1, f.w - 1]]) {
+  for (const [lx, lz] of allColumns(f.w)) {
     const p = toWorld(f, lx, lz);
     for (let ly = bp.height + 4; ly >= 1; ly--) {
       const block = dim.getBlock({ x: p.x, y: site.y + ly, z: p.z });
       if (block?.typeId === "minecraft:scaffolding") block.setType("minecraft:air");
     }
-    yield;
+    if (lx % 4 === 0 && lz === 0) yield;
   }
+}
+
+function allColumns(w: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let lx = 0; lx < w; lx++) for (let lz = 0; lz < w; lz++) out.push([lx, lz]);
+  return out;
 }
 
 // ---------- protection ----------
@@ -445,7 +489,7 @@ function registerDevCommands(): void {
     if (e.id !== "bannerforge:build_finish" && e.id !== "bannerforge:build_next") return;
     const player = e.sourceEntity;
     if (!player) return;
-    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : BUILD_TICKS / PHASES;
+    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : STEP_TICKS;
     const touched = new Set<string>();
     for (const a of active) {
       if (a.dim !== player.dimension.id) continue;

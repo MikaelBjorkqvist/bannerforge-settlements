@@ -35,12 +35,14 @@ assert.ok(P.insideBorder({ x: -4, z: -4, w: 9, rot: 0 }, 0, 0, 40));
 assert.ok(!P.insideBorder({ x: 35, z: 0, w: 9, rot: 0 }, 0, 0, 40));
 
 // Construction: 4 phases over a day, then finish.
+// Phase 1 at once, phases 2 and 3 at 1/3 and 2/3 of the day, phase 4 together with completion.
 assert.equal(P.stepsDue(0), 1);
-assert.equal(P.stepsDue(5999), 1);
-assert.equal(P.stepsDue(6000), 2);
-assert.equal(P.stepsDue(18000), 4);
-assert.equal(P.stepsDue(23999), 4);
-assert.equal(P.stepsDue(24000), 5);
+assert.equal(P.stepsDue(7999), 1);
+assert.equal(P.stepsDue(8000), 2);
+assert.equal(P.stepsDue(16000), 3);
+assert.equal(P.stepsDue(23999), 3, "the last phase waits for the full day");
+assert.equal(P.stepsDue(24000), 4);
+assert.equal(P.STEPS, 4);
 assert.equal(P.stepsDue(-50), 1, "clock oddities never go below the first step");
 const layers = [1, 2, 3, 4].map((p) => P.phaseLayers(p, 9));
 assert.deepEqual(layers[0][0], 0);
