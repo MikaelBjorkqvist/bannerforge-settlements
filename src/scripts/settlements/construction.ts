@@ -18,7 +18,8 @@ import { buildingById } from "./buildings.js";
 import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
-import { localGround, readColumn } from "./terrain.js";
+import { isLiquid, localGround, readColumn } from "./terrain.js";
+import { forgetVanillaIn } from "./vanilla.js";
 import { buildingName, levelName, raw, t, txt } from "./text.js";
 import type { BuildingLevel, Settlement, Site } from "./types.js";
 
@@ -190,13 +191,16 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
 
   // Columns: natural ground under each block of the plot.
   const grounds: number[][] = [];
+  const water: boolean[][] = [];
   let cut = 0;
   for (let lx = 0; lx < f.w; lx++) {
     grounds[lx] = [];
+    water[lx] = [];
     for (let lz = 0; lz < f.w; lz++) {
       const c = readColumn(dim, f.x + lx, f.z + lz, floor);
       if (!c) throw new Error("unloaded");
       grounds[lx][lz] = c.ground;
+      water[lx][lz] = c.water;
       cut = Math.max(cut, c.ground - site.y);
     }
     yield;
@@ -249,11 +253,20 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
     for (let lz = 0; lz < f.w; lz++) {
       const x = f.x + lx;
       const z = f.z + lz;
+      // Farm channels, wells and ponds are filled to the bottom first.
+      if (water[lx][lz]) {
+        for (let y = Math.min(grounds[lx][lz], site.y - 1); y > floor; y--) {
+          if (!isLiquid(dim.getBlock({ x, y, z })?.typeId ?? "")) break;
+          set(dim, x, y, z, fill);
+        }
+      }
       for (let y = grounds[lx][lz] + 1; y < site.y; y++) set(dim, x, y, z, fill);
       set(dim, x, site.y, z, surface);
     }
     yield;
   }
+
+  forgetVanillaIn(a.sid, f);
 
   // 5. Scaffolding at the four corners, as tall as the building will be.
   for (const [lx, lz] of [[0, 0], [f.w - 1, 0], [0, f.w - 1], [f.w - 1, f.w - 1]]) {

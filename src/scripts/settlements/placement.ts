@@ -1,27 +1,29 @@
 // Placing a building (owner decisions, 2026-11-15): the plot follows the player inside the town border,
-// its entrance facing the player. Green = can build, orange = a vanilla house is cleared for a fee,
-// red = blocked (with the reason). Tap Sneak for the panel: Build, Rotate, Move, Cancel.
+// its entrance facing the player. Green = can build, orange = village buildings or farms are cleared for a fee,
+// red = blocked (with the reason). Using the Building Plan item opens the panel: Build, Rotate, Raise, Lower,
+// Move, Cancel. The floor lines up with the ground at the entrance; Raise/Lower adjust it within limits.
 
-import { MolangVariableMap, type Player, type RawMessage, system, world } from "@minecraft/server";
-import { CustomForm } from "@minecraft/server-ui";
+import { ItemLockMode, ItemStack, MolangVariableMap, type Player, type RawMessage, system, world } from "@minecraft/server";
+import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
 import { canAfford, pay } from "./economy.js";
-import { BORDER_RADIUS, PLACEHOLDER_HEIGHT, PLOT_WIDTH, borderPointsNear, footprintInFront, insideBorder, turn, type Footprint } from "./plots.js";
+import { BORDER_RADIUS, CUT_MAX, FILL_MAX, PLACEHOLDER_HEIGHT, PLOT_WIDTH, borderPointsNear, footprintInFront, insideBorder, turn, type Footprint, type Rect } from "./plots.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { check, tier } from "./rules.js";
 import { survey, type Survey } from "./terrain.js";
 import { buildingName, costText, raw, reasonText, say, t, txt } from "./text.js";
 import type { BuildingLevel, Settlement, Site } from "./types.js";
+import { scanAround, vanillaBoxes } from "./vanilla.js";
 
-/** Emeralds the steward asks to clear a vanilla house (placeholder price). */
+/** Emeralds the steward asks to clear village buildings or farms on a plot (placeholder price). */
 export const CLEAR_FEE = 5;
+export const PLAN_ITEM = "bannerforge_settlements:building_plan";
 const PARTICLE = "bannerforge_settlements:marker";
 const TICK = 2;
-/** A Sneak press shorter than this (ticks) is a tap. */
-const TAP_TICKS = 8;
 /** Placement ends if the player wanders this far from the bell. */
-const GIVE_UP_DISTANCE = 160;
+const GIVE_UP_DISTANCE = 200;
+const SCAN_RADIUS = 40;
 
 export type PlaceMode =
   | { kind: "new"; cost: Cost[] } // a new building or house: pay on Build
@@ -34,14 +36,15 @@ interface Placing {
   w: number;
   topHeight: number;
   turns: number;
+  raise: number;
   locked?: Footprint;
   current?: Footprint;
   surveyed?: Survey;
   surveyedKey?: string;
-  sneakSince?: number;
-  wasSneaking: boolean;
   panelOpen: boolean;
   age: number;
+  scanning: boolean;
+  lastScan?: { x: number; z: number };
 }
 
 const placing = new Map<string, Placing>();
@@ -58,10 +61,12 @@ export function startPlacement(player: Player, s: Settlement, def: BuildingDef, 
     w: PLOT_WIDTH[def.plot],
     topHeight: PLACEHOLDER_HEIGHT[def.plot][2],
     turns: 0,
-    wasSneaking: player.isSneaking,
+    raise: 0,
     panelOpen: false,
     age: 0,
+    scanning: false,
   });
+  givePlan(player);
   player.sendMessage(raw(t("bannerforge.place.start"), txt(" "), buildingName(def.id)));
   player.sendMessage(raw(txt("§7"), t("bannerforge.place.how")));
   loop ??= system.runInterval(tick, TICK);
@@ -69,11 +74,55 @@ export function startPlacement(player: Player, s: Settlement, def: BuildingDef, 
 
 function stop(player: Player | undefined, id: string, messageKey?: string): void {
   placing.delete(id);
-  if (player && messageKey) say(player, messageKey);
+  if (player) {
+    takePlan(player);
+    if (messageKey) say(player, messageKey);
+  }
   if (!placing.size && loop !== undefined) {
     system.clearRun(loop);
     loop = undefined;
   }
+}
+
+// ---------- the Building Plan item ----------
+
+function givePlan(player: Player): void {
+  const inv = player.getComponent("minecraft:inventory")?.container;
+  if (!inv) return;
+  for (let i = 0; i < inv.size; i++) if (inv.getItem(i)?.typeId === PLAN_ITEM) return;
+  const item = new ItemStack(PLAN_ITEM, 1);
+  item.lockMode = ItemLockMode.inventory; // can't be dropped or put in chests
+  // Into the hand if that slot is free, otherwise anywhere.
+  const slot = player.selectedSlotIndex;
+  if (!inv.getItem(slot)) inv.setItem(slot, item);
+  else inv.addItem(item);
+}
+
+function takePlan(player: Player): void {
+  const inv = player.getComponent("minecraft:inventory")?.container;
+  if (!inv) return;
+  for (let i = 0; i < inv.size; i++) if (inv.getItem(i)?.typeId === PLAN_ITEM) inv.setItem(i, undefined);
+}
+
+export function registerPlacement(): void {
+  world.afterEvents.itemUse.subscribe((e) => {
+    if (e.itemStack.typeId !== PLAN_ITEM) return;
+    const p = placing.get(e.source.id);
+    if (p && !p.panelOpen) openPanel(e.source, p);
+  });
+  world.beforeEvents.playerInteractWithBlock.subscribe((e) => {
+    if (e.itemStack?.typeId !== PLAN_ITEM) return;
+    e.cancel = true;
+    const player = e.player;
+    system.run(() => {
+      const p = placing.get(player.id);
+      if (p && !p.panelOpen) openPanel(player, p);
+    });
+  });
+  // Plans left over (e.g. after leaving the world mid-placement) are removed.
+  system.runInterval(() => {
+    for (const player of world.getPlayers()) if (!placing.has(player.id)) takePlan(player);
+  }, 100);
 }
 
 // ---------- the loop ----------
@@ -85,40 +134,48 @@ function tick(): void {
       stop(undefined, id);
       continue;
     }
-    if (p.panelOpen) continue;
     const s = settlementById(p.sid);
     if (!s || player.dimension.id !== s.dimension) {
       stop(player, id, "bannerforge.place.cancelled");
       continue;
     }
-    const d = Math.hypot(player.location.x - s.center.x, player.location.z - s.center.z);
-    if (d > GIVE_UP_DISTANCE) {
+    if (Math.hypot(player.location.x - s.center.x, player.location.z - s.center.z) > GIVE_UP_DISTANCE) {
       stop(player, id, "bannerforge.place.cancelled");
       continue;
     }
     p.age += TICK;
-
-    // Sneak tap opens the panel.
-    const sneaking = player.isSneaking;
-    if (sneaking && !p.wasSneaking) p.sneakSince = system.currentTick;
-    if (!sneaking && p.wasSneaking && p.sneakSince !== undefined && system.currentTick - p.sneakSince <= TAP_TICKS) {
-      p.wasSneaking = sneaking;
-      openPanel(player, p);
-      continue;
-    }
-    p.wasSneaking = sneaking;
-
     if (p.age % 6 !== 0) continue;
+
+    scanNearby(player, s, p);
     const f = p.locked ?? footprintAhead(player, p);
     p.current = f;
-    const key = `${f.x},${f.z},${f.rot}`;
+    const key = `${f.x},${f.z},${f.rot},${p.raise},${vanillaBoxes(s.id).length}`;
     if (key !== p.surveyedKey) {
       p.surveyed = runSurvey(s, p, f);
       p.surveyedKey = key;
     }
-    draw(player, s, p, f, p.surveyed!);
-    if (p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p, p.surveyed!, true));
+    draw(player, s, f, p.surveyed!);
+    if (!p.panelOpen && p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p.surveyed!));
   }
+}
+
+/** Looks for vanilla structures around the player in the background (once per area). */
+function scanNearby(player: Player, s: Settlement, p: Placing): void {
+  if (p.scanning) return;
+  const { x, z } = player.location;
+  if (p.lastScan && Math.hypot(p.lastScan.x - x, p.lastScan.z - z) < 8) return;
+  p.scanning = true;
+  p.lastScan = { x, z };
+  const job = scanAround(player.dimension, s.id, x, z, SCAN_RADIUS, s.center.y - 32, ownFootprints(s));
+  system.runJob(
+    (function* () {
+      try {
+        yield* job;
+      } finally {
+        p.scanning = false;
+      }
+    })(),
+  );
 }
 
 function footprintAhead(player: Player, p: Placing): Footprint {
@@ -126,7 +183,7 @@ function footprintAhead(player: Player, p: Placing): Footprint {
   return footprintInFront(player.location.x, player.location.z, v.x, v.z, p.w, p.turns);
 }
 
-function otherFootprints(s: Settlement): Footprint[] {
+function ownFootprints(s: Settlement): Footprint[] {
   const list: Footprint[] = [];
   for (const sites of Object.values(s.sites ?? {})) for (const site of sites) if (site) list.push({ x: site.x, z: site.z, w: site.w, rot: site.rot });
   return list;
@@ -139,7 +196,9 @@ function runSurvey(s: Settlement, p: Placing, f: Footprint): Survey {
     topHeight: p.topHeight,
     bell: s.center,
     insideBorder: insideBorder(f, s.center.x, s.center.z, BORDER_RADIUS[tier(s)]),
-    others: otherFootprints(s),
+    others: ownFootprints(s),
+    vanilla: vanillaBoxes(s.id),
+    raise: p.raise,
   });
 }
 
@@ -150,9 +209,12 @@ const GREEN: RGB = { red: 0.2, green: 1, blue: 0.25 };
 const ORANGE: RGB = { red: 1, green: 0.6, blue: 0.05 };
 const RED: RGB = { red: 1, green: 0.15, blue: 0.1 };
 const WHITE: RGB = { red: 0.85, green: 0.85, blue: 0.9 };
+const TAN: RGB = { red: 0.95, green: 0.75, blue: 0.5 };
 const GOLD: RGB = { red: 1, green: 0.85, blue: 0.2 };
 
-function particle(dim: ReturnType<typeof world.getDimension>, x: number, y: number, z: number, color: RGB): void {
+type Dim = ReturnType<typeof world.getDimension>;
+
+function particle(dim: Dim, x: number, y: number, z: number, color: RGB): void {
   const vars = new MolangVariableMap();
   vars.setColorRGB("variable.color", color);
   try {
@@ -162,34 +224,34 @@ function particle(dim: ReturnType<typeof world.getDimension>, x: number, y: numb
   }
 }
 
-function outline(dim: ReturnType<typeof world.getDimension>, f: Footprint, y: number, color: RGB, spacing: number): void {
-  for (let i = 0; i <= f.w; i += spacing) {
-    particle(dim, f.x + i, y, f.z, color);
-    particle(dim, f.x + i, y, f.z + f.w, color);
-    particle(dim, f.x, y, f.z + i, color);
-    particle(dim, f.x + f.w, y, f.z + i, color);
+function rectOutline(dim: Dim, r: Rect, y: number, color: RGB, spacing: number): void {
+  for (let i = 0; i <= r.wx; i += spacing) {
+    particle(dim, r.x + i, y, r.z, color);
+    particle(dim, r.x + i, y, r.z + r.wz, color);
+  }
+  for (let i = 0; i <= r.wz; i += spacing) {
+    particle(dim, r.x, y, r.z + i, color);
+    particle(dim, r.x + r.wx, y, r.z + i, color);
   }
 }
 
-function draw(player: Player, s: Settlement, p: Placing, f: Footprint, sv: Survey): void {
+const asRect = (f: Footprint): Rect => ({ x: f.x, z: f.z, wx: f.w, wz: f.w });
+
+function draw(player: Player, s: Settlement, f: Footprint, sv: Survey): void {
   const dim = player.dimension;
   const y = (sv.groundY || Math.floor(player.location.y) - 1) + 1.1;
   const color = sv.verdict === "ok" ? GREEN : sv.verdict === "clear" ? ORANGE : RED;
-  outline(dim, f, y, color, 1);
+  rectOutline(dim, asRect(f), y, color, 1);
   // Entrance arrow: three dots leading out of the front edge.
-  const STEPS: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
-  const [sx, sz] = STEPS[f.rot];
-  const cx = f.x + f.w / 2;
-  const cz = f.z + f.w / 2;
+  const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
+  const [sx, sz] = STEP[f.rot];
   for (let k = 0; k < 3; k++) {
     const r = f.w / 2 + 0.5 + k;
-    particle(dim, cx + sx * r, y + 0.2, cz + sz * r, color);
+    particle(dim, f.x + f.w / 2 + sx * r, y + 0.2, f.z + f.w / 2 + sz * r, color);
   }
-  // The settlement's other buildings.
-  for (const o of otherFootprints(s)) {
-    if (Math.hypot(o.x - player.location.x, o.z - player.location.z) < 48) outline(dim, o, y, WHITE, 2);
-  }
-  // Nearby part of the town border.
+  const near = (r: Rect) => Math.hypot(r.x - player.location.x, r.z - player.location.z) < 48;
+  for (const o of ownFootprints(s)) if (near(asRect(o))) rectOutline(dim, asRect(o), y, WHITE, 2);
+  for (const v of vanillaBoxes(s.id)) if (near(v)) rectOutline(dim, v, y, TAN, 2);
   showBorderNear(player, s, y);
 }
 
@@ -213,13 +275,11 @@ export function showBorder(player: Player, s: Settlement): void {
 
 // ---------- text ----------
 
-function statusLine(p: Placing, sv: Survey, withHelp: boolean): RawMessage {
-  const parts: RawMessage[] = [];
-  if (sv.verdict === "ok") parts.push(t("bannerforge.place.ok"));
-  else if (sv.verdict === "clear") parts.push(t("bannerforge.place.clear", String(CLEAR_FEE)));
-  else parts.push(t(`bannerforge.place.reason.${sv.reason ?? "unloaded"}`));
-  if (withHelp) parts.push(txt("§r  ·  §7"), t(p.locked ? "bannerforge.place.bar_locked" : "bannerforge.place.bar_follow"));
-  return raw(...parts);
+/** Short status for the action bar (owner: the info text was too long). */
+function statusLine(sv: Survey): RawMessage {
+  if (sv.verdict === "ok") return t("bannerforge.place.ok");
+  if (sv.verdict === "clear") return t("bannerforge.place.clear", String(CLEAR_FEE));
+  return t(`bannerforge.place.reason.${sv.reason ?? "unloaded"}`);
 }
 
 function totalCost(p: Placing, sv: Survey): Cost[] {
@@ -228,30 +288,69 @@ function totalCost(p: Placing, sv: Survey): Cost[] {
   return amount > 0 ? [{ item: "minecraft:emerald", amount }] : [];
 }
 
+function floorLine(p: Placing): RawMessage {
+  const sign = p.raise > 0 ? "+" : "";
+  return p.raise === 0 ? t("bannerforge.place.floor_entrance") : raw(t("bannerforge.place.floor_raised"), txt(` ${sign}${p.raise}`));
+}
+
 // ---------- panel ----------
 
+/** The panel stays open while you rotate or raise/lower; the outline behind it updates. */
 function openPanel(player: Player, p: Placing): void {
   const s = settlementById(p.sid);
   if (!s || !p.current) return;
   p.locked = p.current; // the plot stays put while you decide (and while you walk around it)
-  const sv = p.surveyed ?? runSurvey(s, p, p.locked);
-  const cost = totalCost(p, sv);
   p.panelOpen = true;
 
+  const status = new ObservableUIRawMessage(txt(""));
+  const floor = new ObservableUIRawMessage(txt(""));
+  const buildLabel = new ObservableUIRawMessage(txt(""));
+  const buildDisabled = new ObservableBoolean(true);
+  const raiseDisabled = new ObservableBoolean(false);
+  const lowerDisabled = new ObservableBoolean(false);
+
+  const update = () => {
+    const sv = runSurvey(s, p, p.locked!);
+    p.surveyed = sv;
+    p.surveyedKey = undefined;
+    const cost = totalCost(p, sv);
+    status.setData(statusLine(sv));
+    floor.setData(raw(txt("§7"), floorLine(p)));
+    buildLabel.setData(cost.length ? raw(t("bannerforge.place.build"), txt(": "), costText(cost)) : t("bannerforge.place.build"));
+    buildDisabled.setData(sv.verdict === "blocked" || !canAfford(player, cost));
+    raiseDisabled.setData(p.raise >= FILL_MAX);
+    lowerDisabled.setData(p.raise <= -CUT_MAX);
+  };
+
   const form = new CustomForm(player, buildingName(p.defId));
-  form.label(statusLine(p, sv, false));
-  form.label(raw(txt("§7"), t("bannerforge.place.help")));
+  form.label(status);
+  form.label(floor);
   form.spacer();
-  const buildLabel = cost.length ? raw(t("bannerforge.place.build"), txt(": "), costText(cost)) : t("bannerforge.place.build");
-  form.button(buildLabel, () => close(() => confirm(player, p)), { disabled: sv.verdict === "blocked" || !canAfford(player, cost) });
-  form.button(t("bannerforge.place.rotate"), () =>
-    close(() => {
-      p.locked = turn(p.locked!);
-      p.turns = (p.turns + 1) % 4;
-    }),
+  form.button(buildLabel, () => close(() => confirm(player, p)), { disabled: buildDisabled });
+  form.button(t("bannerforge.place.rotate"), () => {
+    p.locked = turn(p.locked!);
+    p.turns = (p.turns + 1) % 4;
+    update();
+  });
+  form.button(
+    t("bannerforge.place.raise"),
+    () => {
+      p.raise++;
+      update();
+    },
+    { disabled: raiseDisabled },
+  );
+  form.button(
+    t("bannerforge.place.lower"),
+    () => {
+      p.raise--;
+      update();
+    },
+    { disabled: lowerDisabled },
   );
   form.button(t("bannerforge.place.move"), () => close(() => (p.locked = undefined)));
   form.button(t("bannerforge.place.cancel"), () => close(() => stop(player, player.id, "bannerforge.place.cancelled")));
+  update();
 
   function close(then: () => void): void {
     form.close();
@@ -276,7 +375,6 @@ function confirm(player: Player, p: Placing): void {
   const sv = runSurvey(s, p, f);
   if (sv.verdict === "blocked") {
     player.sendMessage(raw(t(`bannerforge.place.reason.${sv.reason ?? "unloaded"}`)));
-    p.surveyedKey = undefined;
     return;
   }
   let index: number;

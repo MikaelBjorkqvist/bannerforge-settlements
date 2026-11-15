@@ -1,10 +1,10 @@
 import { type Player, system, world } from "@minecraft/server";
-import { ModalFormData } from "@minecraft/server-ui";
+import { CustomForm, ObservableBoolean, ObservableNumber, ObservableString, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { FOUNDING_COST } from "./buildings.js";
 import { canAfford, pay } from "./economy.js";
 import { showOverview } from "./ledger.js";
 import { newSettlementId, saveSettlement } from "./registry.js";
-import { costText, raw, say, t, txt } from "./text.js";
+import { costText, raw, t, txt } from "./text.js";
 import { FACTIONS, SCHEMA, type Settlement, type Vec3 } from "./types.js";
 
 /** "Amberwood Order (Green)" — used where the player picks a faction. */
@@ -14,26 +14,42 @@ const factionWithColour = (f: string) => raw(t(`bannerforge.faction.${f}`), txt(
  * The neutral steward's founding form (opened by talking to them, see steward.ts).
  * `onFounded` runs before the settlement is first saved, so the caller can attach the steward to it.
  */
-export async function showClaimForm(player: Player, dimensionId: string, bell: Vec3, onFounded: (s: Settlement) => void): Promise<void> {
+export function showClaimForm(player: Player, dimensionId: string, bell: Vec3, onFounded: (s: Settlement) => void): void {
   if (!canAfford(player, FOUNDING_COST)) {
     player.sendMessage(raw(t("bannerforge.claim.cannot_afford"), txt(" "), costText(FOUNDING_COST)));
     return;
   }
-  const form = new ModalFormData()
-    .title(t("bannerforge.claim.title"))
-    .textField(raw(t("bannerforge.claim.name_label"), txt("\n§7"), t("bannerforge.claim.cost"), txt(" "), costText(FOUNDING_COST)), t("bannerforge.claim.name_placeholder"))
-    .dropdown(t("bannerforge.claim.faction_label"), FACTIONS.map(factionWithColour))
-    .submitButton(t("bannerforge.claim.submit"));
+  // Same DDUI style as the ledger (owner, play-test 2026-11-15).
+  const nameValue = new ObservableString("");
+  const factionValue = new ObservableNumber(0);
+  const feedback = new ObservableUIRawMessage(txt(""));
+  const feedbackVisible = new ObservableBoolean(false);
+  const form = new CustomForm(player, t("bannerforge.claim.title"));
+  form.label(raw(t("bannerforge.claim.cost"), txt(" "), costText(FOUNDING_COST)));
+  form.spacer();
+  form.textField(t("bannerforge.claim.name_label"), nameValue, { description: t("bannerforge.claim.name_placeholder") });
+  form.dropdown(
+    t("bannerforge.claim.faction_label"),
+    factionValue,
+    FACTIONS.map((f, i) => ({ label: factionWithColour(f), value: i })),
+  );
+  form.label(feedback, { visible: feedbackVisible });
+  form.spacer();
+  form.button(t("bannerforge.claim.submit"), () => {
+    const name = String(nameValue.getData() ?? "").trim().slice(0, 32);
+    if (!name) {
+      feedback.setData(raw(t("bannerforge.claim.name_required")));
+      feedbackVisible.setData(true);
+      player.playSound("note.bass");
+      return;
+    }
+    form.close();
+    system.run(() => found(player, dimensionId, bell, name, FACTIONS[Number(factionValue.getData()) || 0], onFounded));
+  });
+  form.show().catch((e) => console.warn(`[BannerForge] founding form: ${e}`));
+}
 
-  const response = await form.show(player);
-  if (response.canceled || !response.formValues) return;
-
-  const [rawName, factionIndex] = response.formValues;
-  const name = String(rawName ?? "").trim().slice(0, 32);
-  if (!name) {
-    say(player, "bannerforge.claim.name_required");
-    return;
-  }
+function found(player: Player, dimensionId: string, bell: Vec3, name: string, faction: Settlement["faction"], onFounded: (s: Settlement) => void): void {
   // Pay on submit: the player may have dropped emeralds while the form was open.
   if (!pay(player, FOUNDING_COST)) {
     player.sendMessage(raw(t("bannerforge.claim.cannot_afford"), txt(" "), costText(FOUNDING_COST)));
@@ -44,7 +60,7 @@ export async function showClaimForm(player: Player, dimensionId: string, bell: V
     schema: SCHEMA,
     id: newSettlementId(),
     name,
-    faction: FACTIONS[Number(factionIndex) || 0],
+    faction,
     dimension: dimensionId,
     center: bell,
     foundedBy: player.id,

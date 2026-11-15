@@ -11,3 +11,4 @@ Marketplace review requires original or properly licensed content; this file is 
 | RP/models/entity/npc.geo.json | written by hand | Claude (for BannerForge) | Plain humanoid boxes (head, hat, body, arms, legs) | Original, owned by BannerForge | 2026-11-15 |
 | RP/animations/npc.animation.json | written by hand | Claude (for BannerForge) | Walk swing and head look, Molang | Original, owned by BannerForge | 2026-11-15 |
 | RP/textures/bannerforge/settlements/particle/marker.png, RP/particles/marker.particle.json | drawn by a one-line PIL script (soft 8×8 dot) | Claude (for BannerForge) | Tinted per use (plot outlines, town border) | Original, owned by BannerForge | 2026-11-15 |
+| RP/textures/bannerforge/settlements/items/building_plan.png | items/building_plan.txt (16×16 pixel map) | Claude (for BannerForge) | Hand-made pixel map | Original, owned by BannerForge | 2026-11-15 |

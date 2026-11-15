@@ -4,6 +4,7 @@ import { showOverview } from "./ledger.js";
 import { NPC_NAMES, pickIndex, pickName, respawnTicksLeft, ticksToMinutes } from "./npc.js";
 import { allSettlements, saveSettlement, settlementById, settlementNear } from "./registry.js";
 import { raw, say, t } from "./text.js";
+import { BORDER } from "./plots.js";
 import { OUTFIT_INDEX, type Settlement, type Vec3 } from "./types.js";
 
 /**
@@ -22,8 +23,10 @@ export const STEWARD_ID = "bannerforge_settlements:steward";
  */
 const TITLE = "Steward";
 const BELL_ID = "minecraft:bell";
-/** A bell within this horizontal distance of an existing settlement belongs to it. */
-const SETTLEMENT_RADIUS = 48;
+/** Every bell inside a settlement's border belongs to it (owner, 2026-11-15: fixes villages with two bells). */
+const SETTLEMENT_RADIUS = BORDER;
+/** New settlements need their border clear of every other settlement's border. */
+const FOUNDING_DISTANCE = 2 * BORDER;
 /** How far from the bell we look for the steward. Their home radius is 12 (BP/entities/steward.json). */
 const SEARCH_RADIUS = 96;
 /** Ignore repeat interactions from the same player within this many ticks (holding "use" fires repeatedly). */
@@ -73,6 +76,7 @@ function onBellRung(player: Player, block: Block): void {
   const bell = { x, y, z };
   const s = settlementNear(block.dimension.id, bell, SETTLEMENT_RADIUS);
   if (s) callSettlementSteward(player, block.dimension, s);
+  else if (settlementNear(block.dimension.id, bell, FOUNDING_DISTANCE)) say(player, "bannerforge.steward.claimed_elsewhere");
   else callNeutralSteward(player, block.dimension, bell);
 }
 
@@ -129,7 +133,7 @@ function onTalk(player: Player, steward: Entity): void {
   }
   const bell = parseVec(steward.getDynamicProperty(P_BELL)) ?? floorVec(steward.location);
   const dimensionId = steward.dimension.id;
-  if (settlementNear(dimensionId, bell, SETTLEMENT_RADIUS)) {
+  if (settlementNear(dimensionId, bell, FOUNDING_DISTANCE)) {
     say(player, "bannerforge.steward.claimed_elsewhere");
     return;
   }

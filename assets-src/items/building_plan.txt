@@ -1,0 +1,17 @@
+# 16x16 pixel map of the Building Plan icon (p parchment, s shade, b blueprint lines, d rods, r seal)
+................
+..dddddddddddd..
+.dsppppppppppsd.
+.dspbbbbbbbbpsd.
+.dsppppppppppsd.
+.dspbppbbppbpsd.
+.dspbppbbppbpsd.
+.dspbbbbbbbbpsd.
+.dsppppbbppppsd.
+.dspbbbbbbbbpsd.
+.dspbppppppbpsd.
+.dspbbbbbbbbpsd.
+.dsppppppppppsd.
+.dsppppppprrpsd.
+..dddddddddddd..
+................

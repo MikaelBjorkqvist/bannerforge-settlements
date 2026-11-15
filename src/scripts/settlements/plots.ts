@@ -19,8 +19,12 @@ export const PLACEHOLDER_HEIGHT: Record<Exclude<Plot, "perimeter">, [number, num
   L: [7, 10, 13],
 };
 
-/** Town border radius around the bell, by tier (horizontal blocks). */
-export const BORDER_RADIUS: Record<Tier, number> = { village: 40, town: 64, city: 96 };
+/**
+ * Town border radius around the bell (horizontal blocks). The same for every tier (owner, 2026-11-15:
+ * "always the biggest one"). Kept per tier so growth can come back without changing callers.
+ */
+export const BORDER = 160;
+export const BORDER_RADIUS: Record<Tier, number> = { village: BORDER, town: BORDER, city: BORDER };
 
 /** Ground may be cut this many blocks into a slope, and filled this many blocks under a building. */
 export const CUT_MAX = 4;
@@ -78,6 +82,17 @@ export const turn = (f: Footprint): Footprint => ({ ...f, rot: ((f.rot + 1) % 4)
 export function overlaps(a: Footprint, b: Footprint, gap = 1): boolean {
   return a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.z < b.z + b.w + gap && b.z < a.z + a.w + gap;
 }
+
+/** A non-square area (vanilla structures): min corner and size along x and z. */
+export interface Rect {
+  x: number;
+  z: number;
+  wx: number;
+  wz: number;
+}
+
+export const rectOverlaps = (f: Footprint, r: Rect) => f.x < r.x + r.wx && r.x < f.x + f.w && f.z < r.z + r.wz && r.z < f.z + f.w;
+export const rectContains = (r: Rect, x: number, z: number) => x >= r.x && x < r.x + r.wx && z >= r.z && z < r.z + r.wz;
 
 /** Is the whole footprint inside the town border around the bell? */
 export function insideBorder(f: Footprint, bellX: number, bellZ: number, radius: number): boolean {

@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.40",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bannerforge_settlements:building_plan",
+      "menu_category": { "category": "none" }
+    },
+    "components": {
+      "minecraft:icon": "bannerforge_settlements_building_plan",
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": false
+    }
+  }
+}
