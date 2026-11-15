@@ -186,17 +186,19 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       next.setData(level < 3 ? raw(txt("§7"), t("bannerforge.ledger.next"), txt("§r "), levelLine(def, level + 1)) : txt(""));
     }
 
-    // What's needed: for the main action, every reason (red) or ready (green); then cost vs wallet.
+    // What's needed: for the main action, every reason (red) or ready (green); then cost and wallet on their own lines.
     const main = checks.find((c) => c.ok) ?? checks[0];
     const wallet = countItem(player, "minecraft:emerald");
     const parts: RawMessage[] = [];
     if (main.ok) {
-      parts.push(txt("§a✔§r "), t("bannerforge.ledger.ready"), txt("\n"));
-      parts.push(txt("§7"), t("bannerforge.ledger.cost"), txt("§r "), costText(main.cost), txt(" · "), t("bannerforge.ledger.you_have", String(wallet)));
+      const price = main.cost[0]?.amount ?? 0;
+      if (wallet >= price) parts.push(txt("§a✔§r "), t("bannerforge.ledger.ready"), txt("\n"));
+      else parts.push(txt("§c✘§r "), t("bannerforge.ledger.short_by", String(price - wallet)), txt("\n"));
+      parts.push(txt("§7"), t("bannerforge.ledger.cost"), txt("§r "), costText(main.cost), txt("\n"));
     } else {
       for (const r of main.reasons) parts.push(txt("§c✘§r "), reasonText(r), txt("\n"));
-      parts.push(txt("§7"), t("bannerforge.ledger.you_have", String(wallet)));
     }
+    parts.push(txt("§7"), t("bannerforge.ledger.you_have"), txt(`§r ${wallet}`));
     needs.setData(raw(...parts));
     goPopulation.setData(checks.every((c) => !c.ok && c.reasons.some((r) => r.key === "needs_population")));
 
@@ -212,9 +214,9 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       const verb = action.kind === "build" ? (def.perTier ? "bannerforge.ledger.build_new" : "bannerforge.ledger.build") : def.perTier ? "bannerforge.ledger.upgrade_lowest" : "bannerforge.ledger.upgrade";
       const current = action.kind === "upgrade" ? list[action.index] ?? 0 : 0;
       if (c.ok) {
-        // "Upgrade: 16 Emeralds" (the Next line above says what it becomes)
+        // "Upgrade: 16 Emeralds" (the Next line above says what it becomes); greyed out until affordable.
         b.label.setData(raw(t(verb), txt(": "), costText(c.cost)));
-        b.disabled.setData(false);
+        b.disabled.setData(!canAfford(player, c.cost));
       } else if (current >= 3) {
         b.label.setData(raw(t("bannerforge.ledger.complete"), txt(" ✔")));
         b.disabled.setData(true);

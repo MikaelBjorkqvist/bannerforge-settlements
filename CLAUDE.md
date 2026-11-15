@@ -30,6 +30,9 @@ Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md
 - `src/scripts/**/*.ts` — TypeScript; `main.ts` is the entry. Use `.js` in relative import paths.
 - Textures live under our own folder: `RP/textures/bannerforge/{items,blocks,entity}/` (Mojang cooperative add-on rule:
   never put files directly in shared folders like `textures/items/`). Same idea for sounds: `RP/sounds/bannerforge/`.
+- UI (DDUI `CustomForm`, stable in server-ui 2.3+): images and button icons need `pack` = the RP header UUID (scripts use
+  `__RP_PACK_ID__`, replaced at build) and a path **with** `.png`, e.g. `textures/bannerforge/ui/house.png` (verified 26.60).
+  Buttons show one line of text and no colour codes; keep labels short.
 - `assets-src/` — editable sources (.bbmodel, layered art, texture generators). Shipped textures go in `packs/RP`.
 - `tools/` — build, check, package, deploy, version.
 - `docs/` — DESIGN, ROADMAP, ASSETS, decisions/ (ADRs: one file per decision, never rewritten, only superseded).
