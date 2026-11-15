@@ -13,7 +13,8 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 ## M0.5 — Settlement rules
 - [x] Approved plan (docs/BUILDINGS.md) as data: 19 buildings, tier caps, prerequisites, repeatables, population, promotion via Town Hall
 - [x] Rules engine with unit tests (`npm test`, runs in CI)
-- [ ] Play-tested and tuned
+- [x] Play-tested (UI tuned over 4 rounds); numbers still placeholders
+- [x] Released as v0.1.0
 
 ## M1 — The steward
 - [x] Ringing a village bell opens founding / the steward menu (charter dropped)
