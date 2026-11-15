@@ -1,6 +1,7 @@
 // UI images (DDUI image rows and button icons) name the resource pack that holds them. The docs only say
-// "resource pack identifier", so the exact form is chosen in-game with the image test (/scriptevent
-// bannerforge:imagetest) and stored per world. Once confirmed, the winner becomes the default here.
+// "resource pack identifier". Confirmed in-game on 26.60 (owner, 2026-11-15) with the image test: the pack is the
+// resource pack's header UUID and the image path must include ".png" (variant B). The test stays available as a
+// developer tool (/scriptevent bannerforge:imagetest) in case a future Minecraft version changes this.
 import { type Player, system, world } from "@minecraft/server";
 import { CustomForm } from "@minecraft/server-ui";
 
@@ -26,7 +27,7 @@ const UI = "textures/bannerforge/ui/";
 
 function variant(): Variant {
   const key = world.getDynamicProperty(PROPERTY);
-  return (typeof key === "string" && VARIANTS[key]) || VARIANTS.uuid;
+  return (typeof key === "string" && VARIANTS[key]) || VARIANTS.uuid_png;
 }
 
 /** Image path + pack for an icon in textures/bannerforge/ui/. */

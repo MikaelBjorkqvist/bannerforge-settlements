@@ -12,6 +12,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
   - Overview: your faction banner, faction and town name, a warning when jobs wait for homes, the next-tier checklist, and section buttons with icons.
   - Section: one short row per building with an icon and a symbol: + build, ▲ upgrade, ✔ done for this tier, ✘ locked.
   - Short button text that fits on one line, and no misleading counts.
+  - The buy button stays greyed out until you can afford it, and says how many emeralds you're missing.
   - Building: what you have now and what the next level adds, what's missing, cost vs your emeralds, and one clear button.
   - The result appears right above the button, with a sound.
   - Every screen has a "← Back" button.
