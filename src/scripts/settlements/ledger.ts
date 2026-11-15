@@ -7,7 +7,9 @@ import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
 import { canAfford, countItem, pay } from "./economy.js";
-import { saveSettlement } from "./registry.js";
+import { constructionMinutesLeft, startConstruction } from "./construction.js";
+import { showBorder, startPlacement } from "./placement.js";
+import { saveSettlement, settlementById } from "./registry.js";
 import { apply, check, highest, housing, instances, npcDemand, population, prosperity, tier, type Action, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, levelName, raw, reasonText, t, txt } from "./text.js";
@@ -29,6 +31,21 @@ function go(form: CustomForm, next: () => void): void {
   system.run(next);
 }
 
+/** Construction moves on while menus are closed: always work on the saved settlement. */
+const latest = (s: Settlement): Settlement => settlementById(s.id) ?? s;
+
+const siteOf = (s: Settlement, id: string, index: number) => s.sites?.[id]?.[index] ?? null;
+const building = (s: Settlement, id: string, index: number) => !!siteOf(s, id, index)?.build;
+
+/** Like rules.check, but an instance being built can't be bought again until it is finished. */
+function checkFor(s: Settlement, a: Action): Check {
+  if (a.kind === "upgrade" && building(s, a.id, a.index)) {
+    const minutes = constructionMinutesLeft(siteOf(s, a.id, a.index)) ?? 0;
+    return { ok: false, reasons: [{ key: "under_construction", args: [String(minutes)] }] };
+  }
+  return check(s, a);
+}
+
 function show(form: CustomForm): void {
   form.show().catch((e) => console.warn(`[BannerForge] ledger: ${e}`));
 }
@@ -40,30 +57,31 @@ function actionsFor(s: Settlement, def: BuildingDef): Action[] {
   const list = instances(s, def.id);
   if (!def.perTier) return [list.length ? { kind: "upgrade", id: def.id, index: 0 } : { kind: "build", id: def.id }];
   const actions: Action[] = [{ kind: "build", id: def.id }];
-  if (list.length) {
-    let lowest = 0;
-    list.forEach((level, i) => {
-      if (level < list[lowest]) lowest = i;
-    });
-    actions.push({ kind: "upgrade", id: def.id, index: lowest });
-  }
+  // Upgrade the lowest house that isn't being built right now.
+  let lowest = -1;
+  list.forEach((level, i) => {
+    if (building(s, def.id, i)) return;
+    if (lowest < 0 || level < list[lowest]) lowest = i;
+  });
+  if (lowest >= 0) actions.push({ kind: "upgrade", id: def.id, index: lowest });
   return actions;
 }
 
 const onlyTierLimits = (c: Check) => !c.ok && c.reasons.every((r) => r.key === "tier_cap" || r.key === "max_level" || r.key === "limit");
 
-type RowState = "can" | "done" | "locked";
+type RowState = "can" | "done" | "locked" | "busy";
 
 /** Short status for a section row: ▲ can do now, ✔ done for this tier, Locked = needs something first. */
 function rowState(s: Settlement, def: BuildingDef): RowState {
-  const checks = actionsFor(s, def).map((a) => check(s, a));
+  const checks = actionsFor(s, def).map((a) => checkFor(s, a));
   if (checks.some((c) => c.ok)) return "can";
+  if ((s.sites?.[def.id] ?? []).some((site) => site?.build)) return "busy";
   if (checks.every(onlyTierLimits)) return "done";
   return "locked";
 }
 
 const ROMAN = ["", "I", "II", "III"];
-const SYMBOL: Record<RowState, string> = { can: "▲", done: "✔", locked: "✘" };
+const SYMBOL: Record<RowState, string> = { can: "▲", done: "✔", locked: "✘", busy: "⚒" };
 
 /**
  * Row label, kept short because buttons show one line (owner: "less is more"):
@@ -81,6 +99,7 @@ function rowLabel(s: Settlement, def: BuildingDef): RawMessage {
 // ---------- 1. Overview ----------
 
 export function showOverview(player: Player, s: Settlement): void {
+  s = latest(s);
   const tr = tier(s);
   const form = new CustomForm(player, t("bannerforge.ledger.title"));
 
@@ -116,12 +135,15 @@ export function showOverview(player: Player, s: Settlement): void {
       imageDetails: icon(SECTION_ICON[category]),
     });
   }
+  form.divider();
+  form.button(t("bannerforge.ledger.show_border"), () => go(form, () => showBorder(player, s)));
   show(form);
 }
 
 // ---------- 2. Section ----------
 
 export function showSection(player: Player, s: Settlement, category: Category): void {
+  s = latest(s);
   const form = new CustomForm(player, t(`bannerforge.category.${category}`));
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
   form.label(raw(txt("§7"), t("bannerforge.ledger.legend_1"), txt("\n"), t("bannerforge.ledger.legend_2")));
@@ -142,6 +164,7 @@ export function showSection(player: Player, s: Settlement, category: Category): 
 // ---------- 3. Building ----------
 
 export function showBuilding(player: Player, s: Settlement, def: BuildingDef): void {
+  s = latest(s);
   const form = new CustomForm(player, buildingName(def.id));
   const now = new ObservableUIRawMessage(txt(""));
   const next = new ObservableUIRawMessage(txt(""));
@@ -167,7 +190,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     const list = instances(s, def.id);
     const level = highest(s, def.id);
     const actions = actionsFor(s, def);
-    const checks = actions.map((a) => check(s, a));
+    const checks = actions.map((a) => checkFor(s, a));
 
     // Now / next. Readable layout (owner, play-test 4): the white line names the level, the grey line under it
     // says what it gives. Descriptions are kept short (lang) so they rarely wrap.
@@ -175,15 +198,19 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       lvl === 0
         ? raw(t(labelKey), txt(" "), t("bannerforge.ledger.not_built"))
         : raw(t(labelKey), txt(" "), levelName(lvl), txt("\n§7"), t(`bannerforge.desc.${def.id}.${lvl}`));
+    let nowMsg: RawMessage;
     if (def.perTier) {
       const limit = def.perTier[tier(s)];
       const h = def.housing ?? [0, 0, 0];
-      now.setData(raw(t("bannerforge.ledger.houses"), txt(` ${list.length} / ${limit}\n§7`), t("bannerforge.steward.population_limit"), txt(` ${housing(s)}`)));
+      nowMsg = (raw(t("bannerforge.ledger.houses"), txt(` ${list.length} / ${limit}\n§7`), t("bannerforge.steward.population_limit"), txt(` ${housing(s)}`)));
       next.setData(raw(t("bannerforge.ledger.each_house"), txt(`\n§7+${h[0]} / +${h[1]} / +${h[2]} `), t("bannerforge.ledger.limit_by_level")));
     } else {
-      now.setData(levelBlock("bannerforge.ledger.now", level));
+      nowMsg = levelBlock("bannerforge.ledger.now", level);
       next.setData(level < 3 ? levelBlock("bannerforge.ledger.next", level + 1) : txt(""));
     }
+    const underway = (s.sites?.[def.id] ?? []).map(constructionMinutesLeft).filter((m): m is number => m !== undefined);
+    if (underway.length) nowMsg = raw(nowMsg, txt("\n§e⚒ "), t("bannerforge.ledger.construction_line", String(Math.min(...underway))));
+    now.setData(nowMsg);
 
     // What's needed: reasons in red (or ready in green), then cost and wallet, all white lines.
     const main = checks.find((c) => c.ok) ?? checks[0];
@@ -212,7 +239,15 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       b.visible.setData(true);
       const verb = action.kind === "build" ? (def.perTier ? "bannerforge.ledger.build_new" : "bannerforge.ledger.build") : def.perTier ? "bannerforge.ledger.upgrade_lowest" : "bannerforge.ledger.upgrade";
       const current = action.kind === "upgrade" ? list[action.index] ?? 0 : 0;
-      if (c.ok) {
+      const placed = def.plot !== "perimeter";
+      if (action.kind === "upgrade" && building(s, def.id, action.index)) {
+        b.label.setData(raw(t("bannerforge.ledger.under_construction"), txt(" ⚒")));
+        b.disabled.setData(true);
+      } else if (action.kind === "upgrade" && placed && current > 0 && !siteOf(s, def.id, action.index)) {
+        // Bought before buildings were placed (M2a): put it on a plot for free first.
+        b.label.setData(t("bannerforge.ledger.place_free"));
+        b.disabled.setData(false);
+      } else if (c.ok) {
         // "Upgrade: 16 Emeralds" (the Next line above says what it becomes); greyed out until affordable.
         b.label.setData(raw(t(verb), txt(": "), costText(c.cost)));
         b.disabled.setData(!canAfford(player, c.cost));
@@ -227,9 +262,27 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   }
 
   function onBuy(slot: number): void {
+    s = latest(s);
     const action = actionsFor(s, def)[slot];
     if (!action) return;
-    const c = check(s, action);
+    const placed = def.plot !== "perimeter";
+    if (action.kind === "upgrade" && building(s, def.id, action.index)) return;
+    if (action.kind === "upgrade" && placed && (s.buildings[def.id]?.[action.index] ?? 0) > 0 && !siteOf(s, def.id, action.index)) {
+      go(form, () => startPlacement(player, s, def, { kind: "existing", index: action.index }));
+      return;
+    }
+    const c = checkFor(s, action);
+    // A new building is placed first and paid for when you press Build on the plot.
+    if (c.ok && placed && action.kind === "build") {
+      if (!canAfford(player, c.cost)) {
+        feedback.setData(raw(txt("§c"), t("bannerforge.ledger.cannot_afford"), txt(" "), costText(c.cost)));
+        feedbackVisible.setData(true);
+        player.playSound("note.bass");
+        return;
+      }
+      go(form, () => startPlacement(player, s, def, { kind: "new", cost: c.cost }));
+      return;
+    }
     let message: RawMessage;
     if (!c.ok) {
       message = raw(txt("§c"), reasonText(c.reasons[0]));
@@ -237,11 +290,16 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     } else if (!canAfford(player, c.cost) || !pay(player, c.cost)) {
       message = raw(txt("§c"), t("bannerforge.ledger.cannot_afford"), txt(" "), costText(c.cost));
       player.playSound("note.bass");
+    } else if (placed && action.kind === "upgrade") {
+      // Upgrades rebuild the building on its plot over one day; the level counts when it is finished.
+      startConstruction(s, def.id, action.index, c.newLevel);
+      message = raw(txt("§a⚒ "), buildingName(def.id), txt(" "), levelName(c.newLevel), txt(": "), t("bannerforge.ledger.build_started"));
+      player.playSound("random.levelup", { volume: 0.6 });
     } else {
+      // Perimeter buildings (Defences) have no plot yet (roadmap M3): the purchase counts right away.
       const oldTier = tier(s);
       apply(s, action, c.newLevel);
       saveSettlement(s);
-      // Structures are not placed yet (roadmap M2): the purchase is recorded and reported here.
       const verb = action.kind === "build" ? "bannerforge.ledger.built" : "bannerforge.ledger.upgraded";
       const parts: RawMessage[] = [txt("§a✔ "), buildingName(def.id), txt(" "), t(verb), txt(" "), levelName(c.newLevel), txt("!")];
       if (tier(s) !== oldTier) {

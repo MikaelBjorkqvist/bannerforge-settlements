@@ -45,6 +45,12 @@ function migrate(raw: Settlement | SettlementV1): Settlement {
     s.schema = 4;
     changed = true;
   }
+  if (s.schema === 4) {
+    // v4 -> v5: buildings get sites (plots in the world). Older purchases have none until placed.
+    s.sites = {};
+    s.schema = 5;
+    changed = true;
+  }
   s.buildings ??= {};
   if (changed) saveSettlement(s);
   return s;

@@ -28,10 +28,20 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [ ] Faction banner placed at the bell; faction names/colours decided
 - [ ] Settlement boundary visualised (particles) and stored
 
-## M2 — First building, three levels
-- [ ] Plot system: choose a plot, level it, place structure in slices
-- [ ] One building (e.g. watchtower) with Basic / Improved / Advanced structures
-- [ ] Upgrade costs and prosperity gain balanced (placeholders exist since M0)
+## M2 — Buildings in the world
+### M2a — Placement with placeholder boxes (in play-test)
+- [x] Town border that grows with the tier (village 40, town 64, city 96 blocks); "Show town border" in the ledger
+- [x] Free placement inside the border: plot follows the player, entrance faces the player; Sneak tap → Build / Rotate / Move / Cancel
+- [x] Green / orange / red survey with reasons: border, overlap, bell, water, hillside, steep, room above (level 3), vanilla houses (clear for a fee)
+- [x] Foundation fitting: cut up to 4, fill up to 8 blocks with the local ground; garden surface copies the surroundings
+- [x] Construction in 4 phases over one in-game day, time-based catch-up, scaffolding, stored items packed into barrels
+- [x] Sites protected from breaking, placing and explosions; `/scriptevent bannerforge:build_finish` and `build_next`
+- [x] Upgrades rebuild on the plot; the level counts when construction finishes
+- [x] Upgrades pack stored items and player-added blocks into barrels by the entrance (owner decision B)
+- [ ] Docks need water: per-building placement rules (later)
+- [ ] Defences (perimeter) are placed in M3
+### M2b — Design workflow (style guide → blueprint → `.mcstructure` + previews)
+### M2c — First real building, three levels
 
 ## M3 — Walls and gates
 ## M4 — Civic buildings: houses, tavern, stores (+ shopkeepers)

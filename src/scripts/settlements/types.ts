@@ -1,7 +1,7 @@
 // Data model for settlements. Stored as JSON in world dynamic properties.
 // Bump SCHEMA and add a migration in registry.ts whenever this shape changes.
 
-export const SCHEMA = 4;
+export const SCHEMA = 5;
 
 /** The founding player picks one of these when founding (owner decision, 2026-11-12). */
 export type FactionId = "green" | "red" | "blue";
@@ -40,6 +40,36 @@ export interface Settlement {
   buildings: Record<string, BuildingLevel[]>;
   /** The steward who keeps the ledger (schema 4). Missing on older worlds until the bell is rung. */
   steward?: StewardRecord;
+  /**
+   * Where each building instance stands (schema 5). Parallel to `buildings`: sites[id][i] is the plot of
+   * buildings[id][i]. null = not placed yet (bought before M2a, or a perimeter building like Defences).
+   */
+  sites?: Record<string, (Site | null)[]>;
+}
+
+/** A building's plot in the world and its construction state. */
+export interface Site {
+  /** Min corner (x, z) and ground level (y) of the plot. */
+  x: number;
+  y: number;
+  z: number;
+  /** Plot width (square). */
+  w: number;
+  /** Entrance direction, see plots.ts. */
+  rot: 0 | 1 | 2 | 3;
+  /** Level currently standing on the plot (0 = only the site so far). */
+  built: BuildingLevel;
+  /** Construction in progress. */
+  build?: Construction;
+}
+
+export interface Construction {
+  /** Level being built. */
+  to: BuildingLevel;
+  /** gameTime() (clock.ts) when construction started. */
+  start: number;
+  /** Steps finished (0..5, see plots.ts STEPS). */
+  done: number;
 }
 
 /** Which faction outfit an NPC wears (entity property bannerforge:outfit). 0 = neutral, before founding. */
@@ -52,6 +82,6 @@ export interface StewardRecord {
   skin: number;
   /** Entity id of the living steward, to find it quickly. */
   entityId?: string;
-  /** world.getAbsoluteTime() when the steward died; cleared when they return. */
+  /** gameTime() (clock.ts) when the steward died; cleared when they return. */
   diedAt?: number;
 }
