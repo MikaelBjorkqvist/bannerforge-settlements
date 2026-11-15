@@ -66,6 +66,8 @@ Village → Town → City tiers. It is the source of truth for game data.
   3. **Profession** (`prof_<id>`): what the job adds, e.g. the steward's tabard, chain of office and cap.
   4. **Rank** (`rank_<n>`): badge, empty for now (`bannerforge_settlements:rank`).
 - With layers, 5 biomes × 3 factions need about 15 outfits plus one overlay per profession, not one texture per combination.
+- **For now** (owner, 2026-11-15: art and NPC behaviour are priority 2) the game ships flat placeholder textures, one per
+  outfit, stacked at build time by `make_npc.py`. Runtime layering with `villager_v2_masked` comes back with the real art.
 
 ## Tech notes (Claude)
 - **Finding villages.** The Script API has no "village" object. A vanilla village is identified by its **bell**

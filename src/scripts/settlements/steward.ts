@@ -35,6 +35,7 @@ const RESPAWN_CHECK_TICKS = 200;
 const P_SETTLEMENT = "bannerforge:settlement"; // settlement id, once founded
 const P_BELL = "bannerforge:bell"; // JSON position of the bell the steward belongs to
 const P_NAME = "bannerforge:name"; // personal name
+const P_SKIN = "bannerforge:skin"; // skin variant, kept for the layered art (not shown yet)
 
 export const nameTagFor = (name: string) => `${TITLE}, ${name}`;
 
@@ -124,7 +125,7 @@ function onTalk(player: Player, steward: Entity): void {
     }
     // The settlement's data is gone (e.g. removed by an admin): the steward is neutral again.
     steward.setDynamicProperty(P_SETTLEMENT, undefined);
-    steward.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX.neutral);
+    setOutfit(steward, OUTFIT_INDEX.neutral);
   }
   const bell = parseVec(steward.getDynamicProperty(P_BELL)) ?? floorVec(steward.location);
   const dimensionId = steward.dimension.id;
@@ -133,13 +134,12 @@ function onTalk(player: Player, steward: Entity): void {
     return;
   }
   void showClaimForm(player, dimensionId, bell, (s) => {
-    if (steward.isValid) {
-      steward.setDynamicProperty(P_SETTLEMENT, s.id);
-      steward.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[s.faction]);
-      const name = steward.getDynamicProperty(P_NAME);
-      const skin = steward.getProperty("bannerforge_settlements:skin");
-      s.steward = { name: typeof name === "string" ? name : pickName(s.id), skin: typeof skin === "number" ? skin : 0, entityId: steward.id };
-    }
+    if (!steward.isValid) return;
+    steward.setDynamicProperty(P_SETTLEMENT, s.id);
+    const name = steward.getDynamicProperty(P_NAME);
+    const skin = steward.getDynamicProperty(P_SKIN);
+    s.steward = { name: typeof name === "string" ? name : pickName(s.id), skin: typeof skin === "number" ? skin : 0, entityId: steward.id };
+    setOutfit(steward, OUTFIT_INDEX[s.faction]);
   });
 }
 
@@ -193,13 +193,23 @@ function findSteward(dim: Dimension, bell: Vec3, match: (e: Entity) => boolean, 
 
 function spawnSteward(dim: Dimension, bell: Vec3, name: string, skin: number, outfit: number, settlementId?: string): Entity {
   const e = dim.spawnEntity(STEWARD_ID, standingSpotNear(dim, bell));
-  e.nameTag = nameTagFor(name);
-  e.setProperty("bannerforge_settlements:skin", skin);
-  e.setProperty("bannerforge_settlements:outfit", outfit);
+  // Tag the steward first: if anything later fails, the next bell ring still finds them (no duplicates).
   e.setDynamicProperty(P_BELL, JSON.stringify(bell));
   e.setDynamicProperty(P_NAME, name);
+  e.setDynamicProperty(P_SKIN, skin);
   if (settlementId) e.setDynamicProperty(P_SETTLEMENT, settlementId);
+  e.nameTag = nameTagFor(name);
+  setOutfit(e, outfit);
   return e;
+}
+
+/** Outfit is cosmetic: a failure here must never break founding or spawning. */
+function setOutfit(e: Entity, outfit: number): void {
+  try {
+    e.setProperty("bannerforge_settlements:outfit", outfit);
+  } catch (err) {
+    console.warn(`[BannerForge] could not set steward outfit: ${String(err)}`);
+  }
 }
 
 function comeToBell(e: Entity, dim: Dimension, bell: Vec3): void {

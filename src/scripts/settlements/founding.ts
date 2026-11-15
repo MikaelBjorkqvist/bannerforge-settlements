@@ -51,7 +51,12 @@ export async function showClaimForm(player: Player, dimensionId: string, bell: V
     foundedAt: system.currentTick,
     buildings: {},
   };
-  onFounded(settlement);
+  // The emeralds are paid: the settlement must be saved even if attaching the steward fails.
+  try {
+    onFounded(settlement);
+  } catch (err) {
+    console.warn(`[BannerForge] founding: could not attach the steward: ${String(err)}`);
+  }
   saveSettlement(settlement);
   player.playSound("random.levelup");
   world.sendMessage(raw(t("bannerforge.claim.announce", player.name, name)));
