@@ -20,8 +20,8 @@ export function showClaimForm(player: Player, dimensionId: string, bell: Vec3, o
     return;
   }
   // Same DDUI style as the ledger (owner, play-test 2026-11-15).
-  const nameValue = new ObservableString("");
-  const factionValue = new ObservableNumber(0);
+  const nameValue = new ObservableString("", { clientWritable: true });
+  const factionValue = new ObservableNumber(0, { clientWritable: true });
   const feedback = new ObservableUIRawMessage(txt(""));
   const feedbackVisible = new ObservableBoolean(false);
   const form = new CustomForm(player, t("bannerforge.claim.title"));
