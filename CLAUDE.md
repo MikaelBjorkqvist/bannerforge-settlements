@@ -40,7 +40,8 @@ Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md
 ## Workflow
 - `npm run check` → `npm run typecheck` → `npm run build` → `npm run package` (`npm run release` does all).
 - Work on short-lived branches, PR into `main`; CI must be green. Releases: `npm run bump -- minor`, update CHANGELOG,
-  tag `vX.Y.Z` → GitHub Release with `.mcaddon`.
+  merge, then start the Release workflow by hand (workflow_dispatch on main; it creates tag `vX.Y.Z` and the GitHub
+  Release with the `.mcaddon`). Claude sessions can't push tags, so Claude dispatches the workflow via the REST API.
 - Deploy for play-testing: built `dist/*_BP` and `dist/*_RP` folders go to
   `%APPDATA%\Minecraft Bedrock\Users\Shared\games\com.mojang\development_{behavior,resource}_packs\`.
   Claude copies them through the desktop-app folder link; the owner can also run `npm run dev` locally.

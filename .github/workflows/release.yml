@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Manual start (Actions tab, or Claude via the API): releases the version in config/mod.json from main,
+  # creating the tag itself. Used because Claude sessions can't push tags.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,11 +20,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Tag must match config/mod.json version
+      - name: Work out the tag
         run: |
           VERSION=$(node -p "require('./config/mod.json').version")
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+          elif [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match config version v$VERSION"; exit 1
+          else
+            echo "TAG=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
           fi
 
       - name: Install
@@ -33,11 +40,11 @@ jobs:
 
       - name: Extract changelog section
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${TAG#v}
           awk "/^## \\[$VERSION\\]/{flag=1;next}/^## \\[/{flag=0}flag" CHANGELOG.md > release-notes.md
-          [ -s release-notes.md ] || echo "Release $GITHUB_REF_NAME" > release-notes.md
+          [ -s release-notes.md ] || echo "Release $TAG" > release-notes.md
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.mcaddon --title "$GITHUB_REF_NAME" --notes-file release-notes.md
+        run: gh release create "$TAG" dist/*.mcaddon --title "$TAG" --notes-file release-notes.md --target "$GITHUB_SHA"
