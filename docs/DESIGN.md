@@ -24,6 +24,10 @@ shops and missions.
 | 2026-11-12 | Founding costs 10 emeralds, paid to the steward. Founding happens by talking to the steward, who is neutral (no faction look) until the settlement is founded. |
 | 2026-11-12 | Buildings & NPC plan v2 approved, see `BUILDINGS.md`. It covers tier caps, promotion via the Town Hall, 1-day construction, population, repairs, NPC respawn and fees. |
 | 2026-11-12 | Emeralds are the main currency. Upgrades cost emeralds for now; other resources come later. All prices are placeholders in `src/scripts/settlements/buildings.ts`. |
+| 2026-11-15 | Ringing the bell only calls the steward; it never opens a menu. Talking to the steward founds a settlement or opens the ledger. |
+| 2026-11-15 | A dead steward closes the ledger until they return one in-game day later. Ringing the bell meanwhile says how long is left. |
+| 2026-11-15 | Every mod NPC is named "Profession, Name", e.g. "Steward, Edric". |
+| 2026-11-15 | NPC textures are layered like vanilla villagers: skin, outfit (neutral, faction, later biome), profession, rank. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.
@@ -49,6 +53,19 @@ desert, savanna, taiga and snowy. For example, a Brimstone Legion town in a dese
 ## Buildings, NPCs and tiers
 The approved plan is in **[`BUILDINGS.md`](BUILDINGS.md)**: 19 buildings, 22 NPC roles, building and NPC rules, and the
 Village → Town → City tiers. It is the source of truth for game data.
+
+## NPCs: names and looks
+- **Names:** "Profession, Name" (e.g. "Steward, Edric"). The personal name comes from the pool in
+  `src/scripts/settlements/npc.ts`. Name tags are plain strings and can't be translated, so the profession word in
+  them is a documented exception to the lang rule. Everything else the NPC says uses lang keys.
+- **Layers** (`assets-src/entity/make_npc.py`, drawn on our own `geometry.bannerforge_settlements.npc`), stacked at runtime with
+  the vanilla `villager_v2_masked` material, the same way villagers stack biome and profession:
+  1. **Skin** (`skin_<n>`): skin tone, face, hair. Picked per NPC for variety (entity property `bannerforge_settlements:skin`).
+  2. **Outfit** (`outfit_<id>`): neutral before founding, then the faction's; later one per faction and biome
+     (`bannerforge_settlements:outfit`).
+  3. **Profession** (`prof_<id>`): what the job adds, e.g. the steward's tabard, chain of office and cap.
+  4. **Rank** (`rank_<n>`): badge, empty for now (`bannerforge_settlements:rank`).
+- With layers, 5 biomes × 3 factions need about 15 outfits plus one overlay per profession, not one texture per combination.
 
 ## Tech notes (Claude)
 - **Finding villages.** The Script API has no "village" object. A vanilla village is identified by its **bell**

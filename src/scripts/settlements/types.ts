@@ -1,7 +1,7 @@
 // Data model for settlements. Stored as JSON in world dynamic properties.
 // Bump SCHEMA and add a migration in registry.ts whenever this shape changes.
 
-export const SCHEMA = 3;
+export const SCHEMA = 4;
 
 /** The founding player picks one of these when founding (owner decision, 2026-11-12). */
 export type FactionId = "green" | "red" | "blue";
@@ -38,4 +38,20 @@ export interface Settlement {
    * derived from this (see rules.ts), so rebalancing numbers also updates existing worlds.
    */
   buildings: Record<string, BuildingLevel[]>;
+  /** The steward who keeps the ledger (schema 4). Missing on older worlds until the bell is rung. */
+  steward?: StewardRecord;
+}
+
+/** Which faction outfit an NPC wears (entity property bannerforge:outfit). 0 = neutral, before founding. */
+export const OUTFIT_INDEX: Record<FactionId | "neutral", number> = { neutral: 0, green: 1, blue: 2, red: 3 };
+
+export interface StewardRecord {
+  /** Personal name; the name tag shows "Steward, <name>". */
+  name: string;
+  /** Skin layer index (entity property bannerforge:skin). */
+  skin: number;
+  /** Entity id of the living steward, to find it quickly. */
+  entityId?: string;
+  /** world.getAbsoluteTime() when the steward died; cleared when they return. */
+  diedAt?: number;
 }

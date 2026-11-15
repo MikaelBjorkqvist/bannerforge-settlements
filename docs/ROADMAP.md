@@ -17,9 +17,12 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Released as v0.1.0
 
 ## M1 — The steward
-- [x] Ringing a village bell opens founding / the steward menu (charter dropped)
+- [x] Ringing a village bell calls the steward (charter dropped)
 - [x] Founding fee: 10 emeralds
-- [ ] `bannerforge:steward` NPC: appears at the bell when rung (neutral outfit until founding, then the faction's), lives near the bell until the Town Hall exists; interacting opens the steward menu
+- [x] `bannerforge_settlements:steward` NPC: appears at the bell when rung (neutral outfit until founding, then the faction's), lives near the bell; talking opens founding / the ledger
+- [x] Steward death: ledger closed for one in-game day, bell shows the time left, steward returns
+- [x] Layered NPC textures (skin, outfit, profession, rank) and "Profession, Name" names
+- [ ] Steward moves into the Town Hall once it is built (needs physical buildings, M2)
 - [ ] Faction banner placed at the bell; faction names/colours decided
 - [ ] Settlement boundary visualised (particles) and stored
 

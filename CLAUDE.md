@@ -4,7 +4,9 @@ Claude is the main developer here. The owner directs and play-tests through the 
 Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md` section before changing anything.
 
 ## Project facts
-- Namespace: `bannerforge` (every identifier, dynamic property, tag, scoreboard and lang key uses it).
+- Namespace: content identifiers (entities, items, blocks) and resource names use `bannerforge_<mod id>`, e.g.
+  `bannerforge_settlements:steward`, `geometry.bannerforge_settlements.npc`. Script-side names (dynamic properties, tags,
+  scoreboards, UI lang keys) use `bannerforge:`. See `docs/decisions/0004`.
 - One repo per mod. Shared conventions come from `bannerforge-template`; never copy UUIDs between mods.
 - Target: Minecraft Bedrock (Windows GDK build), Marketplace-quality add-on (`metadata.product_type: "addon"`).
 - Script API versions and `min_engine_version` live **only** in `config/mod.json`. Manifests are generated.
@@ -28,10 +30,10 @@ Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md
 - `config/mod.json` — name, version, engine + API versions, UUIDs.
 - `packs/BP`, `packs/RP` — pack sources (no manifest.json; files starting with `_` or `.` and `*.md` are not shipped).
 - `src/scripts/**/*.ts` — TypeScript; `main.ts` is the entry. Use `.js` in relative import paths.
-- Textures live under our own folder: `RP/textures/bannerforge/{items,blocks,entity}/` (Mojang cooperative add-on rule:
-  never put files directly in shared folders like `textures/items/`). Same idea for sounds: `RP/sounds/bannerforge/`.
+- Textures live under our own folder: `RP/textures/bannerforge/<mod id>/{items,blocks,entity,ui}/` (Mojang cooperative add-on
+  rule: one game folder per creator folder; never put files directly in shared folders like `textures/items/`). Same idea for sounds: `RP/sounds/bannerforge/<mod id>/`.
 - UI (DDUI `CustomForm`, stable in server-ui 2.3+): images and button icons need `pack` = the RP header UUID (scripts use
-  `__RP_PACK_ID__`, replaced at build) and a path **with** `.png`, e.g. `textures/bannerforge/ui/house.png` (verified 26.60).
+  `__RP_PACK_ID__`, replaced at build) and a path **with** `.png`, e.g. `textures/bannerforge/settlements/ui/house.png` (verified 26.60).
   Buttons show one line of text and no colour codes; keep labels short.
 - `assets-src/` — editable sources (.bbmodel, layered art, texture generators). Shipped textures go in `packs/RP`.
 - `tools/` — build, check, package, deploy, version.

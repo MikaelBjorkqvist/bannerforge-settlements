@@ -50,10 +50,10 @@ Every NPC belongs to one settlement and one building, and looks like its faction
 1. **Own NPCs only.** All BannerForge NPCs are new `bannerforge:` entities. Vanilla villagers are left as they are and keep living in the village.
 2. **Faction × biome looks.** Each NPC role has a faction outfit plus biome variants, with the same fallback to the faction's default as buildings.
 3. **Buildings bring NPCs.** Building or upgrading a building spawns its NPCs: more of them, or a higher rank, at higher levels. NPCs can die. The steward can respawn a dead NPC for a small emerald fee.
-4. **One steward per settlement.** The steward lives near the village bell until the Town Hall is built, then moves there. Ringing the bell calls the steward back to it. Upgrades and reports always go through the steward, even when other NPCs offer services. The steward can be killed, and returns after one in-game day.
+4. **One steward per settlement.** The steward lives near the village bell until the Town Hall is built, then moves there. Ringing the bell calls the steward back to it. Upgrades and reports always go through the steward, even when other NPCs offer services. The steward can be killed, and returns after one in-game day. While the steward is dead the ledger is closed; ringing the bell says how long until they return (owner rule, 2026-11-15).
 5. **Interaction.** Using an NPC opens a menu for its role: trades, hiring, missions or reports.
 6. **Daily routine.** NPCs work at their building by day and go indoors at night. Guards and patrols stay out at night.
-7. **Names.** Each NPC gets a name from its faction's name list, e.g. an Amberwood steward "Elowen Thornleaf".
+7. **Names.** Every NPC is named "Profession, Name", e.g. "Steward, Elowen" (owner rule, 2026-11-15). Faction-flavoured name lists may come later.
 8. **Population limit caps NPCs.** Population is the number of BannerForge NPCs living in the settlement; vanilla villagers don't count. Houses set the **population limit**, and every NPC that comes from a building (shopkeepers, crafters, soldiers) takes one population slot. **A building or upgrade that adds workers can't be bought unless there are enough free population slots** (owner rule, 2026-11-13). The steward is always free. There is also a hard performance cap of 24 NPCs per settlement (tunable).
 
 ## Building catalogue
