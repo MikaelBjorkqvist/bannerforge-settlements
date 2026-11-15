@@ -125,7 +125,7 @@ export function showOverview(player: Player, s: Settlement): void {
 export function showSection(player: Player, s: Settlement, category: Category): void {
   const form = new CustomForm(player, t(`bannerforge.category.${category}`));
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
-  form.label(raw(txt("§7"), t("bannerforge.ledger.legend")));
+  form.label(raw(txt("§7"), t("bannerforge.ledger.legend_1"), txt("\n"), t("bannerforge.ledger.legend_2")));
   form.divider();
 
   const defs = BUILDINGS.filter((b) => b.category === category);
@@ -160,7 +160,9 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
 
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showSection(player, s, def.category)));
   form.label(now);
+  form.spacer();
   form.label(next);
+  form.spacer();
   form.label(needs);
   form.label(feedback, { visible: feedbackVisible });
   form.spacer();
@@ -174,28 +176,35 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     const actions = actionsFor(s, def);
     const checks = actions.map((a) => check(s, a));
 
-    // Now / next
+    // Now / next. Readable layout (owner, play-test 4): the white line names the level, the grey line under it
+    // says what it gives. Descriptions are kept short (lang) so they rarely wrap.
+    const levelBlock = (labelKey: string, lvl: number): RawMessage =>
+      lvl === 0
+        ? raw(t(labelKey), txt(" "), t("bannerforge.ledger.not_built"))
+        : raw(t(labelKey), txt(" "), levelName(lvl), txt("\n§7"), t(`bannerforge.desc.${def.id}.${lvl}`));
     if (def.perTier) {
-      now.setData(raw(txt("§7"), t("bannerforge.ledger.now"), txt("§r "), t("bannerforge.ledger.house_count", String(list.length), String(def.perTier[tier(s)])), txt(` · `), t("bannerforge.steward.population_limit"), txt(` ${housing(s)}`)));
-      next.setData(raw(txt("§7"), t("bannerforge.ledger.each_level"), txt("§r "), levelLine(def, 1), txt("\n"), levelLine(def, 2), txt("\n"), levelLine(def, 3)));
+      const limit = def.perTier[tier(s)];
+      const h = def.housing ?? [0, 0, 0];
+      now.setData(raw(t("bannerforge.ledger.houses"), txt(` ${list.length} / ${limit}\n§7`), t("bannerforge.steward.population_limit"), txt(` ${housing(s)}`)));
+      next.setData(raw(t("bannerforge.ledger.each_house"), txt(`\n§7+${h[0]} / +${h[1]} / +${h[2]} `), t("bannerforge.ledger.limit_by_level")));
     } else {
-      now.setData(raw(txt("§7"), t("bannerforge.ledger.now"), txt("§r "), levelLine(def, level)));
-      next.setData(level < 3 ? raw(txt("§7"), t("bannerforge.ledger.next"), txt("§r "), levelLine(def, level + 1)) : txt(""));
+      now.setData(levelBlock("bannerforge.ledger.now", level));
+      next.setData(level < 3 ? levelBlock("bannerforge.ledger.next", level + 1) : txt(""));
     }
 
-    // What's needed: for the main action, every reason (red) or ready (green); then cost and wallet on their own lines.
+    // What's needed: reasons in red (or ready in green), then cost and wallet, all white lines.
     const main = checks.find((c) => c.ok) ?? checks[0];
     const wallet = countItem(player, "minecraft:emerald");
     const parts: RawMessage[] = [];
     if (main.ok) {
       const price = main.cost[0]?.amount ?? 0;
-      if (wallet >= price) parts.push(txt("§a✔§r "), t("bannerforge.ledger.ready"), txt("\n"));
-      else parts.push(txt("§c✘§r "), t("bannerforge.ledger.short_by", String(price - wallet)), txt("\n"));
-      parts.push(txt("§7"), t("bannerforge.ledger.cost"), txt("§r "), costText(main.cost), txt("\n"));
+      if (wallet >= price) parts.push(txt("§a✔ "), t("bannerforge.ledger.ready"), txt("§r\n"));
+      else parts.push(txt("§c✘ "), t("bannerforge.ledger.short_by", String(price - wallet)), txt("§r\n"));
+      parts.push(t("bannerforge.ledger.cost"), txt(" "), costText(main.cost), txt("\n"));
     } else {
-      for (const r of main.reasons) parts.push(txt("§c✘§r "), reasonText(r), txt("\n"));
+      for (const r of main.reasons) parts.push(txt("§c✘ "), reasonText(r), txt("§r\n"));
     }
-    parts.push(txt("§7"), t("bannerforge.ledger.you_have"), txt(`§r ${wallet}`));
+    parts.push(t("bannerforge.ledger.you_have"), txt(` ${wallet}`));
     needs.setData(raw(...parts));
     goPopulation.setData(checks.every((c) => !c.ok && c.reasons.some((r) => r.key === "needs_population")));
 
