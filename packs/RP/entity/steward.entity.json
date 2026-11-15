@@ -1,0 +1,23 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bannerforge:steward",
+      "materials": { "default": "villager_v2_masked" },
+      "textures": {
+        "skin_0": "textures/bannerforge/entity/npc/skin_0", "skin_1": "textures/bannerforge/entity/npc/skin_1", "skin_2": "textures/bannerforge/entity/npc/skin_2", "skin_3": "textures/bannerforge/entity/npc/skin_3",
+        "outfit_neutral": "textures/bannerforge/entity/npc/outfit_neutral", "outfit_green": "textures/bannerforge/entity/npc/outfit_green",
+        "outfit_blue": "textures/bannerforge/entity/npc/outfit_blue", "outfit_red": "textures/bannerforge/entity/npc/outfit_red",
+        "profession": "textures/bannerforge/entity/npc/prof_steward",
+        "rank_0": "textures/bannerforge/entity/npc/rank_0"
+      },
+      "geometry": { "default": "geometry.bannerforge.npc" },
+      "animations": {
+        "walk": "animation.bannerforge.npc.walk",
+        "look": "animation.bannerforge.npc.look"
+      },
+      "scripts": { "animate": ["walk", "look"] },
+      "render_controllers": ["controller.render.bannerforge.npc"]
+    }
+  }
+}

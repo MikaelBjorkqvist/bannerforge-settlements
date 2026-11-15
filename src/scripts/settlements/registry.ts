@@ -40,6 +40,11 @@ function migrate(raw: Settlement | SettlementV1): Settlement {
     s.schema = 3;
     changed = true;
   }
+  if (s.schema === 3) {
+    // v3 -> v4: settlements get a steward record. It is created when the bell is next rung (steward.ts).
+    s.schema = 4;
+    changed = true;
+  }
   s.buildings ??= {};
   if (changed) saveSettlement(s);
   return s;
@@ -67,6 +72,16 @@ export function saveSettlement(s: Settlement): void {
 
 export function newSettlementId(): string {
   return Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+}
+
+export function settlementById(id: string): Settlement | undefined {
+  const value = world.getDynamicProperty(PREFIX + id);
+  if (typeof value !== "string") return undefined;
+  try {
+    return migrate(JSON.parse(value) as Settlement);
+  } catch {
+    return undefined;
+  }
 }
 
 /** Nearest settlement in the same dimension within `radius` blocks (horizontal), if any. */

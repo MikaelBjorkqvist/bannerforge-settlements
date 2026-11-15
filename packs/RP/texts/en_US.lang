@@ -15,7 +15,16 @@ bannerforge.tier.city=City
 bannerforge.tier.promoted=§6%s has grown into a
 
 ## Bell / founding
-bannerforge.bell.steward_arrives=§7The bell's peal carries across the village... a steward hurries over.
+entity.bannerforge:steward.name=Steward
+bannerforge.bell.steward_arrives=§7The bell's peal carries across the village... %s hurries over. Talk to them to found a settlement.
+bannerforge.bell.neutral_waiting=§7%s is waiting by the bell. Talk to them to found a settlement.
+bannerforge.bell.steward_coming=§7%s hurries to the bell.
+bannerforge.bell.steward_away=§7%s is away. They return in about %s minutes.
+bannerforge.bell.steward_returns=§7%s is back and hurries to the bell.
+bannerforge.steward.talk=Talk
+bannerforge.steward.died=§c%s of %s has fallen. They will return in one day.
+bannerforge.steward.returned=§7%s has returned to the village.
+bannerforge.steward.claimed_elsewhere=§7This bell already belongs to a settlement.
 bannerforge.claim.title=Found a Settlement
 bannerforge.claim.name_label=Settlement name
 bannerforge.claim.name_placeholder=e.g. Oakmere
