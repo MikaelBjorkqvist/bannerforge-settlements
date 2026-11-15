@@ -44,7 +44,9 @@ export function showClaimForm(player: Player, dimensionId: string, bell: Vec3, o
       return;
     }
     form.close();
-    system.run(() => found(player, dimensionId, bell, name, FACTIONS[Number(factionValue.getData()) || 0], onFounded));
+    const picked = Number(factionValue.getData());
+    console.log(`[BannerForge] founding: dropdown value ${String(factionValue.getData())} -> ${FACTIONS[picked] ?? "?"}`);
+    system.run(() => found(player, dimensionId, bell, name, FACTIONS[picked] ?? FACTIONS[0], onFounded));
   });
   form.show().catch((e) => console.warn(`[BannerForge] founding form: ${e}`));
 }

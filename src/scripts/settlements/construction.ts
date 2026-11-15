@@ -434,6 +434,10 @@ function registerProtection(): void {
  */
 function registerDevCommands(): void {
   system.afterEvents.scriptEventReceive.subscribe((e) => {
+    if (e.id === "bannerforge:info") {
+      if (e.sourceEntity?.typeId === "minecraft:player") settlementInfo(e.sourceEntity as Player);
+      return;
+    }
     if (e.id === "bannerforge:preview") {
       if (e.sourceEntity?.typeId === "minecraft:player") previewBlueprint(e.sourceEntity as Player, e.message.trim());
       return;
@@ -505,4 +509,26 @@ function previewBlueprint(player: Player, k: string): void {
       }
     })(),
   );
+}
+
+/** /scriptevent bannerforge:info  shows the saved data of the nearest settlement (developer tool). */
+function settlementInfo(player: Player): void {
+  let best: Settlement | undefined;
+  let bestD = Infinity;
+  for (const s of allSettlements()) {
+    if (s.dimension !== player.dimension.id) continue;
+    const d = Math.hypot(s.center.x - player.location.x, s.center.z - player.location.z);
+    if (d < bestD) {
+      best = s;
+      bestD = d;
+    }
+  }
+  if (!best) {
+    player.sendMessage("[BannerForge] no settlement in this dimension");
+    return;
+  }
+  const sites = Object.entries(best.sites ?? {})
+    .map(([id, list]) => `${id}: ${list.map((x) => (x ? `${x.variant ?? "placeholder"} L${x.built}${x.build ? " building" : ""}` : "unplaced")).join(", ")}`)
+    .join("; ");
+  player.sendMessage(`[BannerForge] ${best.name}: faction=${best.faction}, schema=${best.schema}, ${Math.round(bestD)} blocks away. Sites: ${sites || "none"}`);
 }
