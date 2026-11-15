@@ -20,7 +20,8 @@ PREVIEWS = os.path.join(HERE, "previews")
 
 # faction, building id, variant, generator, plot width, height limit, palette, required contents per level
 BUILDINGS = [
-    ("blue", "house", "a", ks_house.blueprints, 9, 14, KS_ALLOWED, {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}),
+    ("blue", "house", "a", ks_house.blueprints_a, 9, 14, KS_ALLOWED, {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}),
+    ("blue", "house", "b", ks_house.blueprints_b, 9, 14, KS_ALLOWED, {1: {"bed": 2}, 2: {"bed": 3}, 3: {"bed": 4}}),
 ]
 
 

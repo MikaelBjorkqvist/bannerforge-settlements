@@ -58,3 +58,4 @@ references and rules; the owner reviews (QA); the process must be repeatable and
 | Date | Structure | What changed in the pipeline |
 | --- | --- | --- |
 | 2026-11-15 | Pipeline v1 | Toolkit, QA, previews, generated module, in-game preview command, variants. Draft Kingscross house A as the pipeline test. |
+| 2026-11-15 | Kingscross house A + B v1 | Style guide v1 from web references; shared Kingscross kit (timber walls, gable roofs with stone verges, chimney, awning, flag, crops); lesson: on narrow fronts use corner posts only, or the plaster disappears. |

@@ -22,6 +22,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
   - Upgrades rebuild the building on its plot; the new level counts when it is finished.
   - "Show town border" in the ledger.
 - Buildings bought before this version can be placed for free from the ledger ("Place building").
+- The first designed building: Kingscross Guild houses in two designs (house at the back or in the corner), three levels each, with real crop gardens. Other buildings and factions still use placeholder boxes.
+- The placement panel has a Design button when a building has more than one design.
 ### Fixed
 - Ringing the bell several times no longer spawns extra stewards.
 - Founding now completes after you pay (it took the emeralds and stopped before).

@@ -1,18 +1,19 @@
-# Kingscross Guild House — brief (DRAFT, waiting for owner answers)
+# Kingscross Guild House — brief (v1, in review)
 
 - **Ledger building:** `house` · **Plot:** S 9×9 · **Height limit:** 14
 - **Purpose:** homes for the settlement's NPCs. Housing 2 / 3 / 4 by level (docs/BUILDINGS.md), so 2 / 3 / 4 beds.
 - **Lot layout:** house plus yard: garden, flowers, path and fence (owner, 2026-11-15). The house may sit at the
   back, in a corner or to one side, depending on the variant.
 - **Entrance:** street side, short path from a gate.
-- **Variants planned:** at least 2-3 so villages don't repeat (to decide).
+- **Variants:** 2 to start (owner, 2026-11-15). **A**: house at the back, gable to the street, garden in front. **B**: house in the front-left corner, ridge side to side, crop strip down the right side.
+- **Crops are real and harvestable** (owner, 2026-11-15).
 
-## Levels (pipeline draft, variant A)
+## Levels (both designs)
 | Level | What it adds | Required contents | Height |
 | --- | --- | --- | --- |
-| 1 | Cottage: one room, stone base, timber frame, gable to the street, chimney | 2 beds, chest, barrel, crafting table, furnace, light | 10 |
-| 2 | Upper floor with ladder, blue guild cloth on the front, bigger garden | 3 beds | 13 |
-| 3 | Blue awning over the door, hedges, lanterns at the door | 4 beds | 13 |
+| 1 | Cottage: stone base, cobblestone lower wall, dark timber frame with light plaster, dark roof with stone trim, brick chimney | 2 beds, chest, barrel, crafting table, smoker, light | 10 |
+| 2 | Upper floor with ladder, bigger garden | 3 beds | 13 |
+| 3 | Blue-and-white awning (A) or porch with awning (B), guild flag, hedges, hay and barrels | 4 beds | 13 |
 
 ## References
 `assets-src/references/kingscross/house_l1..3.jpg` (owner, concept art: direction, not a build plan):
