@@ -34,6 +34,10 @@ shops and missions.
 | 2026-11-15 | Rotation: the entrance faces the way the player is facing; the player can rotate before building, with clear instructions on how to rotate and how to build. |
 | 2026-11-15 | A vanilla house inside a lot: the steward clears it for a fee when building starts. |
 | 2026-11-15 | Slopes: a foundation is filled under the building down to the ground (like vanilla villages); only the inside of the plot is flattened. |
+| 2026-11-15 | Placement revised: no fixed lots. A town border (grows with tier) and free placement inside it. While placing, the footprint is green (can build), orange (vanilla house: cleared for a fee) or red (blocked, with the reason); your other buildings are outlined. No suggested-spot helper for now. |
+| 2026-11-15 | Overlapping one of your own buildings is never allowed (demolish it first). Room above is checked for the building's highest level. |
+| 2026-11-15 | Foundation and garden fill copy the local ground around the plot (not a fixed biome set). |
+| 2026-11-15 | Construction: 4 phases over one in-game day, progress based on time so it catches up after you were away; builder NPC animations later; developer command for instant builds. Sites are protected from breaking, placing and explosions while under construction. Finished buildings are breakable; the steward repairs. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

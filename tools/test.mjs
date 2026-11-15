@@ -5,7 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, loadTypeScript } from "./lib.mjs";
 
-const PURE = ["settlements/types", "settlements/buildings", "settlements/rules", "settlements/npc"];
+const PURE = ["settlements/types", "settlements/buildings", "settlements/rules", "settlements/npc", "settlements/plots"];
 const out = path.join(ROOT, ".test-build");
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
