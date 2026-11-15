@@ -12,6 +12,9 @@ def is_solid(b) -> bool:
     return b is not None and any(h in b.id for h in SOLID_HINTS) and "pane" not in b.id
 
 
+NEIGHBOURS = [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1) if (dx, dy, dz) != (0, 0, 0)]
+
+
 def check(bp: Blueprint, plot_w: int, max_height: int, allowed: set[str] | None, needs: dict[str, int]) -> tuple[list, list]:
     errors, warnings = [], []
     tag = f"{bp.name} L{bp.level}"
@@ -43,7 +46,8 @@ def check(bp: Blueprint, plot_w: int, max_height: int, allowed: set[str] | None,
     grounded.update(frontier)
     while frontier:
         x, y, z = frontier.pop()
-        for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+        # Blocks touching at edges or corners count as connected (roof steps meet diagonally).
+        for dx, dy, dz in NEIGHBOURS:
             n = (x + dx, y + dy, z + dz)
             if n in bp.grid and n not in grounded:
                 grounded.add(n)

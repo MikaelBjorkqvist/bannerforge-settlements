@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from bfstruct import Blueprint
 
 COLORS = [  # first match wins
+    ("cracked_stone", (125, 125, 125)), ("mossy_stone", (110, 128, 100)), ("gravel", (136, 126, 120)), ("coarse_dirt", (110, 80, 55)),
     ("banner_blue", (45, 90, 168)), ("banner_green", (47, 122, 58)), ("banner_red", (143, 42, 32)), ("mossy", (100, 125, 90)),
     ("allium", (180, 100, 220)), ("stone_brick", (140, 140, 140)), ("leaves", (60, 120, 50)), ("calcite", (226, 224, 216)), ("brick_block", (150, 75, 60)), ("brick_stairs", (150, 75, 60)), ("smoker", (90, 85, 80)),
     ("white_wool", (235, 235, 235)), ("spruce_fence", (110, 80, 48)), ("spruce_trapdoor", (110, 80, 48)),
@@ -86,6 +87,9 @@ def iso(bp: Blueprint, turns=0, tile=22) -> Image.Image:
             box(bx0, bx1, y + (0 if up else 0.5), y + (0.5 if up else 1), bz0, bz1, c)
             continue
         x0, x1, z0, z1, top = x, x + 1, z, z + 1, y + 1
+        if "trapdoor" in b.id and b.state("open_bit"):
+            box(x + 0.1, x + 0.9, y, y + 1, z, z + 0.18, c)
+            continue
         if any(t in b.id for t in THIN):
             x0, x1, z0, z1 = x + 0.35, x + 0.65, z + 0.35, z + 0.65
             if "pane" in b.id or "door" in b.id:

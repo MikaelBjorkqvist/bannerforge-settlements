@@ -29,11 +29,11 @@ def main():
         for bp in levels:
             e, _ = qa.check(bp, 13, house_gen.H, ALLOWED | {house_gen.BANNER}, NEEDS[bp.level])
             errs += e
-        tiles.append((seed, iso(levels[show_level - 1], 0, tile=16), not errs))
+        tiles.append((seed, iso(levels[show_level - 1], 0, tile=22), not errs))
         lines.append(f"{seed:3d}  {'OK ' if not errs else 'QA!'}  {levels[2].notes[0].split(': ', 1)[1]} | {levels[2].notes[1]}")
         for e in errs:
             lines.append(f"       {e}")
-    cols = 6
+    cols = 4
     cw = max(t.width for _, t, _ in tiles) + 16
     ch = max(t.height for _, t, _ in tiles) + 34
     rows = (len(tiles) + cols - 1) // cols

@@ -25,7 +25,7 @@ ROLES = {
 
 # Every block a Kingscross building may use. QA fails on anything else, so the style stays consistent.
 ALLOWED = {f"minecraft:{n}" for n in """
-stone_bricks cobblestone mossy_cobblestone stone_brick_stairs cobblestone_stairs stone_brick_slab cobblestone_slab
+stone_bricks cobblestone mossy_cobblestone mossy_stone_bricks cracked_stone_bricks gravel coarse_dirt oak_log stone_brick_stairs cobblestone_stairs stone_brick_slab cobblestone_slab
 dark_oak_log spruce_log stripped_dark_oak_log calcite spruce_planks oak_planks dark_oak_planks brick_block brick_stairs
 spruce_stairs dark_oak_stairs oak_stairs spruce_slab dark_oak_slab
 ladder glass_pane spruce_door wooden_door spruce_fence dark_oak_fence spruce_fence_gate fence_gate spruce_trapdoor trapdoor

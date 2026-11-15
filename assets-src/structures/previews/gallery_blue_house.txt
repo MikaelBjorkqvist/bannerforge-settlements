@@ -1,24 +1,12 @@
-  1  OK   7x5, front left, eaves to street, cobble chimney, porch on posts | Yard: crops, well, hay, bench, woodpile, flowers
-  2  OK   7x6, back center, eaves to street, left wing, cobble chimney, porch on posts | Yard: crops, hay, flowers
-  3  OK   7x7, front left, gable to street, jettied upper floor, brick chimney, porch on posts | Yard: well, crops, bench, woodpile, flowers
-  4  OK   9x7, front left, eaves to street, jettied upper floor, cobble chimney, porch on posts | Yard: flowers, woodpile
-  5  OK   7x5, back center, eaves to street, jettied upper floor, brick chimney, awning | Yard: crops, hay, bench, flowers
-  6  OK   9x5, back left, gable to street, cobble chimney, awning | Yard: crops, bench, well, woodpile, flowers
-  7  OK   9x6, front left, eaves to street, jettied upper floor, brick chimney, awning | Yard: woodpile, bench, flowers, hay
-  8  OK   9x5, back right, eaves to street, brick chimney, porch on posts | Yard: crops, well, flowers, bench, woodpile
-  9  OK   7x6, back right, eaves to street, right wing, jettied upper floor, cobble chimney, awning | Yard: crops, hay, woodpile, bench
- 10  OK   9x6, back right, eaves to street, left wing, brick chimney, porch on posts | Yard: crops, woodpile, flowers, bench
- 11  OK   7x5, back right, eaves to street, right wing, jettied upper floor, brick chimney, porch on posts | Yard: crops, flowers, well, bench, woodpile
- 12  OK   9x6, back left, eaves to street, left wing, jettied upper floor, cobble chimney, awning | Yard: crops, bench, hay
- 13  OK   7x6, back left, gable to street, jettied upper floor, brick chimney, porch on posts | Yard: crops, hay, bench, well, woodpile, flowers
- 14  OK   9x7, front right, eaves to street, cobble chimney, awning | Yard: hay, bench, woodpile, flowers
- 15  OK   7x7, front left, eaves to street, right wing, cobble chimney, porch on posts | Yard: well, bench, woodpile, hay
- 16  OK   7x7, front left, eaves to street, left wing, brick chimney, porch on posts | Yard: woodpile, bench, flowers, hay
- 17  OK   7x7, back center, eaves to street, right wing, cobble chimney, awning | Yard: hay, woodpile, bench, flowers
- 18  OK   7x6, back center, eaves to street, right wing, brick chimney, porch on posts | Yard: crops, woodpile, bench
- 19  OK   7x5, front left, eaves to street, left wing, jettied upper floor, brick chimney, porch on posts | Yard: woodpile, flowers, bench, hay
- 20  OK   7x7, back left, gable to street, jettied upper floor, brick chimney, porch on posts | Yard: crops, flowers, well, bench, woodpile
- 21  OK   7x7, front right, eaves to street, right wing, jettied upper floor, cobble chimney, porch on posts | Yard: crops, flowers, woodpile, hay
- 22  OK   7x6, back left, eaves to street, right wing, jettied upper floor, brick chimney, porch on posts | Yard: crops, woodpile, bench
- 23  OK   7x7, back center, eaves to street, left wing, jettied upper floor, brick chimney, porch on posts | Yard: crops, hay, bench
- 24  OK   7x6, back center, eaves to street, right wing, brick chimney, porch on posts | Yard: crops, flowers, bench
+  1  OK   cottage, 9x5, gable roof, eaves to street, gable porch | Yard: crops, well, flowers, bench, woodpile
+  2  OK   townhouse, 7x7, gable roof, gable to street, awning porch | Yard: tree, crops
+  3  OK   L-house, 7x6, gable roof, gable to street, pentice porch | Yard: crops, bench, woodpile, hay
+  4  OK   longhouse, 9x5, hipped roof, eaves to street, gable porch | Yard: crops, bench, well, flowers, woodpile
+  5  OK   saltbox, 7x5, gable roof, eaves to street, gable porch | Yard: bench, flowers, woodpile
+  6  OK   tower house, 7x5, gable roof, gable to street, awning porch | Yard: crops, bench, flowers, woodpile, hay
+  7  OK   cottage, 7x6, gable roof, eaves to street, pentice porch | Yard: tree, crops
+  8  OK   townhouse, 7x6, gable roof, gable to street, gable porch | Yard: tree, crops, bench
+  9  OK   L-house, 7x6, gable roof, eaves to street, awning porch | Yard: crops, flowers, bench, hay
+ 10  OK   longhouse, 9x5, hipped roof, eaves to street, pentice porch | Yard: tree, crops, flowers
+ 11  OK   saltbox, 7x5, gable roof, eaves to street, gable porch | Yard: bench, flowers, woodpile
+ 12  OK   tower house, 7x5, gable roof, eaves to street, awning porch | Yard: tree, crops, hay, bench
