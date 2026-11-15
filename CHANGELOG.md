@@ -9,10 +9,10 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Ring a village bell to call its steward. At an unclaimed village the steward offers to found a settlement:
   pick a name and a faction banner. Founding costs 10 emeralds. At your own settlement, ringing the bell opens the steward's menu.
 - The steward's ledger has three short screens (Overview → Section → Building):
-  - Overview: your faction banner, faction and town name, a warning when jobs wait for homes, the next-tier checklist, and section buttons with icons.
+  - Overview: faction and town name, a warning when jobs wait for homes, the next-tier checklist, and section buttons with icons.
   - Section: one short row per building with an icon and a symbol: + build, ▲ upgrade, ✔ done for this tier, ✘ locked.
   - Short button text that fits on one line, and no misleading counts.
-  - The faction banner is icon-sized, and there's space between the text and the buy button.
+  - Icons appear on buttons only (no picture rows), and there's space between the text and the buy button.
   - The buy button stays greyed out until you can afford it, and says how many emeralds you're missing.
   - Building: what you have now and what the next level adds, what's missing, cost vs your emeralds, and one clear button.
   - The result appears right above the button, with a sound.
