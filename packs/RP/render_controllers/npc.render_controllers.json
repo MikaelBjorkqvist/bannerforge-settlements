@@ -4,19 +4,22 @@
     "controller.render.bannerforge_settlements.npc": {
       "arrays": {
         "textures": {
-          "Array.skins": ["Texture.skin_0", "Texture.skin_1", "Texture.skin_2", "Texture.skin_3"],
-          "Array.outfits": ["Texture.outfit_neutral", "Texture.outfit_green", "Texture.outfit_blue", "Texture.outfit_red"],
-          "Array.professions": ["Texture.profession"],
-          "Array.ranks": ["Texture.rank_0"]
+          "Array.outfits": [
+            "Texture.outfit_neutral",
+            "Texture.outfit_green",
+            "Texture.outfit_blue",
+            "Texture.outfit_red"
+          ]
         }
       },
       "geometry": "Geometry.default",
-      "materials": [{ "*": "Material.default" }],
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
       "textures": [
-        "Array.skins[query.property('bannerforge_settlements:skin')]",
-        "Array.outfits[query.property('bannerforge_settlements:outfit')]",
-        "Array.professions[0]",
-        "Array.ranks[query.property('bannerforge_settlements:rank')]"
+        "Array.outfits[query.property('bannerforge_settlements:outfit')]"
       ]
     }
   }

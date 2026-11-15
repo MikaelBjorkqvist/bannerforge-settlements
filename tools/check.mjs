@@ -68,6 +68,14 @@ for (const [f, data] of parsed) {
   if (id.startsWith("minecraft:")) err(`${rel(f)}: overrides vanilla ${id}. Add-ons must be additive only (docs/decisions/0003).`);
   else if (!id.startsWith(ns)) err(`${rel(f)}: identifier ${id} must use namespace ${ns}`);
 
+  if (kind === "minecraft:entity") {
+    for (const [name, prop] of Object.entries(def.description?.properties ?? {})) {
+      if (!name.startsWith(ns)) err(`${rel(f)}: entity property ${name} must use namespace ${ns}`);
+      // The game rejects ALL properties of the entity when one range is invalid (found in play-test, 2026-11-15).
+      if ((prop.type === "int" || prop.type === "float") && !(Array.isArray(prop.range) && prop.range[1] > prop.range[0]))
+        err(`${rel(f)}: property ${name} needs a range [min, max] with max > min`);
+    }
+  }
   if (kind === "minecraft:item") {
     if (!lang.has(`item.${id}`)) err(`${rel(f)}: missing lang key item.${id} in RP/texts/en_US.lang`);
     const icon = def.components?.["minecraft:icon"];

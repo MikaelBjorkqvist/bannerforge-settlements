@@ -6,8 +6,10 @@ geometry.bannerforge_settlements.npc). The game stacks four layers at runtime:
   3. prof_<id>.png       what the job adds on top            (steward, later smith, guard ...)
   4. rank_<n>.png        rank badge, empty for now
 
+For now (owner, 2026-11-15: art is priority 2) the game uses flat placeholder textures: one per outfit, made by
+stacking skin 1 + outfit + profession here. The layer PNGs are kept in assets-src/entity/layers/ for later.
 Edit the tables and re-run; never edit PNGs by hand.
-Usage: python3 make_npc.py <out_dir> [preview.png]"""
+Usage: python3 make_npc.py <pack_texture_dir> <layer_dir> [preview.png]"""
 import sys
 from PIL import Image
 
@@ -118,14 +120,16 @@ def preview(stack, path):
     out.save(path)
 
 if __name__ == '__main__':
-    out = sys.argv[1]
+    out, layers = sys.argv[1], sys.argv[2]
     skins = [paint_skin(s) for s in SKINS]
     outfits = {n: paint_outfit(o) for n, o in OUTFITS.items()}
     steward, rank0 = paint_steward(), new()
-    for i, img in enumerate(skins): img.save(f'{out}/skin_{i}.png')
-    for n, img in outfits.items(): img.save(f'{out}/outfit_{n}.png')
-    steward.save(f'{out}/prof_steward.png'); rank0.save(f'{out}/rank_0.png')
-    if len(sys.argv) > 2:
-        preview([[skins[i % 4], outfits[n]] for i, n in enumerate(OUTFITS)] +
-                [[skins[i % 4], outfits[n], steward] for i, n in enumerate(OUTFITS)], sys.argv[2])
+    for i, img in enumerate(skins): img.save(f'{layers}/skin_{i}.png')
+    for n, img in outfits.items(): img.save(f'{layers}/outfit_{n}.png')
+    steward.save(f'{layers}/prof_steward.png'); rank0.save(f'{layers}/rank_0.png')
+    for n, img in outfits.items():                      # flat placeholders shipped in the pack
+        flat = new(); flat.alpha_composite(skins[1]); flat.alpha_composite(img); flat.alpha_composite(steward)
+        flat.save(f'{out}/steward_{n}.png')
+    if len(sys.argv) > 3:
+        preview([[skins[1], outfits[n], steward] for n in OUTFITS], sys.argv[3])
     print('ok')

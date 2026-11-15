@@ -3,21 +3,31 @@
   "minecraft:client_entity": {
     "description": {
       "identifier": "bannerforge_settlements:steward",
-      "materials": { "default": "villager_v2_masked" },
-      "textures": {
-        "skin_0": "textures/bannerforge/settlements/entity/npc/skin_0", "skin_1": "textures/bannerforge/settlements/entity/npc/skin_1", "skin_2": "textures/bannerforge/settlements/entity/npc/skin_2", "skin_3": "textures/bannerforge/settlements/entity/npc/skin_3",
-        "outfit_neutral": "textures/bannerforge/settlements/entity/npc/outfit_neutral", "outfit_green": "textures/bannerforge/settlements/entity/npc/outfit_green",
-        "outfit_blue": "textures/bannerforge/settlements/entity/npc/outfit_blue", "outfit_red": "textures/bannerforge/settlements/entity/npc/outfit_red",
-        "profession": "textures/bannerforge/settlements/entity/npc/prof_steward",
-        "rank_0": "textures/bannerforge/settlements/entity/npc/rank_0"
+      "materials": {
+        "default": "entity_alphatest"
       },
-      "geometry": { "default": "geometry.bannerforge_settlements.npc" },
+      "textures": {
+        "outfit_neutral": "textures/bannerforge/settlements/entity/npc/steward_neutral",
+        "outfit_green": "textures/bannerforge/settlements/entity/npc/steward_green",
+        "outfit_blue": "textures/bannerforge/settlements/entity/npc/steward_blue",
+        "outfit_red": "textures/bannerforge/settlements/entity/npc/steward_red"
+      },
+      "geometry": {
+        "default": "geometry.bannerforge_settlements.npc"
+      },
       "animations": {
         "walk": "animation.bannerforge_settlements.npc_walk",
         "look": "animation.bannerforge_settlements.npc_look"
       },
-      "scripts": { "animate": ["walk", "look"] },
-      "render_controllers": ["controller.render.bannerforge_settlements.npc"]
+      "scripts": {
+        "animate": [
+          "walk",
+          "look"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.bannerforge_settlements.npc"
+      ]
     }
   }
 }
