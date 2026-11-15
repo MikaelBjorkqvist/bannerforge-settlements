@@ -28,6 +28,12 @@ shops and missions.
 | 2026-11-15 | A dead steward closes the ledger until they return one in-game day later. Ringing the bell meanwhile says how long is left. |
 | 2026-11-15 | Every mod NPC is named "Profession, Name", e.g. "Steward, Edric". |
 | 2026-11-15 | NPC textures are layered like vanilla villagers: skin, outfit (neutral, faction, later biome), profession, rank. |
+| 2026-11-15 | The "Town Centre" section name stays. |
+| 2026-11-15 | M2 is split: M2a placement with placeholder boxes, M2b design workflow (style guide → blueprint → `.mcstructure` + previews), M2c first real building. Decide each step before building it. |
+| 2026-11-15 | Placement: the steward marks ready-made lots at founding; marking your own lot comes later. |
+| 2026-11-15 | Rotation: the entrance faces the way the player is facing; the player can rotate before building, with clear instructions on how to rotate and how to build. |
+| 2026-11-15 | A vanilla house inside a lot: the steward clears it for a fee when building starts. |
+| 2026-11-15 | Slopes: a foundation is filled under the building down to the ground (like vanilla villages); only the inside of the plot is flattened. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.
