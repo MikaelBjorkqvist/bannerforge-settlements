@@ -32,7 +32,7 @@ ladder glass_pane spruce_door wooden_door spruce_fence dark_oak_fence spruce_fen
 blue_wool white_wool blue_carpet white_carpet
 lantern torch campfire
 bed chest barrel furnace smoker crafting_table composter flower_pot bookshelf hay_block
-grass_path farmland water wheat carrots potatoes beetroot cornflower poppy dandelion oxeye_daisy azalea_leaves oak_leaves
+grass_path farmland water wheat carrots potatoes beetroot cornflower poppy dandelion oxeye_daisy allium azalea_leaves oak_leaves
 """.split()}
 
 

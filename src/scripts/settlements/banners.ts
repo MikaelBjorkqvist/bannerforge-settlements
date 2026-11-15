@@ -10,7 +10,7 @@ const PART = "bannerforge_settlements:part";
 export function registerBanners(): void {
   world.afterEvents.playerPlaceBlock.subscribe((e) => {
     const top = e.block;
-    if (!BANNER.test(top.typeId) || top.permutation.getState(PART) !== "top") return;
+    if (!BANNER.test(top.typeId) || top.permutation.getAllStates()[PART] !== "top") return;
     const below = top.below();
     if (!below?.isAir) return;
     const facing = top.permutation.getState("minecraft:cardinal_direction") as string;
@@ -20,7 +20,7 @@ export function registerBanners(): void {
   world.afterEvents.playerBreakBlock.subscribe((e) => {
     const old = e.brokenBlockPermutation;
     if (!BANNER.test(old.type.id)) return;
-    const other: Block | undefined = old.getState(PART) === "top" ? e.block.below() : e.block.above();
+    const other: Block | undefined = old.getAllStates()[PART] === "top" ? e.block.below() : e.block.above();
     if (other?.typeId === old.type.id) other.setType("minecraft:air");
   });
 }

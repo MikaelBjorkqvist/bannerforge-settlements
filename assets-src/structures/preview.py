@@ -8,7 +8,8 @@ from PIL import Image, ImageDraw, ImageFont
 from bfstruct import Blueprint
 
 COLORS = [  # first match wins
-    ("stone_brick", (140, 140, 140)), ("leaves", (60, 120, 50)), ("calcite", (226, 224, 216)), ("brick_block", (150, 75, 60)), ("brick_stairs", (150, 75, 60)), ("smoker", (90, 85, 80)),
+    ("banner_blue", (45, 90, 168)), ("banner_green", (47, 122, 58)), ("banner_red", (143, 42, 32)), ("mossy", (100, 125, 90)),
+    ("allium", (180, 100, 220)), ("stone_brick", (140, 140, 140)), ("leaves", (60, 120, 50)), ("calcite", (226, 224, 216)), ("brick_block", (150, 75, 60)), ("brick_stairs", (150, 75, 60)), ("smoker", (90, 85, 80)),
     ("white_wool", (235, 235, 235)), ("spruce_fence", (110, 80, 48)), ("spruce_trapdoor", (110, 80, 48)),
     ("water", (64, 110, 220)), ("glass_pane", (190, 225, 240)), ("glass", (200, 230, 245)),
     ("dark_oak", (66, 43, 21)), ("spruce", (110, 80, 48)), ("stripped_oak", (178, 145, 88)), ("oak_log", (110, 86, 52)),
@@ -24,7 +25,7 @@ COLORS = [  # first match wins
     ("bed", (180, 40, 40)), ("chest", (170, 120, 50)), ("barrel", (140, 100, 60)), ("furnace", (95, 95, 95)), ("crafting", (160, 110, 60)),
     ("composter", (120, 90, 50)), ("lectern", (170, 130, 80)), ("bookshelf", (140, 100, 60)), ("fence", (170, 135, 85)), ("trapdoor", (165, 130, 80)),
 ]
-THIN = ("fence", "pane", "lantern", "torch", "door", "wheat", "carrots", "potatoes", "cornflower", "poppy", "dandelion", "oxeye", "allium", "flower_pot", "campfire")
+THIN = ("banner", "fence", "pane", "lantern", "torch", "door", "wheat", "carrots", "potatoes", "cornflower", "poppy", "dandelion", "oxeye", "allium", "flower_pot", "campfire")
 HALF = ("slab", "carpet", "bed", "trapdoor")
 
 
