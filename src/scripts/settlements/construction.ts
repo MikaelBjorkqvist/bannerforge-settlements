@@ -2,6 +2,7 @@
 // Progress follows the clock, not ticks counted, so a site catches up when a player comes back.
 // Sites are protected from breaking, placing and explosions while under construction.
 
+import { gameTime } from "./clock.js";
 import {
   BlockPermutation,
   BlockVolume,
@@ -18,7 +19,7 @@ import { buildingById } from "./buildings.js";
 import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
-import { isLiquid, localGround, readColumn } from "./terrain.js";
+import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
 import { forgetVanillaIn } from "./vanilla.js";
 import { buildingName, levelName, raw, t, txt } from "./text.js";
 import type { BuildingLevel, Settlement, Site } from "./types.js";
@@ -77,7 +78,7 @@ function siteAt(dim: string, x: number, y: number, z: number): ActiveSite | unde
 /** Minutes left on a site's construction, or undefined if it isn't under construction. */
 export function constructionMinutesLeft(site: Site | null | undefined): number | undefined {
   if (!site?.build) return undefined;
-  const elapsed = world.getAbsoluteTime() - site.build.start;
+  const elapsed = gameTime() - site.build.start;
   return Math.max(1, Math.ceil((BUILD_TICKS - elapsed) / 1200));
 }
 
@@ -87,7 +88,7 @@ export function constructionMinutesLeft(site: Site | null | undefined): number |
 export function startConstruction(s: Settlement, defId: string, index: number, to: BuildingLevel): void {
   const site = s.sites?.[defId]?.[index];
   if (!site) return;
-  site.build = { to, start: world.getAbsoluteTime(), done: 0 };
+  site.build = { to, start: gameTime(), done: 0 };
   saveSettlement(s);
   refreshActiveSites();
 }
@@ -103,7 +104,7 @@ export function registerConstruction(): void {
   let ticks = 0;
   system.runInterval(() => {
     if (++ticks % 10 === 0) refreshActiveSites(); // picks up changes made elsewhere every 10 s
-    const now = world.getAbsoluteTime();
+    const now = gameTime();
     for (const a of active) {
       const b = a.site.build!;
       if (running.has(keyOf(a)) || b.done >= stepsDue(now - b.start)) continue;
@@ -158,8 +159,16 @@ function finishStep(a: ActiveSite, step: number): void {
     announceFinished(s, a, to, oldTier !== tier(s));
   } else {
     saveSettlement(s);
+    if (step + 1 < STEPS) announcePhase(s, a, step + 1);
   }
   refreshActiveSites();
+}
+
+/** "⚒ House: phase 2 of 4" to players nearby, so progress is visible. */
+function announcePhase(s: Settlement, a: ActiveSite, phase: number): void {
+  const msg = raw(txt("§7⚒ "), buildingName(a.defId), txt(": "), t("bannerforge.build.phase", String(phase), String(PHASES)));
+  for (const p of world.getDimension(a.dim).getPlayers({ location: { x: a.site.x, y: a.site.y, z: a.site.z }, maxDistance: 64 })) p.sendMessage(msg);
+  void s;
 }
 
 function announceFinished(s: Settlement, a: ActiveSite, level: BuildingLevel, promoted: boolean): void {
@@ -174,11 +183,24 @@ function announceFinished(s: Settlement, a: ActiveSite, level: BuildingLevel, pr
 
 // ---------- steps ----------
 
+const badBlocks = new Set<string>();
+
+/**
+ * Places one block. An unloaded chunk throws (the step is retried later). A block the game refuses
+ * (wrong id or state, play-test 2026-11-15) is skipped and logged once, so one bad block never stalls a building.
+ */
 function set(dim: Dimension, x: number, y: number, z: number, id: string, states?: Record<string, string | number | boolean>): void {
   const block = dim.getBlock({ x, y, z });
   if (!block) throw new Error("unloaded");
-  if (states) block.setPermutation(BlockPermutation.resolve(id, states));
-  else block.setType(id);
+  try {
+    if (states) block.setPermutation(BlockPermutation.resolve(id, states));
+    else block.setType(id);
+  } catch (e) {
+    if (!badBlocks.has(id)) {
+      badBlocks.add(id);
+      console.warn(`[BannerForge] skipped block ${id}: ${String(e)}`);
+    }
+  }
 }
 
 const CONTAINER = /chest|barrel|shulker_box|hopper|dispenser|dropper|furnace|smoker|brewing_stand/;
@@ -226,6 +248,29 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
           }
         }
         if (++n % (BLOCKS_PER_YIELD * 4) === 0) yield;
+      }
+    }
+  }
+
+  // 1b. Upgrades: blocks the player added to the old building are packed up too (owner decision B,
+  //     2026-11-15). Anything that differs from the old level's blueprint counts as added.
+  if (site.built > 0) {
+    const old = blueprintFor(a.defId, site.built, site);
+    if (old) {
+      for (let ly = 0; ly <= clearTop - site.y; ly++) {
+        for (let lx = 0; lx < f.w; lx++) {
+          for (let lz = 0; lz < f.w; lz++) {
+            const expected = old.at(lx, ly, lz);
+            if (ly === 0 && !expected) continue; // garden ground
+            const p = toWorld(f, lx, lz);
+            const block = dim.getBlock({ x: p.x, y: site.y + ly, z: p.z });
+            if (!block || isClearable(block.typeId) || block.typeId === "minecraft:scaffolding") continue;
+            if (expected && expected.id === block.typeId) continue;
+            const item = block.getItemStack(1);
+            if (item) salvaged.push(item);
+            if (++n % (BLOCKS_PER_YIELD * 4) === 0) yield;
+          }
+        }
       }
     }
   }

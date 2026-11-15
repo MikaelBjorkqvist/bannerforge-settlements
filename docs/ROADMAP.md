@@ -37,7 +37,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Construction in 4 phases over one in-game day, time-based catch-up, scaffolding, stored items packed into barrels
 - [x] Sites protected from breaking, placing and explosions; `/scriptevent bannerforge:build_finish` and `build_next`
 - [x] Upgrades rebuild on the plot; the level counts when construction finishes
-- [ ] Owner decision: upgrades and player-added blocks (pack up vs warn vs additive), see DESIGN.md
+- [x] Upgrades pack stored items and player-added blocks into barrels by the entrance (owner decision B)
 - [ ] Docks need water: per-building placement rules (later)
 - [ ] Defences (perimeter) are placed in M3
 ### M2b — Design workflow (style guide → blueprint → `.mcstructure` + previews)

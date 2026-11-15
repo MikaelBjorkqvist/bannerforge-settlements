@@ -43,7 +43,7 @@ export function placeholderBlueprint(def: BuildingDef, level: 1 | 2 | 3, w: numb
     at(lx, ly, lz) {
       const inside = lx >= lo && lx <= hi && lz >= lo && lz <= hi;
       // Sign in the front garden, right of the door.
-      if (ly === 1 && lz === w - 1 && lx === mid + 2) return { id: "minecraft:oak_standing_sign", states: { ground_sign_direction: SIGN_DIR[rot] }, sign: true };
+      if (ly === 1 && lz === w - 1 && lx === mid + 2) return { id: "minecraft:standing_sign", states: { ground_sign_direction: SIGN_DIR[rot] }, sign: true };
       if (!inside) return undefined;
       if (ly === 0) return { id: "minecraft:oak_planks" };
       if (ly === height - 1) return { id: "minecraft:smooth_stone_slab" };

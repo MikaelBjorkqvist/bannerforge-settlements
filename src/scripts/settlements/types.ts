@@ -66,7 +66,7 @@ export interface Site {
 export interface Construction {
   /** Level being built. */
   to: BuildingLevel;
-  /** world.getAbsoluteTime() when construction started. */
+  /** gameTime() (clock.ts) when construction started. */
   start: number;
   /** Steps finished (0..5, see plots.ts STEPS). */
   done: number;
@@ -82,6 +82,6 @@ export interface StewardRecord {
   skin: number;
   /** Entity id of the living steward, to find it quickly. */
   entityId?: string;
-  /** world.getAbsoluteTime() when the steward died; cleared when they return. */
+  /** gameTime() (clock.ts) when the steward died; cleared when they return. */
   diedAt?: number;
 }

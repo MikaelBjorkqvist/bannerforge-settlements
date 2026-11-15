@@ -23,7 +23,8 @@ export const pickName = (seed: string) => NPC_NAMES[pickIndex(seed, NPC_NAMES.le
 /** Ticks until a steward who died at `diedAt` may return (0 = may return now). */
 export function respawnTicksLeft(diedAt: number | undefined, now: number): number {
   if (diedAt === undefined) return 0;
-  return Math.max(0, diedAt + RESPAWN_TICKS - now);
+  // Clamped: a clock change (e.g. /time set back) never makes the wait longer than one day.
+  return Math.min(RESPAWN_TICKS, Math.max(0, diedAt + RESPAWN_TICKS - now));
 }
 
 /** Whole real-time minutes (20 ticks per second), rounded up, at least 1. */

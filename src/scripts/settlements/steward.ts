@@ -1,3 +1,4 @@
+import { gameTime } from "./clock.js";
 import { type Block, type Dimension, type Entity, type Player, system, world } from "@minecraft/server";
 import { showClaimForm } from "./founding.js";
 import { showOverview } from "./ledger.js";
@@ -93,7 +94,7 @@ function callSettlementSteward(player: Player, dim: Dimension, s: Settlement): v
     say(player, "bannerforge.bell.steward_coming", nameTagFor(st.name));
     return;
   }
-  const left = respawnTicksLeft(st.diedAt, world.getAbsoluteTime());
+  const left = respawnTicksLeft(st.diedAt, gameTime());
   if (left > 0) {
     if (isNew) saveSettlement(s);
     say(player, "bannerforge.bell.steward_away", nameTagFor(st.name), String(ticksToMinutes(left)));
@@ -158,7 +159,7 @@ function onStewardDied(dead: Entity): void {
   }
   const s = typeof sid === "string" ? settlementById(sid) : allSettlements().find((x) => x.steward?.entityId === dead.id);
   if (!s?.steward) return;
-  s.steward.diedAt = world.getAbsoluteTime();
+  s.steward.diedAt = gameTime();
   delete s.steward.entityId;
   saveSettlement(s);
   world.sendMessage(raw(t("bannerforge.steward.died", nameTagFor(s.steward.name), s.name)));
@@ -166,7 +167,7 @@ function onStewardDied(dead: Entity): void {
 
 /** Light periodic check: a steward whose day is up returns once a player is near the settlement. */
 function returnStewardsNearPlayers(): void {
-  const now = world.getAbsoluteTime();
+  const now = gameTime();
   for (const s of allSettlements()) {
     if (s.steward?.diedAt === undefined || respawnTicksLeft(s.steward.diedAt, now) > 0) continue;
     const dim = world.getDimension(s.dimension);

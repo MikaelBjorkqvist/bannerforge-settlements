@@ -43,6 +43,8 @@ shops and missions.
 | 2026-11-15 | Floor level: the ground at the entrance, adjustable with Raise/Lower within the cut/fill limits. |
 | 2026-11-15 | Vanilla structures: smarter scan (anchor blocks + connected blocks), outlined while placing. Overriding vanilla structure files is ruled out (ADR 0003, Marketplace). Farms, wells and small water are cleared for the fee; a quarter of the plot or more under water is blocked. |
 | 2026-11-15 | The founding form uses the same DDUI style as the ledger. |
+| 2026-11-15 | Upgrades (option B): chest contents and blocks the player added (anything that differs from the old level's blueprint) are packed into barrels by the entrance before the rebuild. |
+| 2026-11-15 | Construction and steward timers use the in-game calendar (day × 24000 + time of day), so sleeping through nights counts. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

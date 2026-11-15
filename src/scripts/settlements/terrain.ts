@@ -20,10 +20,20 @@ export const ANCHOR = /(_bed$|_door$|lectern|composter|smithing_table|fletching_
 
 const LIQUID = /water|lava/;
 
+/**
+ * Natural terrain: the only thing that counts as ground, and the only thing that blocks a building above
+ * the ground (cliffs, overhangs). Anything else that isn't a plant is treated as a structure and cleared
+ * (play-test 2026-11-15: unknown village blocks made "Not enough room above" too often).
+ * Checked after MAN_MADE, so cobblestone, stone bricks and cut sandstone stay structures.
+ */
+const NATURAL =
+  /(stone|dirt|deepslate|granite|diorite|andesite|tuff|calcite|sand|gravel|clay|terracotta|_ore$|grass_block|podzol|mycelium|mud|moss_block|snow$|powder_snow|ice$|basalt|blackstone|netherrack|nylium|soul_soil|soul_sand|bedrock|obsidian|magma|dripstone_block|amethyst_block|sculk|end_stone|path)/;
+
 export const isAir = (id: string) => id === "minecraft:air" || id === "minecraft:cave_air" || id === "minecraft:light_block";
 export const isClearable = (id: string) => isAir(id) || CLEARABLE.test(id);
 export const isManMade = (id: string) => MAN_MADE.test(id);
 export const isLiquid = (id: string) => LIQUID.test(id);
+export const isNatural = (id: string) => !isManMade(id) && NATURAL.test(id);
 
 export interface Column {
   x: number;
@@ -55,11 +65,8 @@ export function readColumn(dim: Dimension, x: number, z: number, floor: number):
     }
     if (isLiquid(id)) return { x, z, ground: y, water: true, house };
     if (isClearable(id)) continue;
-    if (isManMade(id)) {
-      house = true;
-      continue;
-    }
-    return { x, z, ground: y, water: false, house };
+    if (isNatural(id)) return { x, z, ground: y, water: false, house };
+    house = true; // man-made or unknown: part of a structure, keep looking for the ground under it
   }
   return { x, z, ground: y, water: false, house };
 }
@@ -142,11 +149,8 @@ export function survey(input: SurveyInput): Survey {
         return blocked("unloaded", groundY, entranceY);
       }
       if (isClearable(id)) continue;
-      if (isManMade(id)) {
-        c.house = true;
-        continue;
-      }
-      return blocked("no_room", groundY, entranceY);
+      if (isNatural(id)) return blocked("no_room", groundY, entranceY);
+      c.house = true;
     }
   }
 
