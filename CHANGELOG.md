@@ -3,6 +3,8 @@
 All notable changes to this add-on. Format: [Keep a Changelog](https://keepachangelog.com/), versions: SemVer.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-11-15
 ### Added
 - Faction names: Amberwood Order (green), Kingscross Guild (blue), Brimstone Legion (red).
   The founding form shows each faction with its colour.
