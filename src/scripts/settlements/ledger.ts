@@ -116,7 +116,6 @@ export function showOverview(player: Player, s: Settlement): void {
       imageDetails: icon(SECTION_ICON[category]),
     });
   }
-  form.closeButton();
   show(form);
 }
 
@@ -137,7 +136,6 @@ export function showSection(player: Player, s: Settlement, category: Category): 
     form.header(t(`bannerforge.group.${g}`));
     defs.filter((d) => d.group === g).forEach(addRow);
   }
-  form.closeButton();
   show(form);
 }
 
@@ -164,7 +162,6 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   form.spacer();
   buttons.forEach((b, slot) => form.button(b.label, () => onBuy(slot), { disabled: b.disabled, visible: b.visible, imageDetails: icon(def.id) }));
   form.button(t("bannerforge.ledger.go_population"), () => go(form, () => showSection(player, s, "population")), { visible: goPopulation });
-  form.closeButton();
 
   function refresh(): void {
     const list = instances(s, def.id);

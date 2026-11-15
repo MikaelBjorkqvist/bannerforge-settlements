@@ -23,6 +23,8 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Steward death: ledger closed for one in-game day, bell shows the time left, steward returns
 - [x] Layered NPC textures (skin, outfit, profession, rank) and "Profession, Name" names
 - [ ] Steward moves into the Town Hall once it is built (needs physical buildings, M2)
+- [ ] Villages with several bells: the steward returns to the founding bell, even when another bell is rung
+      (play-test 2026-11-15, harmless for now). Option: return to the bell that was rung, or treat every bell in the settlement as its bell
 - [ ] Faction banner placed at the bell; faction names/colours decided
 - [ ] Settlement boundary visualised (particles) and stored
 
