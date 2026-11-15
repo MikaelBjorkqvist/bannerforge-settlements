@@ -10,7 +10,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
   pick a name and a faction banner. Founding costs 10 emeralds. At your own settlement, ringing the bell opens the steward's menu.
 - The steward's ledger has three short screens (Overview → Section → Building):
   - Overview: your faction banner, faction and town name, a warning when jobs wait for homes, the next-tier checklist, and section buttons with icons.
-  - Section: one short row per building with an icon (▲ can do now, ✔ done for this tier, Locked).
+  - Section: one short row per building with an icon and a symbol: + build, ▲ upgrade, ✔ done for this tier, ✘ locked.
+  - Short button text that fits on one line, and no misleading counts.
   - Building: what you have now and what the next level adds, what's missing, cost vs your emeralds, and one clear button.
   - The result appears right above the button, with a sound.
   - Every screen has a "← Back" button.
