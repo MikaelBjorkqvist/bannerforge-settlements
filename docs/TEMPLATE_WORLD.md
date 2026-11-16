@@ -27,6 +27,8 @@ Claude can also do both and copy the pack over the desktop folder link.
    experiments needed).
 2. Stand on the ground where the grid should start. It grows towards +X (east) and +Z (south): about 560 × 130 blocks.
 3. `/scriptevent bannerforge:vt_layout` lays out everything. `/scriptevent bannerforge:vt_layout plains` does one biome.
+   The first run remembers its starting spot in the world; later runs reuse it, so re-running fills gaps in place.
+   `vt_layout here [biome]` starts again from where you stand.
    `/scriptevent bannerforge:vt_check` only reports block states the game rejects (Content Log). `vt_stop` stops.
 4. Each building gets a sign in front with its name; each row has a biome sign at its west end.
 
@@ -37,6 +39,9 @@ Claude can also do both and copy the pack over the desktop folder link.
 - **Height:** a street jigsaw at template height *j* means template y = 0 goes at surface + 1 − *j*. Plains houses
   sit on the grass, desert houses and basements sink in, town centres replace the surface.
 - Air is placed only at or below the surface (it carves out sunken floors); above ground, air is skipped.
+- Chunks are loaded with one ticking area per 144-block stretch of a row, waiting in real ticks (`system.currentTick`):
+  a `runJob` yield can resume within the same tick (play-test 2026-11-16: the first version gave up after ~1 s and
+  skipped most buildings).
 - Bedrock works out stair shapes, fence, pane and bar connections, and snowy grass by itself.
 
 ## Known gaps (Bedrock keeps these in block entities, which a script permutation can't set)
