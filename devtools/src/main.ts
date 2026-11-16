@@ -275,17 +275,21 @@ function* layout(player: Player, biome: string | undefined, here: boolean): Gene
 }
 
 /** Runs a fill command in slices of at most ~32k blocks (the /fill limit). */
-function fillBox(dim: Dimension, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, block: string): void {
+function fillBox(dim: Dimension, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, block: string): number {
   const layer = (x1 - x0 + 1) * (z1 - z0 + 1);
   const step = Math.max(1, Math.floor(32000 / layer));
+  let changed = 0;
   for (let y = y0; y <= y1; y += step) {
     const top = Math.min(y1, y + step - 1);
+    const cmd = `fill ${x0} ${y} ${z0} ${x1} ${top} ${z1} ${block}`;
     try {
-      dim.runCommand(`fill ${x0} ${y} ${z0} ${x1} ${top} ${z1} ${block}`);
+      const r = dim.runCommand(cmd) as { successCount?: number } | undefined;
+      changed += r?.successCount ?? 0;
     } catch (e) {
-      console.warn(`${TAG} fill failed (${block}): ${String(e)}`);
+      console.warn(`${TAG} fill failed: ${cmd}: ${String(e)}`);
     }
   }
+  return changed;
 }
 
 let grassId: string | undefined;
@@ -318,6 +322,7 @@ function* clear(player: Player, filter: string): Generator<void, void> {
   const depth: Record<string, number> = {};
   for (const t of TEMPLATES) depth[t.biome] = Math.max(depth[t.biome] ?? 0, t.size[2]);
   player.sendMessage(`${TAG} clearing ${list.length} templates (${filter})…`);
+  console.warn(`${TAG} vt_clear ${filter}: origin ${ox} ${sy} ${oz}`);
   area = undefined;
   let lastBiome = "";
   let n = 0;
@@ -335,15 +340,18 @@ function* clear(player: Player, filter: string): Generator<void, void> {
     // Covers both the old (dy 0) and current placement heights, plus a margin.
     const top = sy + Math.max(t.dy, 1) + t.size[1] + 1;
     const below = sy + Math.min(t.dy, 0);
-    fillBox(dim, box.x0, sy + 1, box.z0, box.x1, top, box.z1, "air");
+    const a = fillBox(dim, box.x0, sy + 1, box.z0, box.x1, top, box.z1, "air");
     if (below < sy) fillBox(dim, box.x0, below, box.z0, box.x1, sy - 1, box.z1, "dirt");
-    fillBox(dim, box.x0, sy, box.z0, box.x1, sy, box.z1, grass());
+    const g = fillBox(dim, box.x0, sy, box.z0, box.x1, sy, box.z1, grass());
+    if (n === 0) console.warn(`${TAG} clear ${t.key}: y ${sy}..${top}, x ${box.x0}..${box.x1}, z ${box.z0}..${box.z1}; fill air ${a}, ${grass()} ${g}`);
     n++;
     yield;
   }
   removeArea(dim);
   area = undefined;
-  player.sendMessage(`${TAG} cleared ${n}/${list.length}. Run vt_layout ${filter} to place them again.`);
+  const done = `${TAG} cleared ${n}/${list.length} (${filter}). Run vt_layout ${filter} to place them again.`;
+  console.warn(done);
+  player.sendMessage(done);
   running = false;
   stopRequested = false;
 }

@@ -36,6 +36,8 @@ const RENAMES = {
   dandelion: ["dandelion", "yellow_flower"],
   dirt_path: ["grass_path", "dirt_path"],
   cobweb: ["web"],
+  dead_bush: ["deadbush", "dead_bush"],
+  rooted_dirt: ["dirt_with_roots", "rooted_dirt"],
   note_block: ["noteblock"],
   nether_quartz_ore: ["quartz_ore"],
   poppy: ["poppy", "red_flower"],
@@ -144,7 +146,10 @@ export function translateState(java) {
   if (id === "hay_block") return [c(id, { pillar_axis: p.axis ?? "y" })];
 
   const leaves = id.match(/^(\w+)_leaves$/);
-  if (leaves) return [c(id, { persistent_bit: p.persistent === "true", update_bit: false })];
+  if (leaves) {
+    const name = id === "flowering_azalea_leaves" ? "azalea_leaves_flowered" : id;
+    return [c(name, { persistent_bit: p.persistent === "true", update_bit: false })];
+  }
 
   if (id.endsWith("_sapling")) return [c(id, { age_bit: p.stage === "1" })];
   // Flattened families, with the pre-flattening form as a fallback.
@@ -178,7 +183,7 @@ export function translateState(java) {
   if (id.endsWith("_wall_banner")) return [c("wall_banner", { facing_direction: FACING_DIRECTION[p.facing] ?? 2 })];
   if (id.endsWith("_banner")) return [c("standing_banner", { ground_sign_direction: Number(p.rotation ?? 0) })];
   if (id.endsWith("_wall_sign")) {
-    const name = id === "oak_wall_sign" ? "wall_sign" : id;
+    const name = id === "oak_wall_sign" ? "wall_sign" : id === "dark_oak_wall_sign" ? "darkoak_wall_sign" : id;
     return [c(name, { facing_direction: FACING_DIRECTION[p.facing] ?? 2 })];
   }
 
@@ -192,7 +197,7 @@ export function translateState(java) {
   }
   if (id.endsWith("_sign")) {
     // standing sign: oak is just "standing_sign"
-    const name = id === "oak_sign" ? "standing_sign" : id.replace(/_sign$/, "_standing_sign");
+    const name = id === "oak_sign" ? "standing_sign" : id === "dark_oak_sign" ? "darkoak_standing_sign" : id.replace(/_sign$/, "_standing_sign");
     return [c(name, { ground_sign_direction: Number(p.rotation ?? 0) })];
   }
   if (/(^|_)candle$/.test(id)) return [c(id, { candles: Math.max(0, Number(p.candles ?? 1) - 1), lit: bool(p.lit) })];
