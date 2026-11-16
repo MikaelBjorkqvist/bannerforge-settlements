@@ -33,8 +33,12 @@ export const FILL_MAX = 8;
 /** One in-game day, split into 4 visible phases. */
 export const BUILD_TICKS = 24000;
 export const PHASES = 4;
-/** Steps: 0 = prepare site + phase 1, 1..3 = phases 2..4, 4 = finish (scaffolding off, level applied). */
-export const STEPS = PHASES + 1;
+/**
+ * Steps: 0 = prepare the site + phase 1 (at once), 1 = phase 2 (1/3 day), 2 = phase 3 (2/3 day),
+ * 3 = phase 4 + finish (full day). The last phase arrives with completion, so a building that looks
+ * finished is finished (play-test 2026-11-15).
+ */
+export const STEPS = PHASES;
 
 export interface Footprint {
   x: number; // min corner
@@ -106,8 +110,11 @@ export const containsColumn = (f: Footprint, x: number, z: number) => x >= f.x &
 /** Construction steps that should be done `elapsed` ticks after the start (1..STEPS). */
 export function stepsDue(elapsed: number): number {
   if (elapsed >= BUILD_TICKS) return STEPS;
-  return Math.min(PHASES, 1 + Math.floor(Math.max(0, elapsed) / (BUILD_TICKS / PHASES)));
+  return Math.min(STEPS - 1, 1 + Math.floor(Math.max(0, elapsed) / (BUILD_TICKS / (STEPS - 1))));
 }
+
+/** Ticks between visible steps (for the developer "next phase" command). */
+export const STEP_TICKS = BUILD_TICKS / (STEPS - 1);
 
 /** Layers (ly from, to exclusive) placed in phase 1..PHASES of a building `height` blocks tall. */
 export function phaseLayers(phase: number, height: number): [number, number] {

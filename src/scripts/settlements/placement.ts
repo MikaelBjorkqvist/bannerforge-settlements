@@ -5,10 +5,11 @@
 
 import { ItemLockMode, ItemStack, MolangVariableMap, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
+import { pickVariant, topHeightFor, variantsFor } from "./blueprint.js";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
 import { canAfford, pay } from "./economy.js";
-import { BORDER_RADIUS, CUT_MAX, FILL_MAX, PLACEHOLDER_HEIGHT, PLOT_WIDTH, borderPointsNear, footprintInFront, insideBorder, turn, type Footprint, type Rect } from "./plots.js";
+import { BORDER_RADIUS, CUT_MAX, FILL_MAX, PLOT_WIDTH, borderPointsNear, footprintInFront, insideBorder, turn, type Footprint, type Rect } from "./plots.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { check, tier } from "./rules.js";
 import { survey, type Survey } from "./terrain.js";
@@ -35,6 +36,7 @@ interface Placing {
   mode: PlaceMode;
   w: number;
   topHeight: number;
+  variant?: string;
   turns: number;
   raise: number;
   locked?: Footprint;
@@ -54,12 +56,14 @@ export const isPlacing = (player: Player) => placing.has(player.id);
 
 export function startPlacement(player: Player, s: Settlement, def: BuildingDef, mode: PlaceMode): void {
   if (def.plot === "perimeter") return;
+  const variant = pickVariant(s.faction, def.id);
   placing.set(player.id, {
     sid: s.id,
     defId: def.id,
     mode,
     w: PLOT_WIDTH[def.plot],
-    topHeight: PLACEHOLDER_HEIGHT[def.plot][2],
+    variant,
+    topHeight: topHeightFor(def, s.faction, variant),
     turns: 0,
     raise: 0,
     panelOpen: false,
@@ -315,7 +319,7 @@ function openPanel(player: Player, p: Placing): void {
     p.surveyedKey = undefined;
     const cost = totalCost(p, sv);
     status.setData(statusLine(sv));
-    floor.setData(raw(txt("§7"), floorLine(p)));
+    floor.setData(p.variant ? raw(txt("§7"), t("bannerforge.place.design"), txt(` ${p.variant.toUpperCase()}  ·  `), floorLine(p)) : raw(txt("§7"), floorLine(p)));
     buildLabel.setData(cost.length ? raw(t("bannerforge.place.build"), txt(": "), costText(cost)) : t("bannerforge.place.build"));
     buildDisabled.setData(sv.verdict === "blocked" || !canAfford(player, cost));
     raiseDisabled.setData(p.raise >= FILL_MAX);
@@ -348,6 +352,16 @@ function openPanel(player: Player, p: Placing): void {
     },
     { disabled: lowerDisabled },
   );
+  // Several designs of this building: let the player pick (owner: fewer copy-paste houses).
+  const variants = variantsFor(s.faction, p.defId);
+  if (variants.length > 1) {
+    form.button(t("bannerforge.place.variant"), () => {
+      p.variant = variants[(variants.indexOf(p.variant ?? "") + 1) % variants.length];
+      const def = buildingById(p.defId);
+      if (def) p.topHeight = topHeightFor(def, s.faction, p.variant);
+      update();
+    });
+  }
   form.button(t("bannerforge.place.move"), () => close(() => (p.locked = undefined)));
   form.button(t("bannerforge.place.cancel"), () => close(() => stop(player, player.id, "bannerforge.place.cancelled")));
   update();
@@ -396,7 +410,7 @@ function confirm(player: Player, p: Placing): void {
     return;
   }
 
-  const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, rot: f.rot, built: 0 };
+  const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
   const sites = ((s.sites ??= {})[def.id] ??= []);
   if (p.mode.kind === "new") {
     const levels = (s.buildings[def.id] ??= []);

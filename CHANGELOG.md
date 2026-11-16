@@ -18,10 +18,13 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
   - Construction takes one in-game day in four phases, and continues while you are away.
   - Items stored in chests on the plot, and on upgrades your own added blocks, are packed into barrels by the entrance.
   - Chat shows each finished phase and when the building is ready. Sleeping through the night counts toward construction.
+- Every building except Defences and Barracks now uses a hand-built plains house as its placeholder, in every faction, with the faction's banners, bed and cushion colours. The building's name is on its sign.
   - Construction sites can't be broken, built on or blown up.
   - Upgrades rebuild the building on its plot; the new level counts when it is finished.
   - "Show town border" in the ledger.
 - Buildings bought before this version can be placed for free from the ledger ("Place building").
+- The first designed building: Kingscross Guild houses in two designs (house at the back or in the corner), three levels each, with real crop gardens. Other buildings and factions still use placeholder boxes.
+- The placement panel has a Design button when a building has more than one design.
 ### Fixed
 - Ringing the bell several times no longer spawns extra stewards.
 - Founding now completes after you pay (it took the emeralds and stopped before).

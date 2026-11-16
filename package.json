@@ -15,7 +15,8 @@
     "bump": "node tools/version.mjs",
     "test": "node tools/test.mjs",
     "devtools:build": "node tools/build_devtools.mjs",
-    "devtools:deploy": "node tools/deploy.mjs devtools"
+    "devtools:deploy": "node tools/deploy.mjs devtools",
+    "structures:import": "node tools/import_structures.mjs"
   },
   "devDependencies": {
     "@minecraft/server": "2.11.0",

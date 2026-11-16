@@ -57,6 +57,8 @@ export interface Site {
   w: number;
   /** Entrance direction, see plots.ts. */
   rot: 0 | 1 | 2 | 3;
+  /** Design variant (generated/blueprints.ts), kept through upgrades. Missing = placeholder box. */
+  variant?: string;
   /** Level currently standing on the plot (0 = only the site so far). */
   built: BuildingLevel;
   /** Construction in progress. */

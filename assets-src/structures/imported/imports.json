@@ -1,0 +1,12 @@
+{
+  "$comment": "Owner-built structures (in-game structure block exports). tools/import_structures.mjs turns each into faction-coloured .mcstructure files and blueprints. front: the side with the entrance as exported. groundLayers: how many bottom layers sit in the ground. placeholderFor: 'all' = every plot building except the Defence section, until it has its own design.",
+  "designs": {
+    "plains_house_s1": {
+      "file": "plains_house_s1.mcstructure",
+      "author": "Mikael (owner), built by hand in game, 2026-11-16",
+      "front": "north",
+      "groundLayers": 1,
+      "placeholderFor": "all"
+    }
+  }
+}

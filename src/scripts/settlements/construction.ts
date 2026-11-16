@@ -11,12 +11,13 @@ import {
   ItemStack,
   type Player,
   type RawMessage,
+  StructureRotation,
   system,
   world,
 } from "@minecraft/server";
-import { placeholderBlueprint, type Blueprint } from "./blueprint.js";
+import { blueprintByKey, blueprintFor as designFor, blueprintKeys, topHeightFor, type Blueprint } from "./blueprint.js";
 import { buildingById } from "./buildings.js";
-import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
+import { BUILD_TICKS, FILL_MAX, PHASES, PLACEHOLDER_HEIGHT, STEPS, STEP_TICKS, footprintInFront, phaseLayers, stepsDue, toWorld, type Footprint } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
 import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
@@ -32,22 +33,22 @@ const BLOCKS_PER_YIELD = 48;
 export const footprintOf = (site: Site): Footprint => ({ x: site.x, z: site.z, w: site.w, rot: site.rot });
 
 /** Height of the building's tallest level, for clearing and protection. */
-function topHeight(defId: string): number {
+function topHeight(defId: string, faction: string, variant: string | undefined): number {
   const def = buildingById(defId);
-  const plot = !def || def.plot === "perimeter" ? "S" : def.plot;
-  return PLACEHOLDER_HEIGHT[plot][2];
+  return def ? topHeightFor(def, faction, variant) : PLACEHOLDER_HEIGHT.S[2];
 }
 
-function blueprintFor(defId: string, level: BuildingLevel, site: Site): Blueprint | undefined {
-  const def = buildingById(defId);
+function blueprintFor(a: { defId: string; faction: string }, level: BuildingLevel, site: Site): Blueprint | undefined {
+  const def = buildingById(a.defId);
   if (!def || level < 1) return undefined;
-  return placeholderBlueprint(def, level as 1 | 2 | 3, site.w, site.rot);
+  return designFor(def, a.faction, site.variant, level as 1 | 2 | 3, site.w, site.rot);
 }
 
 // ---------- active sites (cache for protection and work) ----------
 
 interface ActiveSite {
   sid: string;
+  faction: string;
   defId: string;
   index: number;
   dim: string;
@@ -63,8 +64,8 @@ export function refreshActiveSites(): void {
     for (const [defId, sites] of Object.entries(s.sites ?? {})) {
       sites.forEach((site, index) => {
         if (!site?.build) return;
-        const box = { x0: site.x, x1: site.x + site.w - 1, y0: site.y - FILL_MAX, y1: site.y + topHeight(defId) + 2, z0: site.z, z1: site.z + site.w - 1 };
-        list.push({ sid: s.id, defId, index, dim: s.dimension, site, box });
+        const box = { x0: site.x, x1: site.x + site.w - 1, y0: site.y - FILL_MAX, y1: site.y + topHeight(defId, s.faction, site.variant) + 2, z0: site.z, z1: site.z + site.w - 1 };
+        list.push({ sid: s.id, faction: s.faction, defId, index, dim: s.dimension, site, box });
       });
     }
   }
@@ -124,15 +125,17 @@ function* runStep(dim: Dimension, a: ActiveSite, step: number): Generator<void, 
   let ok = false;
   try {
     const level = a.site.build!.to;
-    const bp = blueprintFor(a.defId, level, a.site);
+    const bp = blueprintFor(a, level, a.site);
     if (!bp) return;
     if (step === 0) {
       yield* prepare(dim, a, bp);
       yield* placePhase(dim, a.site, bp, 1);
-    } else if (step < PHASES) {
-      yield* placePhase(dim, a.site, bp, step + 1);
     } else {
-      yield* removeScaffolding(dim, a.site, bp);
+      yield* placePhase(dim, a.site, bp, step + 1);
+      if (step === STEPS - 1) {
+        yield* removeScaffolding(dim, a.site, bp);
+        placeFinishedStructure(dim, a.site, bp);
+      }
     }
     ok = true;
   } catch (e) {
@@ -227,7 +230,7 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
     }
     yield;
   }
-  const clearTop = site.y + Math.max(topHeight(a.defId), cut) + 1;
+  const clearTop = site.y + Math.max(topHeight(a.defId, a.faction, site.variant), cut) + 1;
   const { surface, fill } = localGround(dim, f, floor);
 
   // 1. Keep stored items: empty every container in the way.
@@ -255,7 +258,7 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
   // 1b. Upgrades: blocks the player added to the old building are packed up too (owner decision B,
   //     2026-11-15). Anything that differs from the old level's blueprint counts as added.
   if (site.built > 0) {
-    const old = blueprintFor(a.defId, site.built, site);
+    const old = blueprintFor(a, site.built, site);
     if (old) {
       for (let ly = 0; ly <= clearTop - site.y; ly++) {
         for (let lx = 0; lx < f.w; lx++) {
@@ -313,8 +316,9 @@ function* prepare(dim: Dimension, a: ActiveSite, bp: Blueprint): Generator<void,
 
   forgetVanillaIn(a.sid, f);
 
-  // 5. Scaffolding at the four corners, as tall as the building will be.
-  for (const [lx, lz] of [[0, 0], [f.w - 1, 0], [0, f.w - 1], [f.w - 1, f.w - 1]]) {
+  // 5. Scaffolding in columns the design leaves empty, just outside the building's corners, so no block of the
+  //    building ever replaces it (play-test 2026-11-15: scaffolding at the lot corners broke when fence posts went in).
+  for (const [lx, lz] of scaffoldColumns(bp)) {
     const p = toWorld(f, lx, lz);
     for (let ly = 1; ly < bp.height; ly++) set(dim, p.x, site.y + ly, p.z, "minecraft:scaffolding");
   }
@@ -364,6 +368,31 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
   for (const at of signs) labelSign(dim, at);
 }
 
+const ROTATIONS = [StructureRotation.None, StructureRotation.Rotate90, StructureRotation.Rotate180, StructureRotation.Rotate270];
+
+/**
+ * Imported designs: when the building is finished, the whole structure is placed over the blueprint blocks, so
+ * what scripts can't set (bed colours, cushions, chest and bookshelf contents, pot plants) is there too.
+ * Structure void leaves the ground as it is. Throws on an unloaded chunk, so the step is retried.
+ */
+function placeFinishedStructure(dim: Dimension, site: Pick<Site, "x" | "y" | "z" | "w" | "rot">, bp: Blueprint, labelSigns = true): void {
+  if (!bp.structure) return;
+  const { id, turns, yOffset } = bp.structure;
+  world.structureManager.place(id, dim, { x: site.x, y: site.y + yOffset, z: site.z }, { rotation: ROTATIONS[turns % 4], includeEntities: true });
+  if (!labelSigns) return;
+  // The structure brought its own sign text back: write the building's name again.
+  const f: Footprint = { x: site.x, z: site.z, w: site.w, rot: site.rot };
+  for (let ly = 0; ly < bp.height; ly++) {
+    for (let lx = 0; lx < f.w; lx++) {
+      for (let lz = 0; lz < f.w; lz++) {
+        if (!bp.at(lx, ly, lz)?.sign) continue;
+        const p = toWorld(f, lx, lz);
+        labelSign(dim, { x: p.x, y: site.y + ly, z: p.z });
+      }
+    }
+  }
+}
+
 /** The building's name on its sign. Signs need a little time to exist, so this runs a tick later. */
 function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): void {
   const a = active.find((x) => x.dim === dim.id && at.x >= x.box.x0 && at.x <= x.box.x1 && at.z >= x.box.z0 && at.z <= x.box.z1);
@@ -379,16 +408,60 @@ function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): voi
   });
 }
 
+/** Up to four columns that are empty above the ground in the whole design, near the building's corners. */
+function scaffoldColumns(bp: Blueprint): [number, number][] {
+  const free = (lx: number, lz: number) => {
+    for (let ly = 1; ly < bp.height; ly++) if (bp.at(lx, ly, lz)) return false;
+    return true;
+  };
+  // The building's body: columns with blocks from the third layer up.
+  let x0 = bp.w, x1 = -1, z0 = bp.w, z1 = -1;
+  for (let lx = 0; lx < bp.w; lx++) {
+    for (let lz = 0; lz < bp.w; lz++) {
+      for (let ly = 3; ly < bp.height; ly++) {
+        if (bp.at(lx, ly, lz)) {
+          x0 = Math.min(x0, lx); x1 = Math.max(x1, lx); z0 = Math.min(z0, lz); z1 = Math.max(z1, lz);
+          break;
+        }
+      }
+    }
+  }
+  if (x1 < 0) return [];
+  const picks: [number, number][] = [];
+  for (const [cx, cz] of [[x0 - 1, z0 - 1], [x1 + 1, z0 - 1], [x0 - 1, z1 + 1], [x1 + 1, z1 + 1]]) {
+    let best: [number, number] | undefined;
+    let bestD = Infinity;
+    for (let lx = 0; lx < bp.w; lx++) {
+      for (let lz = 0; lz < bp.w; lz++) {
+        const d = Math.abs(lx - cx) + Math.abs(lz - cz);
+        if (d < bestD && d <= 3 && free(lx, lz) && !picks.some(([px, pz]) => px === lx && pz === lz)) {
+          best = [lx, lz];
+          bestD = d;
+        }
+      }
+    }
+    if (best) picks.push(best);
+  }
+  return picks;
+}
+
+/** Removes all scaffolding on the plot (wherever it stands), top down so nothing drops. */
 function* removeScaffolding(dim: Dimension, site: Site, bp: Blueprint): Generator<void, void, void> {
   const f = footprintOf(site);
-  for (const [lx, lz] of [[0, 0], [f.w - 1, 0], [0, f.w - 1], [f.w - 1, f.w - 1]]) {
+  for (const [lx, lz] of allColumns(f.w)) {
     const p = toWorld(f, lx, lz);
     for (let ly = bp.height + 4; ly >= 1; ly--) {
       const block = dim.getBlock({ x: p.x, y: site.y + ly, z: p.z });
       if (block?.typeId === "minecraft:scaffolding") block.setType("minecraft:air");
     }
-    yield;
+    if (lx % 4 === 0 && lz === 0) yield;
   }
+}
+
+function allColumns(w: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let lx = 0; lx < w; lx++) for (let lz = 0; lz < w; lz++) out.push([lx, lz]);
+  return out;
 }
 
 // ---------- protection ----------
@@ -434,10 +507,18 @@ function registerProtection(): void {
  */
 function registerDevCommands(): void {
   system.afterEvents.scriptEventReceive.subscribe((e) => {
+    if (e.id === "bannerforge:info") {
+      if (e.sourceEntity?.typeId === "minecraft:player") settlementInfo(e.sourceEntity as Player);
+      return;
+    }
+    if (e.id === "bannerforge:preview") {
+      if (e.sourceEntity?.typeId === "minecraft:player") previewBlueprint(e.sourceEntity as Player, e.message.trim());
+      return;
+    }
     if (e.id !== "bannerforge:build_finish" && e.id !== "bannerforge:build_next") return;
     const player = e.sourceEntity;
     if (!player) return;
-    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : BUILD_TICKS / PHASES;
+    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : STEP_TICKS;
     const touched = new Set<string>();
     for (const a of active) {
       if (a.dim !== player.dimension.id) continue;
@@ -453,4 +534,75 @@ function registerDevCommands(): void {
     refreshActiveSites();
     if (player.typeId === "minecraft:player") (player as Player).sendMessage(`[BannerForge] ${e.id}: ${touched.size} site(s)`);
   });
+}
+
+/**
+ * /scriptevent bannerforge:preview blue/house/a/2
+ * Places a designed blueprint instantly in front of you, entrance facing you, on the ground you stand on
+ * (step 5 of docs/STRUCTURES.md). No cost, no construction, no foundation: for looking only.
+ * Without a key it lists the available blueprints.
+ */
+function previewBlueprint(player: Player, k: string): void {
+  if (!k) {
+    player.sendMessage(`[BannerForge] blueprints: ${blueprintKeys().join(", ") || "none"}`);
+    return;
+  }
+  const probe = blueprintByKey(k, 0);
+  if (!probe) {
+    player.sendMessage(`[BannerForge] unknown blueprint "${k}". Try: ${blueprintKeys().join(", ")}`);
+    return;
+  }
+  const v = player.getViewDirection();
+  const f = footprintInFront(player.location.x, player.location.z, v.x, v.z, probe.w, 0);
+  const bp = blueprintByKey(k, f.rot)!;
+  const groundY = Math.floor(player.location.y) - 1;
+  const dim = player.dimension;
+  system.runJob(
+    (function* () {
+      try {
+        for (let y = groundY + 1; y <= groundY + bp.height + 1; y++) {
+          dim.fillBlocks(new BlockVolume({ x: f.x, y, z: f.z }, { x: f.x + f.w - 1, y, z: f.z + f.w - 1 }), "minecraft:air");
+          yield;
+        }
+        let n = 0;
+        for (let ly = 0; ly < bp.height; ly++) {
+          for (let lx = 0; lx < f.w; lx++) {
+            for (let lz = 0; lz < f.w; lz++) {
+              const spec = bp.at(lx, ly, lz);
+              if (!spec) continue;
+              const p = toWorld(f, lx, lz);
+              set(dim, p.x, groundY + ly, p.z, spec.id, spec.states);
+              if (++n % BLOCKS_PER_YIELD === 0) yield;
+            }
+          }
+        }
+        if (bp.structure) placeFinishedStructure(dim, { x: f.x, y: groundY, z: f.z, w: f.w, rot: f.rot }, bp, false);
+        player.sendMessage(`[BannerForge] placed ${k} (${n} blocks${bp.structure ? " + finished structure" : ""}). Skipped blocks, if any, are in the content log.`);
+      } catch (err) {
+        player.sendMessage(`[BannerForge] preview failed: ${String(err)}`);
+      }
+    })(),
+  );
+}
+
+/** /scriptevent bannerforge:info  shows the saved data of the nearest settlement (developer tool). */
+function settlementInfo(player: Player): void {
+  let best: Settlement | undefined;
+  let bestD = Infinity;
+  for (const s of allSettlements()) {
+    if (s.dimension !== player.dimension.id) continue;
+    const d = Math.hypot(s.center.x - player.location.x, s.center.z - player.location.z);
+    if (d < bestD) {
+      best = s;
+      bestD = d;
+    }
+  }
+  if (!best) {
+    player.sendMessage("[BannerForge] no settlement in this dimension");
+    return;
+  }
+  const sites = Object.entries(best.sites ?? {})
+    .map(([id, list]) => `${id}: ${list.map((x) => (x ? `${x.variant ?? "placeholder"} L${x.built}${x.build ? " building" : ""}` : "unplaced")).join(", ")}`)
+    .join("; ");
+  player.sendMessage(`[BannerForge] ${best.name}: faction=${best.faction}, schema=${best.schema}, ${Math.round(bestD)} blocks away. Sites: ${sites || "none"}`);
 }

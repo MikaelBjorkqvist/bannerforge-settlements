@@ -1,0 +1,12 @@
+  1  OK   cottage, 9x5, gable roof, eaves to street, gable porch | Yard: crops, well, flowers, bench, woodpile
+  2  OK   townhouse, 7x7, gable roof, gable to street, awning porch | Yard: tree, crops
+  3  OK   L-house, 7x6, gable roof, gable to street, pentice porch | Yard: crops, bench, woodpile, hay
+  4  OK   longhouse, 9x5, hipped roof, eaves to street, gable porch | Yard: crops, bench, well, flowers, woodpile
+  5  OK   saltbox, 7x5, gable roof, eaves to street, gable porch | Yard: bench, flowers, woodpile
+  6  OK   tower house, 7x5, gable roof, gable to street, awning porch | Yard: crops, bench, flowers, woodpile, hay
+  7  OK   cottage, 7x6, gable roof, eaves to street, pentice porch | Yard: tree, crops
+  8  OK   townhouse, 7x6, gable roof, gable to street, gable porch | Yard: tree, crops, bench
+  9  OK   L-house, 7x6, gable roof, eaves to street, awning porch | Yard: crops, flowers, bench, hay
+ 10  OK   longhouse, 9x5, hipped roof, eaves to street, pentice porch | Yard: tree, crops, flowers
+ 11  OK   saltbox, 7x5, gable roof, eaves to street, gable porch | Yard: bench, flowers, woodpile
+ 12  OK   tower house, 7x5, gable roof, eaves to street, awning porch | Yard: tree, crops, hay, bench

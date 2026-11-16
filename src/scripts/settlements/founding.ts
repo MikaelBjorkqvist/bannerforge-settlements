@@ -20,8 +20,8 @@ export function showClaimForm(player: Player, dimensionId: string, bell: Vec3, o
     return;
   }
   // Same DDUI style as the ledger (owner, play-test 2026-11-15).
-  const nameValue = new ObservableString("");
-  const factionValue = new ObservableNumber(0);
+  const nameValue = new ObservableString("", { clientWritable: true });
+  const factionValue = new ObservableNumber(0, { clientWritable: true });
   const feedback = new ObservableUIRawMessage(txt(""));
   const feedbackVisible = new ObservableBoolean(false);
   const form = new CustomForm(player, t("bannerforge.claim.title"));
@@ -44,7 +44,9 @@ export function showClaimForm(player: Player, dimensionId: string, bell: Vec3, o
       return;
     }
     form.close();
-    system.run(() => found(player, dimensionId, bell, name, FACTIONS[Number(factionValue.getData()) || 0], onFounded));
+    const picked = Number(factionValue.getData());
+    console.log(`[BannerForge] founding: dropdown value ${String(factionValue.getData())} -> ${FACTIONS[picked] ?? "?"}`);
+    system.run(() => found(player, dimensionId, bell, name, FACTIONS[picked] ?? FACTIONS[0], onFounded));
   });
   form.show().catch((e) => console.warn(`[BannerForge] founding form: ${e}`));
 }

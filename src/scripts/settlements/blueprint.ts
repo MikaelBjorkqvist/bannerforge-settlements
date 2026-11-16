@@ -1,8 +1,13 @@
 // What a building looks like, block by block, in plot-local coordinates (see plots.ts).
-// M2a: placeholder boxes. M2b replaces these with real designs (.mcstructure files) behind the same interface.
+// Designed buildings come from the structure pipeline (docs/STRUCTURES.md, generated/blueprints.ts);
+// buildings without a design yet (or for a faction without one) use the M2a placeholder boxes.
 
+import { ALPHABET, type BlueprintData } from "./blueprint_data.js";
 import type { BuildingDef, Category } from "./buildings.js";
-import { PLACEHOLDER_HEIGHT, type Rot } from "./plots.js";
+import { BLUEPRINTS, VARIANTS } from "./generated/blueprints.js";
+import { IMPORTED, PLACEHOLDER_DESIGN, type ImportedDesign } from "./generated/imported.js";
+import { PLACEHOLDER_HEIGHT, PLOT_WIDTH, type Rot } from "./plots.js";
+import { rotateStates } from "./rotate.js";
 
 export interface BlockSpec {
   id: string;
@@ -16,6 +21,11 @@ export interface Blueprint {
   height: number;
   /** Block at a local position, or undefined for air. */
   at(lx: number, ly: number, lz: number): BlockSpec | undefined;
+  /**
+   * Imported designs: the structure placed when the building is finished (it keeps bed colours, cushions and
+   * container contents, which scripts can't set). `turns` = clockwise quarter turns to apply when placing.
+   */
+  structure?: { id: string; turns: number; yOffset: number };
 }
 
 /** Placeholder wall colour per ledger section, so boxes are easy to tell apart in play-tests. */
@@ -60,3 +70,78 @@ export function placeholderBlueprint(def: BuildingDef, level: 1 | 2 | 3, w: numb
     },
   };
 }
+
+// ---------- designed buildings ----------
+
+const key = (faction: string, building: string, variant: string, level: number) => `${faction}/${building}/${variant}/${level}`;
+
+/** Variants designed for a building in a faction's style (empty = placeholder). */
+export const variantsFor = (faction: string, building: string): string[] => VARIANTS[`${faction}/${building}`] ?? [];
+
+/** A random variant, so a village doesn't fill up with copies of one house. */
+export function pickVariant(faction: string, building: string): string | undefined {
+  const list = variantsFor(faction, building);
+  return list.length ? list[Math.floor(Math.random() * list.length)] : undefined;
+}
+
+function dataBlueprint(data: BlueprintData, rot: Rot): Blueprint {
+  const [w, height] = data.size;
+  const turned = data.palette.map((p) => ({ id: p.id, states: rotateStates(p.id, p.states, rot), sign: p.sign }));
+  return {
+    w,
+    height,
+    at(lx, ly, lz) {
+      const ch = data.layers[ly]?.[lz]?.[lx];
+      if (!ch || ch === ".") return undefined;
+      return turned[ALPHABET.indexOf(ch)];
+    },
+  };
+}
+
+// ---------- imported designs (owner-built, tools/import_structures.mjs) ----------
+
+function importedBlueprint(imp: ImportedDesign, rot: Rot): Blueprint {
+  return { ...dataBlueprint(imp.data, rot), structure: { id: imp.structure, turns: (rot + imp.turns) % 4, yOffset: imp.yOffset } };
+}
+
+/**
+ * The owner's placeholder design for this building, faction and plot width (owner, 2026-11-16: one hand-built
+ * house stands in for every building until it has its own design; the Defence section keeps its boxes).
+ */
+function importedPlaceholder(def: BuildingDef, faction: string, w: number): ImportedDesign | undefined {
+  if (!PLACEHOLDER_DESIGN || def.category === "defence" || def.plot === "perimeter") return undefined;
+  return IMPORTED[`${PLACEHOLDER_DESIGN}/${faction}/${w}`];
+}
+
+/**
+ * The blueprint to build: the designed one if it exists for this faction, plot width and variant; else the
+ * owner's imported placeholder house; else a placeholder box.
+ */
+export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, rot: Rot): Blueprint {
+  const data = variant ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
+  if (data && data.size[0] === w && data.size[2] === w) return dataBlueprint(data, rot);
+  if (data) console.warn(`[BannerForge] design ${key(faction, def.id, variant!, level)} is ${data.size[0]}x${data.size[2]}, plot is ${w}x${w}: placeholder used`);
+  const imp = importedPlaceholder(def, faction, w);
+  if (imp) return importedBlueprint(imp, rot);
+  return placeholderBlueprint(def, level, w, rot);
+}
+
+/** Height of the tallest level, for checking room above and protecting the site. */
+export function topHeightFor(def: BuildingDef, faction: string, variant: string | undefined): number {
+  const plot = def.plot === "perimeter" ? "S" : def.plot;
+  const designed = variant ? [1, 2, 3].map((l) => BLUEPRINTS[key(faction, def.id, variant, l)]?.size[1] ?? 0) : [];
+  const imported = def.plot === "perimeter" ? undefined : importedPlaceholder(def, faction, PLOT_WIDTH[def.plot]);
+  return Math.max(PLACEHOLDER_HEIGHT[plot][2], imported?.data.size[1] ?? 0, ...designed);
+}
+
+/** Any designed blueprint by its full key (developer preview command); imported ones as imported/<design>/<faction>/<w>. */
+export function blueprintByKey(k: string, rot: Rot): Blueprint | undefined {
+  if (k.startsWith("imported/")) {
+    const imp = IMPORTED[k.slice("imported/".length)];
+    return imp ? importedBlueprint(imp, rot) : undefined;
+  }
+  const data = BLUEPRINTS[k];
+  return data ? dataBlueprint(data, rot) : undefined;
+}
+
+export const blueprintKeys = (): string[] => [...Object.keys(BLUEPRINTS), ...Object.keys(IMPORTED).map((k) => `imported/${k}`)];
