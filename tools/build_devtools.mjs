@@ -1,6 +1,10 @@
 // Build the owner-only BannerForge Dev Tools pack into dist-devtools/ (never part of a mod release).
 //
-//   node tools/build_devtools.mjs [path to vanilla structures/village]
+//   node tools/build_devtools.mjs [path to vanilla structures/village] [--schem <folder> --set <name>]
+//
+// --schem adds a second set from Sponge schematics (.schem, e.g. purchased build packs): one row per biome, the
+// biome taken from the file name ("Desert-Library.schem", "PlainsChurch.schem"). Rows are named "<set>_<biome>"
+// (set "gs" -> gs_desert …) and laid out south of the vanilla rows. Third-party data stays in dist-devtools/ only.
 //
 // Reads the Java structure templates (.nbt) that ship inside the owner's own Bedrock install, translates them with
 // tools/structures/java_to_bedrock.mjs and plans a grid: one row per biome (town centres, houses, then lamps and
@@ -11,9 +15,20 @@ import path from "node:path";
 import { ROOT, readJson, writeJson, walk, semverArray, loadConfig, loadTypeScript } from "./lib.mjs";
 import { readNbt } from "./structures/nbt.mjs";
 import { convertTemplate } from "./structures/java_to_bedrock.mjs";
+import { schemToTemplate } from "./structures/schem.mjs";
 
 const DEFAULT_SRC = "C:\\XboxGames\\Minecraft for Windows\\Content\\data\\behavior_packs\\vanilla\\structures\\village";
-const src = process.argv[2] ?? process.env.VANILLA_VILLAGE_DIR ?? DEFAULT_SRC;
+const args = process.argv.slice(2);
+const opt = (name) => {
+  const i = args.indexOf(name);
+  if (i < 0) return undefined;
+  const v = args[i + 1];
+  args.splice(i, 2);
+  return v;
+};
+const schemDir = opt("--schem");
+const schemSet = opt("--set") ?? "gs";
+const src = args[0] ?? process.env.VANILLA_VILLAGE_DIR ?? DEFAULT_SRC;
 if (!fs.existsSync(src)) {
   console.error(`Village templates not found at ${src}. Pass the path to vanilla structures/village.`);
   process.exit(1);
@@ -85,6 +100,50 @@ for (const biome of BIOMES) {
   }
   maxX = Math.max(maxX, x);
   rowZ += depth + GAP_Z;
+}
+
+// ---- optional second set from Sponge schematics ----
+function addTemplate(t, key, label, biome, x, z) {
+  const palette = t.palette.map((cands) => {
+    const k = JSON.stringify(cands);
+    if (!candidateIndex.has(k)) {
+      candidateIndex.set(k, candidates.length);
+      candidates.push(cands);
+    }
+    return candidateIndex.get(k);
+  });
+  templates.push({ key, label, biome, size: t.size, dy: t.dy, ox: x, oz: z, palette, blocks: t.blocks });
+}
+
+if (schemDir) {
+  rowZ += GAP_Z * 2;
+  const schems = walk(schemDir).filter((f) => f.endsWith(".schem")).sort();
+  const byBiome = new Map();
+  for (const f of schems) {
+    const base = path.basename(f, ".schem");
+    const m = base.match(/^([A-Za-z]+?)(?:-|(?=[A-Z]))(.*)$/);
+    const biome = (m ? m[1] : "misc").toLowerCase();
+    const name = (m ? m[2] : base).replace(/^-/, "");
+    if (!byBiome.has(biome)) byBiome.set(biome, []);
+    byBiome.get(biome).push({ f, name });
+  }
+  for (const [biome, list] of [...byBiome].sort()) {
+    const row = `${schemSet}_${biome}`;
+    rows.push({ biome: row, ox: 0, oz: rowZ - 2 });
+    let x = START_X;
+    let depth = 0;
+    for (const { f, name } of list) {
+      // Schematic y = 0 is the floor or terrain layer: it replaces the surface. Air is never placed (keeps the grass).
+      const t = convertTemplate(schemToTemplate(readNbt(fs.readFileSync(f))), { carveBelowSurface: false });
+      t.dy = 0;
+      const words = name.replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/);
+      addTemplate(t, `${row}/${name}`, `${schemSet.toUpperCase()} ${biome}\n${words.join(" ")}`, row, x, rowZ);
+      x += t.size[0] + GAP_X;
+      depth = Math.max(depth, t.size[2]);
+    }
+    maxX = Math.max(maxX, x);
+    rowZ += depth + GAP_Z;
+  }
 }
 
 // ---- write the pack ----

@@ -34,6 +34,10 @@ const RENAMES = {
   snow_block: ["snow"],
   stonecutter: ["stonecutter_block"],
   dandelion: ["dandelion", "yellow_flower"],
+  dirt_path: ["grass_path", "dirt_path"],
+  cobweb: ["web"],
+  note_block: ["noteblock"],
+  nether_quartz_ore: ["quartz_ore"],
   poppy: ["poppy", "red_flower"],
 };
 
@@ -51,12 +55,13 @@ const LEGACY_SIMPLE = {
 };
 
 function stairs(java, p) {
-  const name = java === "cobblestone_stairs" ? "stone_stairs" : java;
+  const name = { cobblestone_stairs: "stone_stairs", stone_stairs: "normal_stone_stairs" }[java] ?? java;
   return [c(name, { weirdo_direction: WEIRDO_DIRECTION[p.facing] ?? 0, upside_down_bit: p.half === "top" })];
 }
 
 function slab(java, p) {
-  const base = java.replace(/_slab$/, "");
+  const base = java === "stone_slab" ? "normal_stone" : java.replace(/_slab$/, "");
+  java = `${base}_slab`;
   if (p.type === "double") return [c(`${base}_double_slab`), c(`${base}_slab`, { "minecraft:vertical_half": "bottom" })];
   return [c(java, { "minecraft:vertical_half": p.type === "top" ? "top" : "bottom" })];
 }
@@ -177,6 +182,34 @@ export function translateState(java) {
     return [c(name, { facing_direction: FACING_DIRECTION[p.facing] ?? 2 })];
   }
 
+  // --- newer (1.17–1.21) blocks seen in third-party schematics -------------------------------
+  if (id.endsWith("_wall_hanging_sign")) {
+    const name = id.replace("_wall_hanging_sign", "_hanging_sign");
+    return [c(name, { hanging: false, attached_bit: false, facing_direction: FACING_DIRECTION[p.facing] ?? 2, ground_sign_direction: 0 })];
+  }
+  if (id.endsWith("_hanging_sign")) {
+    return [c(id, { hanging: true, attached_bit: p.attached === "true", ground_sign_direction: Number(p.rotation ?? 0), facing_direction: 2 })];
+  }
+  if (id.endsWith("_sign")) {
+    // standing sign: oak is just "standing_sign"
+    const name = id === "oak_sign" ? "standing_sign" : id.replace(/_sign$/, "_standing_sign");
+    return [c(name, { ground_sign_direction: Number(p.rotation ?? 0) })];
+  }
+  if (/(^|_)candle$/.test(id)) return [c(id, { candles: Math.max(0, Number(p.candles ?? 1) - 1), lit: bool(p.lit) })];
+  if (id.endsWith("copper_bulb")) return [c(id, { lit: bool(p.lit), powered_bit: bool(p.powered) })];
+  if (id.endsWith("_amethyst_bud") || id === "amethyst_cluster") return [c(id, { "minecraft:block_face": p.facing ?? "up" })];
+  if (id.endsWith("_coral_fan")) return [c(id, { coral_fan_direction: 0 })];
+  if (id.endsWith("mushroom_block") || id === "mushroom_stem") {
+    const name = id === "mushroom_stem" ? "mushroom_stem" : id;
+    return [c(name, { huge_mushroom_bits: id === "mushroom_stem" ? 15 : 14 })];
+  }
+
+  // Anything else with an axis (logs of any kind, deepslate, bone, chains, basalt…)
+  if (p.axis && !["nether_portal"].includes(id)) {
+    if (id === "chain") return [c("chain", { pillar_axis: p.axis }), c("iron_chain", { pillar_axis: p.axis })];
+    return [c(id, { pillar_axis: p.axis })];
+  }
+
   // --- single blocks --------------------------------------------------------------------------
   switch (id) {
     case "grass_block": return [c("grass_block"), c("grass")];
@@ -201,7 +234,8 @@ export function translateState(java) {
     case "stonecutter": return cardinal("stonecutter_block", p);
     case "campfire": return cardinal("campfire", p, { extinguished: p.lit === "false" }, "direction");
     case "brewing_stand": return [c("brewing_stand")];
-    case "cauldron": return [c("cauldron", { fill_level: Math.min(6, Number(p.level ?? 0) * 2), cauldron_liquid: "water" })];
+    case "cauldron":
+    case "water_cauldron": return [c("cauldron", { fill_level: Math.min(6, Number(p.level ?? 0) * 2), cauldron_liquid: "water" })];
     case "composter": return [c("composter", { composter_fill_level: Number(p.level ?? 0) })];
     case "farmland": return [c("farmland", { moisturized_amount: Number(p.moisture ?? 0) })];
     case "wheat":
@@ -221,6 +255,64 @@ export function translateState(java) {
     case "sea_pickle": return [c("sea_pickle", { cluster_count: Math.max(0, Number(p.pickles ?? 1) - 1), dead_bit: p.waterlogged !== "true" })];
     case "iron_bars":
     case "glass_pane": return [c(id)];
+    case "fire":
+    case "soul_fire":
+    case "light":
+      return null; // fire would spread through the template world; light blocks are invisible helpers
+    case "soul_lantern": return [c("soul_lantern", { hanging: bool(p.hanging) })];
+    case "trapped_chest":
+    case "ender_chest": return cardinal(id, p);
+    case "carved_pumpkin":
+    case "jack_o_lantern": return [c(id === "jack_o_lantern" ? "lit_pumpkin" : id, { "minecraft:cardinal_direction": p.facing }), c(id, { "minecraft:cardinal_direction": p.facing })];
+    case "anvil": return [c("anvil", { "minecraft:cardinal_direction": p.facing, damage: "undamaged" })];
+    case "hopper": return [c("hopper", { facing_direction: FACING_DIRECTION[p.facing] ?? 0, toggle_bit: false })];
+    case "lever": {
+      const dir = p.face === "floor" ? (p.facing === "north" || p.facing === "south" ? "up_north_south" : "up_east_west") : p.face === "ceiling" ? (p.facing === "north" || p.facing === "south" ? "down_north_south" : "down_east_west") : p.facing;
+      return [c("lever", { lever_direction: dir, open_bit: bool(p.powered) })];
+    }
+    case "rail":
+    case "detector_rail": {
+      const shapes = ["north_south", "east_west", "ascending_east", "ascending_west", "ascending_north", "ascending_south", "south_east", "south_west", "north_west", "north_east"];
+      const states = { rail_direction: Math.max(0, shapes.indexOf(p.shape)) };
+      if (id === "detector_rail") Object.assign(states, { rail_data_bit: false });
+      return [c(id, states)];
+    }
+    case "tripwire": return [c("trip_wire", { attached_bit: bool(p.attached), disarmed_bit: bool(p.disarmed), powered_bit: false, suspended_bit: true })];
+    case "tripwire_hook": return [c("tripwire_hook", { direction: LEGACY_DIRECTION[p.facing] ?? 0, attached_bit: bool(p.attached), powered_bit: false })];
+    case "turtle_egg": return [c("turtle_egg", { turtle_egg_count: ["one_egg", "two_egg", "three_egg", "four_egg"][Number(p.eggs ?? 1) - 1] ?? "one_egg", cracked_state: "no_cracks" })];
+    case "vine": {
+      // bits: south 1, west 2, north 4, east 8
+      const bits = (bool(p.south) ? 1 : 0) | (bool(p.west) ? 2 : 0) | (bool(p.north) ? 4 : 0) | (bool(p.east) ? 8 : 0);
+      return [c("vine", { vine_direction_bits: bits })];
+    }
+    case "glow_lichen": {
+      // bits: down 1, up 2, south 4, west 8, north 16, east 32
+      const bits = (bool(p.down) ? 1 : 0) | (bool(p.up) ? 2 : 0) | (bool(p.south) ? 4 : 0) | (bool(p.west) ? 8 : 0) | (bool(p.north) ? 16 : 0) | (bool(p.east) ? 32 : 0);
+      return [c("glow_lichen", { multi_face_direction_bits: bits })];
+    }
+    case "pointed_dripstone": return [c("pointed_dripstone", { dripstone_thickness: p.thickness ?? "tip", hanging: p.vertical_direction === "down" })];
+    case "lightning_rod": return [c("lightning_rod", { facing_direction: FACING_DIRECTION[p.facing] ?? 1 })];
+    case "beehive":
+    case "bee_nest": return [c(id, { direction: LEGACY_DIRECTION[p.facing] ?? 0, honey_level: Number(p.honey_level ?? 0) })];
+    case "decorated_pot": return [c("decorated_pot", { direction: LEGACY_DIRECTION[p.facing] ?? 0 })];
+    case "chiseled_bookshelf": {
+      let books = 0;
+      for (let k = 0; k < 6; k++) if (p[`slot_${k}_occupied`] === "true") books |= 1 << k;
+      return [c("chiseled_bookshelf", { direction: LEGACY_DIRECTION[p.facing] ?? 0, books_stored: books })];
+    }
+    case "cocoa": return [c("cocoa", { direction: LEGACY_DIRECTION[p.facing] ?? 0, age: Number(p.age ?? 0) })];
+    case "sweet_berry_bush": return [c("sweet_berry_bush", { growth: Number(p.age ?? 0) })];
+    case "nether_wart": return [c("nether_wart", { age: Number(p.age ?? 0) })];
+    case "scaffolding": return [c("scaffolding", { stability: Number(p.distance ?? 0), stability_check: false })];
+    case "target": return [c("target")];
+    case "lilac":
+    case "rose_bush":
+    case "peony":
+    case "sunflower": {
+      const upper = p.half === "upper";
+      const legacy = { lilac: "syringa", rose_bush: "rose", peony: "paeonia", sunflower: "sunflower" }[id];
+      return [c(id, { upper_block_bit: upper }), c("double_plant", { upper_block_bit: upper, double_plant_type: legacy })];
+    }
   }
 
   const renamed = RENAMES[id];
@@ -252,7 +344,7 @@ export function parseStateString(s) {
  *
  * @returns {{ size: number[], dy: number, palette: object[][], blocks: number[] }} blocks = flat [x,y,z,paletteIndex,…]
  */
-export function convertTemplate(nbt) {
+export function convertTemplate(nbt, { carveBelowSurface = true } = {}) {
   const javaPalette = nbt.palette ?? nbt.palettes?.[0] ?? [];
   const palette = [];
   const index = new Map();
@@ -292,7 +384,7 @@ export function convertTemplate(nbt) {
     const idx = add(s);
     if (idx < 0) continue;
     const isAir = palette[idx][0].name === "air";
-    if (isAir && b.pos[1] + dy > 0) continue;
+    if (isAir && (!carveBelowSurface || b.pos[1] + dy > 0)) continue;
     blocks.push(b.pos[0], b.pos[1], b.pos[2], idx);
   }
   return { size: [...nbt.size], dy, palette, blocks };

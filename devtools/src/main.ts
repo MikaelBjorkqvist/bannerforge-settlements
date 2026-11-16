@@ -4,6 +4,7 @@
 //   /scriptevent bannerforge:vt_layout [biome]   lay the grid out (all biomes, or one). The first run starts where you
 //                                                stand and remembers that spot; later runs reuse it (re-running fills gaps).
 //   /scriptevent bannerforge:vt_layout here [biome]   forget the saved spot and start from where you stand
+//   [biome] can also be a set: "vanilla" (the five vanilla rows) or the prefix of an extra set, e.g. "gs".
 //   /scriptevent bannerforge:vt_stop             stop a running layout
 //
 // Owner-only tool, never shipped: chat text is plain English on purpose (no resource pack, no lang files).
@@ -210,6 +211,13 @@ function* placeTemplate(dim: Dimension, t: Template, rowDepth: number, ox: numbe
   return placed;
 }
 
+/** Row filter: nothing = all rows; "vanilla" = rows without a set prefix; "gs" = rows "gs_*"; else one row. */
+function matches(row: string, filter: string | undefined): boolean {
+  if (!filter) return true;
+  if (filter === "vanilla") return !row.includes("_");
+  return row === filter || row.startsWith(`${filter}_`);
+}
+
 type Origin = { x: number; y: number; z: number; dim: string };
 
 function savedOrigin(): Origin | undefined {
@@ -229,7 +237,7 @@ function* layout(player: Player, biome: string | undefined, here: boolean): Gene
     world.setDynamicProperty(ORIGIN_KEY, JSON.stringify({ schema: 1, ...o }));
   }
   const { x: ox, y: sy, z: oz } = o; // sy = surface: the block under your feet on the first run
-  const list = TEMPLATES.filter((t) => !biome || t.biome === biome);
+  const list = TEMPLATES.filter((t) => matches(t.biome, biome));
   player.sendMessage(`${TAG} placing ${list.length} templates from x=${ox} z=${oz}, surface y=${sy}. /scriptevent bannerforge:vt_stop to stop.`);
 
   const depth: Record<string, number> = {};
@@ -284,7 +292,7 @@ system.afterEvents.scriptEventReceive.subscribe((e) => {
       const here = args[0] === "here";
       if (here) args.shift();
       const biome = args[0];
-      if (biome && !ROWS.some((r) => r.biome === biome)) {
+      if (biome && !ROWS.some((r) => matches(r.biome, biome))) {
         player.sendMessage(`${TAG} unknown biome "${biome}". Use one of: ${ROWS.map((r) => r.biome).join(", ")}`);
         return;
       }

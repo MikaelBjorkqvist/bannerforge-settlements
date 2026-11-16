@@ -15,6 +15,13 @@ Source: `C:\XboxGames\Minecraft for Windows\Content\data\behavior_packs\vanilla\
 templates, DataVersion ~1935). Included: `houses/`, `town_centers/`, top-level lamps and decorations (180 templates).
 Left out: streets, terminators, villagers, animals.
 
+## Extra sets from schematics (owner-only)
+`--schem <folder> --set <prefix>` adds Sponge `.schem` files (WorldEdit, e.g. purchased build packs) as extra rows
+`<prefix>_<biome>` south of the vanilla rows (`tools/structures/schem.mjs`). Schematic y = 0 replaces the surface
+and air is never placed. `vt_layout gs` lays out only that set, `vt_layout vanilla` only the vanilla rows.
+Third-party builds are private reference: never commit them, and don't ship them in a mod without the author's
+written licence (see Rights).
+
 ## Build and deploy
 ```
 npm run devtools:build -- "<path to structures\village>"   # path optional on the owner's PC

@@ -55,3 +55,17 @@ assert.equal(out.palette[out.blocks[11]][0].name, "oak_planks");
 // NBT reader: gzip big-endian compound with a string and an int list
 const be = Buffer.from([10, 0, 0, 8, 0, 1, 0x6e, 0, 2, 0x68, 0x69, 9, 0, 4, 0x73, 0x69, 0x7a, 0x65, 3, 0, 0, 0, 2, 0, 0, 0, 7, 0, 0, 0, 9, 0]);
 assert.deepEqual(readNbt(zlib.gzipSync(be)), { n: "hi", size: [7, 9] });
+
+// 1.21 names from third-party schematics
+assert.equal(first("stone_slab", { type: "bottom" }).name, "normal_stone_slab");
+assert.equal(first("stone_stairs", { facing: "east", half: "bottom" }).name, "normal_stone_stairs");
+assert.deepEqual(first("white_candle", { candles: "3", lit: "false" }), { name: "white_candle", states: { candles: 2, lit: false } });
+assert.deepEqual(first("deepslate", { axis: "z" }), { name: "deepslate", states: { pillar_axis: "z" } });
+assert.equal(translateState({ Name: "minecraft:fire", Properties: {} }), null);
+assert.equal(first("acacia_wall_hanging_sign", { facing: "east" }).name, "acacia_hanging_sign");
+
+// Sponge schematic v3: 2x1x1, palette air=0, stone=1, varint data
+import { schemToTemplate } from "../tools/structures/schem.mjs";
+const schem = schemToTemplate({ Schematic: { Version: 3, Width: 2, Height: 1, Length: 1, Blocks: { Palette: { "minecraft:air": 0, "minecraft:oak_stairs[facing=west]": 1 }, Data: [0, 1] } } });
+assert.deepEqual(schem.size, [2, 1, 1]);
+assert.equal(schem.palette[schem.blocks[1].state].Properties.facing, "west");
