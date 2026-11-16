@@ -11,6 +11,7 @@ import {
   ItemStack,
   type Player,
   type RawMessage,
+  StructureRotation,
   system,
   world,
 } from "@minecraft/server";
@@ -131,7 +132,10 @@ function* runStep(dim: Dimension, a: ActiveSite, step: number): Generator<void, 
       yield* placePhase(dim, a.site, bp, 1);
     } else {
       yield* placePhase(dim, a.site, bp, step + 1);
-      if (step === STEPS - 1) yield* removeScaffolding(dim, a.site, bp);
+      if (step === STEPS - 1) {
+        yield* removeScaffolding(dim, a.site, bp);
+        placeFinishedStructure(dim, a.site, bp);
+      }
     }
     ok = true;
   } catch (e) {
@@ -364,6 +368,31 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
   for (const at of signs) labelSign(dim, at);
 }
 
+const ROTATIONS = [StructureRotation.None, StructureRotation.Rotate90, StructureRotation.Rotate180, StructureRotation.Rotate270];
+
+/**
+ * Imported designs: when the building is finished, the whole structure is placed over the blueprint blocks, so
+ * what scripts can't set (bed colours, cushions, chest and bookshelf contents, pot plants) is there too.
+ * Structure void leaves the ground as it is. Throws on an unloaded chunk, so the step is retried.
+ */
+function placeFinishedStructure(dim: Dimension, site: Pick<Site, "x" | "y" | "z" | "w" | "rot">, bp: Blueprint, labelSigns = true): void {
+  if (!bp.structure) return;
+  const { id, turns, yOffset } = bp.structure;
+  world.structureManager.place(id, dim, { x: site.x, y: site.y + yOffset, z: site.z }, { rotation: ROTATIONS[turns % 4], includeEntities: true });
+  if (!labelSigns) return;
+  // The structure brought its own sign text back: write the building's name again.
+  const f: Footprint = { x: site.x, z: site.z, w: site.w, rot: site.rot };
+  for (let ly = 0; ly < bp.height; ly++) {
+    for (let lx = 0; lx < f.w; lx++) {
+      for (let lz = 0; lz < f.w; lz++) {
+        if (!bp.at(lx, ly, lz)?.sign) continue;
+        const p = toWorld(f, lx, lz);
+        labelSign(dim, { x: p.x, y: site.y + ly, z: p.z });
+      }
+    }
+  }
+}
+
 /** The building's name on its sign. Signs need a little time to exist, so this runs a tick later. */
 function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): void {
   const a = active.find((x) => x.dim === dim.id && at.x >= x.box.x0 && at.x <= x.box.x1 && at.z >= x.box.z0 && at.z <= x.box.z1);
@@ -547,7 +576,8 @@ function previewBlueprint(player: Player, k: string): void {
             }
           }
         }
-        player.sendMessage(`[BannerForge] placed ${k} (${n} blocks). Skipped blocks, if any, are in the content log.`);
+        if (bp.structure) placeFinishedStructure(dim, { x: f.x, y: groundY, z: f.z, w: f.w, rot: f.rot }, bp, false);
+        player.sendMessage(`[BannerForge] placed ${k} (${n} blocks${bp.structure ? " + finished structure" : ""}). Skipped blocks, if any, are in the content log.`);
       } catch (err) {
         player.sendMessage(`[BannerForge] preview failed: ${String(err)}`);
       }

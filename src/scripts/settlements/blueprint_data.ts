@@ -3,6 +3,8 @@
 export interface PaletteEntry {
   id: string;
   states?: Record<string, string | number | boolean>;
+  /** A sign to write the building's name on (imported designs: the sign that says "[HOUSE NAME]"). */
+  sign?: boolean;
 }
 
 export interface BlueprintData {
