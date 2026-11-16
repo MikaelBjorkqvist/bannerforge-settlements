@@ -14,5 +14,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/scripts/**/*.ts"]
+  "include": ["src/scripts/**/*.ts", "devtools/src/**/*.ts"]
 }

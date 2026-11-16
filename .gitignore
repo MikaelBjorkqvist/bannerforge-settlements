@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-devtools/
 creator-tools-report.txt
 *.log
 .DS_Store
