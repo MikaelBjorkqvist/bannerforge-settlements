@@ -99,16 +99,7 @@ const inside = (b: Box, a: Box) => b.x0 >= a.x0 && b.x1 <= a.x1 && b.z0 >= a.z0 
 function* ensureLoaded(dim: Dimension, box: Box, rowDepth: number, y: number): Generator<void, boolean> {
   if (!area || !inside(box, area)) {
     area = { x0: box.x0 - 6, z0: box.z0 - 4, x1: box.x0 - 6 + AREA_WIDTH, z1: Math.max(box.z1, box.z0 + rowDepth) + 1 };
-    try {
-      dim.runCommand(`tickingarea remove ${AREA}`);
-    } catch {
-      // no area yet
-    }
-    try {
-      dim.runCommand(`tickingarea add ${area.x0} ${y} ${area.z0} ${area.x1} ${y} ${area.z1} ${AREA}`);
-    } catch (e) {
-      console.warn(`${TAG} tickingarea add failed: ${String(e)}`);
-    }
+    addArea(dim, area, y);
   }
   const corners = [
     { x: box.x0, y, z: box.z0 },
@@ -116,12 +107,40 @@ function* ensureLoaded(dim: Dimension, box: Box, rowDepth: number, y: number): G
     { x: box.x0, y, z: box.z1 },
     { x: box.x1, y, z: box.z1 },
   ];
-  const start = system.currentTick;
-  while (system.currentTick - start < LOAD_TIMEOUT_TICKS) {
-    if (corners.every((c) => tryGet(dim, c))) return true;
-    yield;
+  // Two tries: a stalled area is replaced once (play-test 2026-11-16: the first area of a new row once never loaded).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) addArea(dim, area, y);
+    const start = system.currentTick;
+    while (system.currentTick - start < LOAD_TIMEOUT_TICKS) {
+      if (corners.every((c) => tryGet(dim, c))) return true;
+      yield;
+    }
   }
   return false;
+}
+
+let areaName: string | undefined;
+let areaCount = 0;
+
+/** Replaces the ticking area. Each area gets its own name so a remove and an add never collide. */
+function addArea(dim: Dimension, a: Box, y: number): void {
+  removeArea(dim);
+  areaName = `${AREA}_${++areaCount}`;
+  try {
+    dim.runCommand(`tickingarea add ${a.x0} ${y} ${a.z0} ${a.x1} ${y} ${a.z1} ${areaName}`);
+  } catch (e) {
+    console.warn(`${TAG} tickingarea add failed: ${String(e)}`);
+  }
+}
+
+function removeArea(dim: Dimension): void {
+  if (!areaName) return;
+  try {
+    dim.runCommand(`tickingarea remove ${areaName}`);
+  } catch {
+    // already gone
+  }
+  areaName = undefined;
 }
 
 let sign: BlockPermutation | undefined;
@@ -237,11 +256,7 @@ function* layout(player: Player, biome: string | undefined, here: boolean): Gene
     }
     if ((done + skipped) % 20 === 0) player.sendMessage(`${TAG} ${done + skipped}/${list.length}`);
   }
-  try {
-    dim.runCommand(`tickingarea remove ${AREA}`);
-  } catch {
-    // already gone
-  }
+  removeArea(dim);
   area = undefined;
   const msg = `${TAG} ${stopRequested ? "stopped" : "done"}: ${done} placed, ${skipped} skipped (chunks didn't load), ${blocks} blocks.`;
   console.warn(msg);
