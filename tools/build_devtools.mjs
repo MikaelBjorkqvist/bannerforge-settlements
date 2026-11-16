@@ -16,6 +16,7 @@ import { ROOT, readJson, writeJson, walk, semverArray, loadConfig, loadTypeScrip
 import { readNbt } from "./structures/nbt.mjs";
 import { convertTemplate } from "./structures/java_to_bedrock.mjs";
 import { schemToTemplate } from "./structures/schem.mjs";
+import { classify } from "./structures/roles.mjs";
 
 const DEFAULT_SRC = "C:\\XboxGames\\Minecraft for Windows\\Content\\data\\behavior_packs\\vanilla\\structures\\village";
 const args = process.argv.slice(2);
@@ -103,6 +104,7 @@ for (const biome of BIOMES) {
 }
 
 // ---- optional second set from Sponge schematics ----
+const listing = [["set", "row", "name", "kind", "role", "width", "height", "depth"]];
 function addTemplate(t, key, label, biome, x, z) {
   const palette = t.palette.map((cands) => {
     const k = JSON.stringify(cands);
@@ -137,8 +139,12 @@ if (schemDir) {
       // GraySun builds were one block too low with y = 0 in the surface layer). Air is never placed (keeps the grass).
       const t = convertTemplate(schemToTemplate(readNbt(fs.readFileSync(f))), { carveBelowSurface: false });
       t.dy = 1;
-      const words = name.replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/);
-      addTemplate(t, `${row}/${name}`, `${schemSet.toUpperCase()} ${biome}\n${words.join(" ")}`, row, x, rowZ);
+      const pretty = name.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-zA-Z])(\d)/g, "$1 $2");
+      const { kind, role } = classify(pretty);
+      // §9 blue = stands in for a vanilla village building, §2 green = new building with no vanilla counterpart
+      const head = kind === "vanilla" ? "§9VANILLA" : "§2NEW";
+      addTemplate(t, `${row}/${name}`, `${head}§r\n${pretty}\n${role}\n${schemSet.toUpperCase()} ${biome}`, row, x, rowZ);
+      listing.push([schemSet, row, pretty, kind, role, ...t.size]);
       x += t.size[0] + GAP_X;
       depth = Math.max(depth, t.size[2]);
     }
@@ -178,6 +184,10 @@ fs.writeFileSync(
     `export const EXTENT = ${JSON.stringify([maxX, rowZ])};\n` +
     `export const TEMPLATES = [\n${templates.map((t) => JSON.stringify(t)).join(",\n")}\n];\n`,
 );
+
+if (listing.length > 1) {
+  fs.writeFileSync(path.join(ROOT, "dist-devtools", "templates.csv"), listing.map((r) => r.join(",")).join("\n") + "\n");
+}
 
 const blockCount = templates.reduce((n, t) => n + t.blocks.length / 4, 0);
 console.log(`Built ${dcfg.displayName} v${dcfg.version} -> ${path.relative(ROOT, OUT)}`);

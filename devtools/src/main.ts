@@ -161,7 +161,11 @@ function signPermutation(): BlockPermutation {
   return sign;
 }
 
-function placeSign(dim: Dimension, at: Vector3, text: string): void {
+/**
+ * Places a sign and writes its text. Waits in real ticks for the sign's block entity, inside the same job,
+ * so the ticking area is still on this spot (play-test 2026-11-16: text set later was lost once the area moved).
+ */
+function* labelSign(dim: Dimension, at: Vector3, text: string): Generator<void, void> {
   const block = tryGet(dim, at);
   if (!block) return;
   try {
@@ -170,13 +174,22 @@ function placeSign(dim: Dimension, at: Vector3, text: string): void {
     console.warn(`${TAG} sign failed: ${String(e)}`);
     return;
   }
-  system.runTimeout(() => {
-    try {
-      tryGet(dim, at)?.getComponent("minecraft:sign")?.setText(text);
-    } catch {
-      // a sign without text is fine
+  const start = system.currentTick;
+  while (system.currentTick - start < 60) {
+    if (system.currentTick - start >= 2) {
+      try {
+        const sign = tryGet(dim, at)?.getComponent("minecraft:sign");
+        if (sign) {
+          sign.setText(text);
+          return;
+        }
+      } catch {
+        // not ready yet
+      }
     }
-  }, 2);
+    yield;
+  }
+  console.warn(`${TAG} sign text not set at ${at.x} ${at.y} ${at.z}`);
 }
 
 function* placeTemplate(dim: Dimension, t: Template, rowDepth: number, ox: number, sy: number, oz: number, row?: RowLabel): Generator<void, number> {
@@ -187,7 +200,7 @@ function* placeTemplate(dim: Dimension, t: Template, rowDepth: number, ox: numbe
     console.warn(`${TAG} chunks did not load for ${t.key}, skipped`);
     return -1;
   }
-  if (row) placeSign(dim, { x: ox + row.ox, y: sy + 1, z: oz + row.oz }, `${row.biome.toUpperCase()}\nvillage`);
+  if (row) yield* labelSign(dim, { x: ox + row.ox, y: sy + 1, z: oz + row.oz }, `${row.biome.toUpperCase()}\nvillage`);
   let placed = 0;
   let missed = 0;
   const b = t.blocks;
@@ -208,7 +221,7 @@ function* placeTemplate(dim: Dimension, t: Template, rowDepth: number, ox: numbe
     if (i % 64 === 0) yield;
   }
   if (missed) console.warn(`${TAG} ${t.key}: ${missed} blocks in unloaded chunks`);
-  placeSign(dim, { x: x0 + Math.floor(t.size[0] / 2), y: sy + 1, z: z0 - 2 }, t.label);
+  yield* labelSign(dim, { x: x0 + Math.floor(t.size[0] / 2), y: sy + 1, z: z0 - 2 }, t.label);
   return placed;
 }
 

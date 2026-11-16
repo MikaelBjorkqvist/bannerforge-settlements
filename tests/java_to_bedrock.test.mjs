@@ -69,3 +69,9 @@ import { schemToTemplate } from "../tools/structures/schem.mjs";
 const schem = schemToTemplate({ Schematic: { Version: 3, Width: 2, Height: 1, Length: 1, Blocks: { Palette: { "minecraft:air": 0, "minecraft:oak_stairs[facing=west]": 1 }, Data: [0, 1] } } });
 assert.deepEqual(schem.size, [2, 1, 1]);
 assert.equal(schem.palette[schem.blocks[1].state].Properties.facing, "west");
+
+// building roles for dev-tool labels
+import { classify } from "../tools/structures/roles.mjs";
+assert.deepEqual(classify("Black Smith"), { kind: "vanilla", role: "weaponsmith" });
+assert.deepEqual(classify("Town Hall"), { kind: "new", role: "addon" });
+assert.equal(classify("Igloo 2").role, "house");
