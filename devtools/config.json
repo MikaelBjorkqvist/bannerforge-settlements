@@ -1,0 +1,12 @@
+{
+  "$comment": "BannerForge Dev Tools: owner-only helper pack, never shipped with a mod. Built by tools/build_devtools.mjs into dist-devtools/. Script API versions follow config/mod.json.",
+  "displayName": "BannerForge Dev Tools",
+  "description": "Owner-only build helpers (vanilla village template world). Not for release.",
+  "folder": "bannerforge_devtools_BP",
+  "version": "0.1.0",
+  "uuids": {
+    "header": "6562667d-8253-4479-aa66-72284e395887",
+    "data": "50a55f70-ee55-4837-b55a-673f98796398",
+    "script": "af2f1144-6ae9-4fee-9842-17cb503b17f7"
+  }
+}

@@ -36,7 +36,8 @@ Read this file, `docs/DESIGN.md`, `docs/ROADMAP.md` and the latest `CHANGELOG.md
   `__RP_PACK_ID__`, replaced at build) and a path **with** `.png`, e.g. `textures/bannerforge/settlements/ui/house.png` (verified 26.60).
   Buttons show one line of text and no colour codes; keep labels short.
 - `assets-src/` — editable sources (.bbmodel, layered art, texture generators). Shipped textures go in `packs/RP`.
-- `tools/` — build, check, package, deploy, version.
+- `tools/` — build, check, package, deploy, version. `tools/structures/` reads Java structure NBT and translates block states.
+- `devtools/` — owner-only Dev Tools pack (vanilla village template world, `docs/TEMPLATE_WORLD.md`). Built to `dist-devtools/`, never shipped.
 - `docs/` — DESIGN, ROADMAP, ASSETS, decisions/ (ADRs: one file per decision, never rewritten, only superseded).
 
 ## Workflow
