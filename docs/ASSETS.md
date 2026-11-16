@@ -3,6 +3,9 @@
 Every shipped asset (texture, model, animation, sound, structure, icon) must be listed here before release.
 Marketplace review requires original or properly licensed content; this file is the proof.
 
+Not an asset: the owner-only Dev Tools template world (`docs/TEMPLATE_WORLD.md`) is generated from the owner's local
+vanilla install, never committed and never shipped. Structures exported from it need a line here like any other build.
+
 | File (in packs/) | Source file (assets-src/) | Author | Method | Licence / rights | Added |
 | --- | --- | --- | --- | --- | --- |
 | BP/pack_icon.png, RP/pack_icon.png | pack_icon.svg | Claude (for BannerForge) | Hand-written 32×32 pixel SVG, rendered with sharp | Original, owned by BannerForge | 2026-11-12 |
