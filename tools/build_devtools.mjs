@@ -133,9 +133,10 @@ if (schemDir) {
     let x = START_X;
     let depth = 0;
     for (const { f, name } of list) {
-      // Schematic y = 0 is the floor or terrain layer: it replaces the surface. Air is never placed (keeps the grass).
+      // Schematic y = 0 is the bottom layer of the build and sits on top of the surface (owner play-test 2026-11-16:
+      // GraySun builds were one block too low with y = 0 in the surface layer). Air is never placed (keeps the grass).
       const t = convertTemplate(schemToTemplate(readNbt(fs.readFileSync(f))), { carveBelowSurface: false });
-      t.dy = 0;
+      t.dy = 1;
       const words = name.replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/);
       addTemplate(t, `${row}/${name}`, `${schemSet.toUpperCase()} ${biome}\n${words.join(" ")}`, row, x, rowZ);
       x += t.size[0] + GAP_X;

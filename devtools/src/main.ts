@@ -5,7 +5,8 @@
 //                                                stand and remembers that spot; later runs reuse it (re-running fills gaps).
 //   /scriptevent bannerforge:vt_layout here [biome]   forget the saved spot and start from where you stand
 //   [biome] can also be a set: "vanilla" (the five vanilla rows) or the prefix of an extra set, e.g. "gs".
-//   /scriptevent bannerforge:vt_stop             stop a running layout
+//   /scriptevent bannerforge:vt_clear <rows>     flatten the area of those rows back to grass (e.g. "gs", "gs_plains")
+//   /scriptevent bannerforge:vt_stop             stop a running layout or clear
 //
 // Owner-only tool, never shipped: chat text is plain English on purpose (no resource pack, no lang files).
 import { BlockPermutation, Dimension, Player, system, Vector3, world } from "@minecraft/server";
@@ -273,6 +274,80 @@ function* layout(player: Player, biome: string | undefined, here: boolean): Gene
   stopRequested = false;
 }
 
+/** Runs a fill command in slices of at most ~32k blocks (the /fill limit). */
+function fillBox(dim: Dimension, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, block: string): void {
+  const layer = (x1 - x0 + 1) * (z1 - z0 + 1);
+  const step = Math.max(1, Math.floor(32000 / layer));
+  for (let y = y0; y <= y1; y += step) {
+    const top = Math.min(y1, y + step - 1);
+    try {
+      dim.runCommand(`fill ${x0} ${y} ${z0} ${x1} ${top} ${z1} ${block}`);
+    } catch (e) {
+      console.warn(`${TAG} fill failed (${block}): ${String(e)}`);
+    }
+  }
+}
+
+let grassId: string | undefined;
+function grass(): string {
+  if (!grassId) {
+    for (const id of ["grass_block", "grass"]) {
+      try {
+        BlockPermutation.resolve(id);
+        grassId = id;
+        break;
+      } catch {
+        // older name
+      }
+    }
+  }
+  return grassId ?? "grass_block";
+}
+
+/** Clears each template's footprint (plus its sign) from the surface up and puts grass back on the surface layer. */
+function* clear(player: Player, filter: string): Generator<void, void> {
+  const dim = player.dimension;
+  const o = savedOrigin();
+  if (!o || o.dim !== dim.id) {
+    player.sendMessage(`${TAG} no saved layout in this dimension; nothing to clear`);
+    running = false;
+    return;
+  }
+  const { x: ox, y: sy, z: oz } = o;
+  const list = TEMPLATES.filter((t) => matches(t.biome, filter));
+  const depth: Record<string, number> = {};
+  for (const t of TEMPLATES) depth[t.biome] = Math.max(depth[t.biome] ?? 0, t.size[2]);
+  player.sendMessage(`${TAG} clearing ${list.length} templates (${filter})…`);
+  area = undefined;
+  let lastBiome = "";
+  let n = 0;
+  for (const t of list) {
+    if (stopRequested) break;
+    const row = t.biome !== lastBiome ? ROWS.find((r) => r.biome === t.biome) : undefined;
+    lastBiome = t.biome;
+    const x0 = ox + t.ox;
+    const z0 = oz + t.oz;
+    const box = { x0: row ? Math.min(x0, ox + row.ox) : x0, z0: z0 - 2, x1: x0 + t.size[0] - 1, z1: z0 + t.size[2] - 1 };
+    if (!(yield* ensureLoaded(dim, box, depth[t.biome], sy))) {
+      console.warn(`${TAG} chunks did not load for ${t.key}, not cleared`);
+      continue;
+    }
+    // Covers both the old (dy 0) and current placement heights, plus a margin.
+    const top = sy + Math.max(t.dy, 1) + t.size[1] + 1;
+    const below = sy + Math.min(t.dy, 0);
+    fillBox(dim, box.x0, sy + 1, box.z0, box.x1, top, box.z1, "air");
+    if (below < sy) fillBox(dim, box.x0, below, box.z0, box.x1, sy - 1, box.z1, "dirt");
+    fillBox(dim, box.x0, sy, box.z0, box.x1, sy, box.z1, grass());
+    n++;
+    yield;
+  }
+  removeArea(dim);
+  area = undefined;
+  player.sendMessage(`${TAG} cleared ${n}/${list.length}. Run vt_layout ${filter} to place them again.`);
+  running = false;
+  stopRequested = false;
+}
+
 system.afterEvents.scriptEventReceive.subscribe((e) => {
   const player = e.sourceEntity instanceof Player ? e.sourceEntity : undefined;
   switch (e.id) {
@@ -299,6 +374,21 @@ system.afterEvents.scriptEventReceive.subscribe((e) => {
       running = true;
       check(player);
       system.runJob(layout(player, biome, here));
+      break;
+    }
+    case "bannerforge:vt_clear": {
+      const filter = e.message.trim();
+      if (!player) return;
+      if (!filter || !ROWS.some((r) => matches(r.biome, filter))) {
+        player.sendMessage(`${TAG} say which rows to clear, e.g. vt_clear gs or vt_clear gs_plains`);
+        return;
+      }
+      if (running) {
+        player.sendMessage(`${TAG} something is already running`);
+        return;
+      }
+      running = true;
+      system.runJob(clear(player, filter));
       break;
     }
     case "bannerforge:vt_stop":
