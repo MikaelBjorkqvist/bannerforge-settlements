@@ -25,6 +25,8 @@ export const PLAN_ITEM = "bannerforge_settlements:building_plan";
 /** The plot box follows the player every TICK ticks; the border and other plots are redrawn every SLOW_TICK. */
 const TICK = 2;
 const SLOW_TICK = 10;
+/** The border is drawn close to the player (border.ts), so it is redrawn often enough to keep up while walking. */
+const BORDER_TICK = 4;
 /** A survey reads the land, so it runs at most this often while the plot moves. */
 const SURVEY_TICKS = 6;
 /** Placement ends if the player wanders this far from the bell. */
@@ -170,6 +172,7 @@ function tick(): void {
     // Until the first survey: the player's feet as ground, white (unknown) lines.
     drawPlot(player, f, p, p.surveyed);
     if (p.age % SLOW_TICK === 0) drawSurroundings(player, s);
+    if (p.age % BORDER_TICK === 0) drawBorder(player, s, BORDER_LIFE);
     if (!p.panelOpen && p.surveyed && p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p.surveyed));
   }
 }
@@ -228,6 +231,7 @@ const TAN: RGB = { red: 0.95, green: 0.72, blue: 0.45 };
 /** Lines of the moving plot live just over one redraw, so the box never trails behind the player. */
 const PLOT_LIFE = (TICK + 1.5) / 20;
 const SLOW_LIFE = (SLOW_TICK + 2) / 20;
+const BORDER_LIFE = (BORDER_TICK + 1.5) / 20;
 const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
 
 /**
@@ -252,15 +256,29 @@ function drawPlot(player: Player, f: Footprint, p: Placing, sv: Survey | undefin
   line(dim, at(0.6, 0.9), at(1.6, 0), style);
 }
 
-/** Every 10 ticks: the whole town border, and the plots of other buildings and village structures nearby. */
+/**
+ * Every 10 ticks: boxes around your other buildings (their real size and height, where
+ * they stand, so they don't move with you) and around village structures found nearby.
+ */
 function drawSurroundings(player: Player, s: Settlement): void {
   const dim = player.dimension;
-  const y = Math.floor(player.location.y) + 0.05;
   const near = (r: Rect) => Math.hypot(r.x + r.wx / 2 - player.location.x, r.z + r.wz / 2 - player.location.z) < 64;
-  const flat = (r: Rect, color: RGB) => rect(dim, r.x, r.z, r.x + r.wx, r.z + r.wz, y, { color, thick: 0.05, life: SLOW_LIFE });
-  for (const o of ownFootprints(s)) if (near(rectOf(o))) flat(rectOf(o), WHITE);
-  for (const v of vanillaBoxes(s.id)) if (near(v)) flat(v, TAN);
-  drawBorder(player, s, SLOW_LIFE);
+  const slow = (color: RGB): LineStyle => ({ color, thick: 0.05, life: SLOW_LIFE });
+  for (const [defId, sites] of Object.entries(s.sites ?? {})) {
+    const def = buildingById(defId);
+    for (const site of sites) {
+      if (!site || !def) continue;
+      const r = rectOf({ x: site.x, z: site.z, w: site.w, d: site.d ?? site.w, rot: site.rot });
+      if (!near(r)) continue;
+      const y = site.y + 1.02;
+      box(dim, r.x, y, r.z, r.x + r.wx, y + topHeightFor(def, s.faction, site.variant) - 1, r.z + r.wz, slow(WHITE));
+    }
+  }
+  for (const v of vanillaBoxes(s.id)) {
+    if (!near(v)) continue;
+    if (v.y === undefined || v.h === undefined) rect(dim, v.x, v.z, v.x + v.wx, v.z + v.wz, Math.floor(player.location.y) + 0.05, slow(TAN));
+    else box(dim, v.x, v.y + 0.02, v.z, v.x + v.wx, v.y + v.h + 0.02, v.z + v.wz, slow(TAN));
+  }
 }
 
 /** "Show town border" from the ledger: the whole border, for 30 seconds. */
@@ -268,12 +286,12 @@ export function showBorder(player: Player, s: Settlement): void {
   say(player, "bannerforge.border.showing");
   let runs = 0;
   const id = system.runInterval(() => {
-    if (!player.isValid || ++runs > (30 * 20) / SLOW_TICK) {
+    if (!player.isValid || ++runs > (30 * 20) / BORDER_TICK) {
       system.clearRun(id);
       return;
     }
-    drawBorder(player, s, SLOW_LIFE);
-  }, SLOW_TICK);
+    drawBorder(player, s, BORDER_LIFE);
+  }, BORDER_TICK);
 }
 
 // ---------- text ----------

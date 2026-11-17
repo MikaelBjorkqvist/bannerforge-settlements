@@ -31,6 +31,8 @@ assert.equal(P.turn({ ...fp, rot: 3 }).rot, 0);
 const a = { x: 0, z: 0, w: 9, d: 9, rot: 0 };
 assert.ok(P.overlaps(a, { x: 9, z: 0, w: 9, d: 9, rot: 0 }), "touching counts as overlap (gap 1)");
 assert.ok(!P.overlaps(a, { x: 10, z: 0, w: 9, d: 9, rot: 0 }));
+assert.ok(!P.overlaps(a, { x: 9, z: 0, w: 9, d: 9, rot: 0 }, 0), "gap 0: buildings may stand right next to each other");
+assert.ok(P.overlaps(a, { x: 8, z: 0, w: 9, d: 9, rot: 0 }, 0), "but never share a block");
 assert.ok(P.insideBorder({ x: -4, z: -4, w: 9, d: 9, rot: 0 }, 0, 0, 40));
 assert.ok(!P.insideBorder({ x: 35, z: 0, w: 9, d: 9, rot: 0 }, 0, 0, 40));
 

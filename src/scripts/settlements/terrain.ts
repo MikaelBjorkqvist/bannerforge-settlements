@@ -108,7 +108,8 @@ export function survey(input: SurveyInput): Survey {
   const { dim, f } = input;
   const blocked = (reason: string, groundY = 0, entranceY = 0): Survey => ({ verdict: "blocked", reason, groundY, entranceY });
   if (!input.insideBorder) return blocked("outside_border");
-  if (input.others.some((o) => overlaps(f, o))) return blocked("overlap");
+  // Buildings may stand right next to each other (owner, 2026-11-17), they just can't share a block.
+  if (input.others.some((o) => overlaps(f, o, 0))) return blocked("overlap");
   if (containsColumn(f, input.bell.x, input.bell.z)) return blocked("bell");
 
   const floor = input.bell.y - 48;

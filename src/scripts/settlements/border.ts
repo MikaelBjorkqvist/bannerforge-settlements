@@ -17,8 +17,8 @@ const SPACING = 5;
 const POST_EVERY = 5;
 const POST_HEIGHT = 2.5;
 /** Ground readings per redraw: unknown points first, then a slow refresh of the rest (terrain changes). */
-const NEW_READS = 20;
-const REFRESH_READS = 4;
+const NEW_READS = 10;
+const REFRESH_READS = 2;
 
 interface Ring {
   key: string;
@@ -79,6 +79,13 @@ function heightAt(ring: Ring, i: number, fallback: number): number {
 }
 
 /**
+ * Particles far from the player are never shown (play-test 2026-11-17: the border 160 blocks out was invisible).
+ * A segment further away than this is drawn closer, along the line of sight, scaled down by the same factor, so
+ * on screen it is exactly where and as big as the real border. It also shows through hills and trees.
+ */
+const NEAR = 40;
+
+/**
  * Draws the whole border once. `life` = seconds the lines stay (redraw a little sooner than that).
  */
 export function drawBorder(player: Player, s: Settlement, life: number): void {
@@ -89,14 +96,17 @@ export function drawBorder(player: Player, s: Settlement, life: number): void {
   const n = ring.pts.length;
   const ys = ring.pts.map((_, i) => heightAt(ring, i, s.center.y + 1) + 0.08);
   for (let i = 0; i < n; i++) {
-    const a = { x: ring.pts[i].x, y: ys[i], z: ring.pts[i].z };
     const j = (i + 1) % n;
+    const a = { x: ring.pts[i].x, y: ys[i], z: ring.pts[i].z };
     const b = { x: ring.pts[j].x, y: ys[j], z: ring.pts[j].z };
+    const top = { x: a.x, y: a.y + POST_HEIGHT, z: a.z };
     const dist = Math.hypot((a.x + b.x) / 2 - eye.x, (a.y + b.y) / 2 - eye.y, (a.z + b.z) / 2 - eye.z);
-    // About 1.5 pixels wide at any distance on a normal screen: 0.07 blocks close by, ~1 block 200 blocks away.
+    // About 1.5 pixels wide at any distance on a normal screen.
     const thick = Math.min(1.4, 0.07 + dist * 0.0045);
-    const style = { color: GOLD, thick, life };
-    line(dim, a, b, style);
-    if (i % POST_EVERY === 0) line(dim, a, { x: a.x, y: a.y + POST_HEIGHT, z: a.z }, style);
+    const k = dist > NEAR ? NEAR / dist : 1;
+    const pull = (p: { x: number; y: number; z: number }) => (k === 1 ? p : { x: eye.x + (p.x - eye.x) * k, y: eye.y + (p.y - eye.y) * k, z: eye.z + (p.z - eye.z) * k });
+    const style = { color: GOLD, thick: thick * k, life };
+    line(dim, pull(a), pull(b), style);
+    if (i % POST_EVERY === 0) line(dim, pull(a), pull(top), style);
   }
 }

@@ -117,6 +117,9 @@ export interface Rect {
   z: number;
   wx: number;
   wz: number;
+  /** Lowest block and height, when known (vanilla structures), for drawing them as boxes. */
+  y?: number;
+  h?: number;
 }
 
 export function rectOverlaps(f: Footprint, r: Rect): boolean {
