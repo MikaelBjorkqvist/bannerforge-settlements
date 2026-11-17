@@ -204,8 +204,9 @@ function scanNearby(player: Player, s: Settlement, p: Placing): void {
 const AIM_DISTANCE = 48;
 
 /**
- * The plot centred on the block you look at (water surface counts, grass and flowers don't). Looking at the sky,
- * further than AIM_DISTANCE, or so close the plot would cover your own feet: the plot just in front of you.
+ * The plot centred on the block you look at (water surface counts, grass and flowers don't). Looking at the sky or
+ * further than AIM_DISTANCE: the plot stays AIM_DISTANCE away in the direction you look (owner, 2026-11-17: it
+ * jumped back to the player). So close the plot would cover your own feet: the plot just in front of you.
  */
 function footprintAhead(player: Player, p: Placing): Footprint {
   const v = player.getViewDirection();
@@ -216,8 +217,17 @@ function footprintAhead(player: Player, p: Placing): Footprint {
   } catch {
     return near;
   }
-  if (!hit) return near;
-  const f = footprintAt(hit.block.location.x, hit.block.location.z, v.x, v.z, p.w, p.d, p.turns);
+  let cx: number, cz: number;
+  if (hit) {
+    cx = hit.block.location.x;
+    cz = hit.block.location.z;
+  } else {
+    const h = Math.hypot(v.x, v.z);
+    if (h < 0.05) return near; // looking straight up or down
+    cx = player.location.x + (v.x / h) * AIM_DISTANCE;
+    cz = player.location.z + (v.z / h) * AIM_DISTANCE;
+  }
+  const f = footprintAt(cx, cz, v.x, v.z, p.w, p.d, p.turns);
   return containsColumn(f, Math.floor(player.location.x), Math.floor(player.location.z)) ? near : f;
 }
 
@@ -261,7 +271,7 @@ const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -
 function drawPlot(player: Player, f: Footprint, p: Placing, sv: Survey | undefined): void {
   const dim = player.dimension;
   const color = !sv ? WHITE : sv.verdict === "ok" ? GREEN : sv.verdict === "clear" ? ORANGE : RED;
-  const style: LineStyle = { color, thick: 0.06, life: PLOT_LIFE };
+  const style: LineStyle = { color, thick: 0.06, life: PLOT_LIFE, alpha: 0.55, fade: PLOT_LIFE - TICK / 20 };
   const ground = (sv?.groundY || Math.floor(player.location.y) - 1) + 1.02; // just above the ground block
   const { wx, wz } = extent(f);
   box(dim, f.x, ground, f.z, f.x + wx, ground + p.topHeight - 1, f.z + wz, style);
@@ -283,7 +293,7 @@ function drawPlot(player: Player, f: Footprint, p: Placing, sv: Survey | undefin
 function drawSurroundings(player: Player, s: Settlement): void {
   const dim = player.dimension;
   const near = (r: Rect) => Math.hypot(r.x + r.wx / 2 - player.location.x, r.z + r.wz / 2 - player.location.z) < 64;
-  const slow = (color: RGB): LineStyle => ({ color, thick: 0.05, life: SLOW_LIFE });
+  const slow = (color: RGB): LineStyle => ({ color, thick: 0.05, life: SLOW_LIFE, alpha: 0.35, fade: SLOW_LIFE - SLOW_TICK / 20 });
   for (const [defId, sites] of Object.entries(s.sites ?? {})) {
     const def = buildingById(defId);
     for (const site of sites) {

@@ -4,7 +4,7 @@
 //
 // A wall of striped panels all the way round, fixed in the world on a grid anchored to the bell: a band from one
 // panel below to three panels above the bell's height, plus the rows at the player's own height if they stand far
-// above or below it. White stripes at 25% (owner, 2026-11-17: "even more transparent"); each panel fades in and out at the ends of its life
+// above or below it. White stripes at 12% (owner, 2026-11-17: "even more transparent", twice); each panel fades in and out at the ends of its life
 // so overlapping redraws crossfade instead of flashing.
 
 import type { Player } from "@minecraft/server";

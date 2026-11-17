@@ -17,6 +17,13 @@ export interface LineStyle {
   thick: number;
   /** Seconds the segment stays: a little longer than the redraw interval, so lines never blink. */
   life: number;
+  /** 0..1, how solid the line is (owner, 2026-11-17: see-through lines are easier on the eye). */
+  alpha: number;
+  /**
+   * Seconds the line takes to fade in and out: set it to the overlap with the next redraw (life - interval), so
+   * the old and new line crossfade instead of flashing brighter while both are there.
+   */
+  fade: number;
 }
 
 /** One straight segment from a to b. Silently skipped outside loaded chunks. */
@@ -32,6 +39,8 @@ export function line(dim: Dimension, a: Vector3, b: Vector3, style: LineStyle): 
   vars.setFloat("variable.len", len);
   vars.setFloat("variable.thick", style.thick);
   vars.setFloat("variable.life", style.life);
+  vars.setFloat("variable.alpha", style.alpha);
+  vars.setFloat("variable.fade", style.fade);
   try {
     dim.spawnParticle(LINE, { x: a.x + dx / 2, y: a.y + dy / 2, z: a.z + dz / 2 }, vars);
   } catch {
