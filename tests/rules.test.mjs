@@ -60,6 +60,11 @@ assert.equal(promoKeys(), "");
 R.promote(s);
 assert.equal(R.tier(s), "city");
 assert.equal(R.checkPromotion(s).next, undefined);
+// Barracks: one per Village, two per Town, three per City; 4 workers each.
+assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "ok");
+act("barracks");
+act("barracks");
+assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "limit");
 
 // Older saves: no stored tier, the Town Hall level was the tier; level 2+ buildings count once.
 const old = { ...s, tier: undefined, buildings: { town_hall: [2], market: [3], house: [2, 1] } };

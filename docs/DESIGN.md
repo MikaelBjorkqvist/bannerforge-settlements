@@ -62,6 +62,7 @@ shops and missions.
 | 2026-11-17 | **No building tiers (levels) at all for now:** every building has one level. Promotion to Town / City is a button at the steward, offered when the prerequisites are met: **prosperity, population and defence points**. Town needs 22 prosperity (play-test). |
 | 2026-11-17 | **Defence points** replace defence-building prerequisites: towers, barracks and other defensive buildings each give defence points. The wall / gate / tower system (with a wall-building interface so the player designs it) and the Keep are not decided yet. |
 | 2026-11-17 | No tier locks on buildings at this point (reconfirmed). |
+| 2026-11-17 | Military garrisons keep their size and rise in rank with the tier: Barracks 4 militia → soldiers → knights; Watchtower 1 archer → marksman → ranger. Bigger towns may build more barracks (1 / 2 / 3) and towers (3 / 6 / 10). Civilian NPCs rank up 1 → 3 through a small quest once the tier allows it. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

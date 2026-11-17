@@ -61,7 +61,9 @@ export const BUILDINGS: BuildingDef[] = [
   // Defence: defence points instead of a walls prerequisite (owner, 2026-11-17). The wall / gate / tower system
   // with its own building interface is not decided yet; the old "Defences" perimeter purchase is gone.
   { id: "watchtower", category: "defence", plot: "S", emeralds: 6, prosperity: 1, npcs: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
-  { id: "barracks", category: "defence", plot: "L", emeralds: 12, prosperity: 3, npcs: 2, defence: 4 },
+  // Garrisons keep their size and rise in rank with the tier (owner, 2026-11-17): barracks 4 militia -> soldiers ->
+  // knights, watchtower 1 archer -> marksman -> ranger. Bigger towns may spread more barracks around.
+  { id: "barracks", category: "defence", plot: "L", emeralds: 12, prosperity: 3, npcs: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
 ];
 
 /** What a promotion needs (owner, 2026-11-17): a Town Hall, then prosperity, population and defence points. */

@@ -158,8 +158,8 @@ bannerforge.desc.docks.3=Harbour
 bannerforge.desc.defences.1=Palisade, gates, lookouts
 bannerforge.desc.defences.2=Stone wall, guards, archers
 bannerforge.desc.defences.3=Fortress wall, portcullis
-bannerforge.desc.watchtower.1=Lookout with an archer
-bannerforge.desc.barracks.1=Militia, trains the town guard
+bannerforge.desc.watchtower.1=Lookout: archer, marksman, ranger
+bannerforge.desc.barracks.1=Garrison of 4: militia, soldiers, knights
 bannerforge.desc.barracks.2=4 soldiers, patrols
 bannerforge.desc.barracks.3=Elite soldiers, tower
 
