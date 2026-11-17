@@ -93,4 +93,5 @@ const farm = { x: 0, z: 0, wx: 9, wz: 3 };
 assert.ok(P.rectOverlaps({ x: 8, z: 2, w: 5, d: 5, rot: 0 }, farm));
 assert.ok(!P.rectOverlaps({ x: 0, z: 3, w: 5, d: 5, rot: 0 }, farm), "rectangles are not squared up");
 assert.ok(P.rectContains(farm, 8, 2) && !P.rectContains(farm, 9, 0));
-assert.equal(P.BORDER_RADIUS.village, P.BORDER_RADIUS.city, "owner: one border size for every tier");
+assert.deepEqual(P.BORDER_RADIUS, { village: 48, town: 72, city: 96 }, "owner 2026-11-17: 48 / 72 / 96");
+assert.equal(P.BORDER, 96, "the largest border sets bell ownership and town spacing");

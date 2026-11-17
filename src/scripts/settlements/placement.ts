@@ -6,7 +6,7 @@
 import { ItemLockMode, ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
-import { drawBorderFar, drawBorderNear } from "./border.js";
+import { drawBorder } from "./border.js";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
 import { canAfford, pay } from "./economy.js";
@@ -25,6 +25,8 @@ export const PLAN_ITEM = "bannerforge_settlements:building_plan";
 /** The plot box follows the player every TICK ticks; the border and other plots are redrawn every SLOW_TICK. */
 const TICK = 2;
 const SLOW_TICK = 10;
+/** The border wall is static: redrawn once a second (a few hundred panels for a city). */
+const BORDER_TICK = 20;
 /** A survey reads the land, so it runs at most this often while the plot moves. */
 const SURVEY_TICKS = 6;
 /** Placement ends if the player wanders this far from the bell. */
@@ -170,9 +172,8 @@ function tick(): void {
     // Until the first survey: the player's feet as ground, white (unknown) lines.
     drawPlot(player, f, p, p.surveyed);
     if (p.age % SLOW_TICK === 0) drawSurroundings(player, s);
-    // Town border (border.ts): fixed wall and near outline with the slow redraw, far outline every redraw.
-    if (p.age % SLOW_TICK === 0) drawBorderNear(player, s, SLOW_LIFE);
-    drawBorderFar(player, s, PLOT_LIFE);
+    // Town border (border.ts): a fixed wall, so it only needs the slow redraw.
+    if (p.age % BORDER_TICK === 0) drawBorder(player, s, BORDER_LIFE);
     if (!p.panelOpen && p.surveyed && p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p.surveyed));
   }
 }
@@ -231,6 +232,7 @@ const TAN: RGB = { red: 0.95, green: 0.72, blue: 0.45 };
 /** Lines of the moving plot live just over one redraw, so the box never trails behind the player. */
 const PLOT_LIFE = (TICK + 1.5) / 20;
 const SLOW_LIFE = (SLOW_TICK + 2) / 20;
+const BORDER_LIFE = (BORDER_TICK + 2) / 20;
 const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
 
 /**
@@ -285,13 +287,12 @@ export function showBorder(player: Player, s: Settlement): void {
   say(player, "bannerforge.border.showing");
   let runs = 0;
   const id = system.runInterval(() => {
-    if (!player.isValid || ++runs > (30 * 20) / TICK) {
+    if (!player.isValid || ++runs > 30) {
       system.clearRun(id);
       return;
     }
-    if (runs % (SLOW_TICK / TICK) === 1) drawBorderNear(player, s, SLOW_LIFE);
-    drawBorderFar(player, s, PLOT_LIFE);
-  }, TICK);
+    drawBorder(player, s, BORDER_LIFE);
+  }, BORDER_TICK);
 }
 
 // ---------- text ----------

@@ -29,7 +29,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - A building's plot is now exactly as big as the building (the hand-built plains house is 7 × 9), not a fixed 9 / 13 / 17 square. Its outline matches the house that will stand there.
 - Placement outlines are solid lines instead of dots: the plot is a box the size and height of the building that follows you smoothly, with an arrow out of the entrance. Your other buildings and nearby village houses show as fixed boxes of their real size.
 - Buildings can stand right next to each other (no 1-block gap).
-- The town border is now a square around the bell (160 blocks to each side), shown while you place a building like the world border: a see-through striped gold wall near you and a gold line along its top all the way round, visible from anywhere in town. "Show town border" in the ledger shows it too.
+- The town border is now a square around the bell that grows with the settlement: 48 blocks to each side for a village, 72 for a town, 96 for a city (it was 160 for all). New settlements need their bell at least 192 blocks from another's. While you place a building the whole border shows as a white striped wall, like the world border. "Show town border" in the ledger shows it too.
 - Items packed up from a plot go into barrels just in front of the building (and any that don't fit are dropped by the door instead of being lost).
 ### Fixed
 - Ringing the bell several times no longer spawns extra stewards.

@@ -22,11 +22,12 @@ export const PLACEHOLDER_HEIGHT: Record<Exclude<Plot, "perimeter">, [number, num
 
 /**
  * Town border: a square around the bell (owner, 2026-11-17: square, easier for defences later), this many blocks
- * from the bell to each side (horizontal blocks). The same for every tier (owner, 2026-11-15:
- * "always the biggest one"). Kept per tier so growth can come back without changing callers.
+ * from the bell to each side. Grows with the tier (owner, 2026-11-17: 48 / 72 / 96, i.e. 97, 145 and 193 blocks
+ * across; 96 is the cap, beyond it the far side of town is out of simulation distance).
  */
-export const BORDER = 160;
-export const BORDER_RADIUS: Record<Tier, number> = { village: BORDER, town: BORDER, city: BORDER };
+export const BORDER_RADIUS: Record<Tier, number> = { village: 48, town: 72, city: 96 };
+/** The largest border (a city's): bells this close belong to the settlement, and towns need 2x this between bells. */
+export const BORDER = BORDER_RADIUS.city;
 
 /** Ground may be cut this many blocks into a slope, and filled this many blocks under a building. */
 export const CUT_MAX = 4;

@@ -3,7 +3,7 @@
   "particle_effect": {
     "description": {
       "identifier": "bannerforge_settlements:border_wall",
-      "basic_render_parameters": { "material": "particles_blend", "texture": "textures/bannerforge/settlements/particle/border_wall" }
+      "basic_render_parameters": { "material": "particles_alpha", "texture": "textures/bannerforge/settlements/particle/border_wall" }
     },
     "components": {
       "minecraft:emitter_rate_instant": { "num_particles": 1 },
