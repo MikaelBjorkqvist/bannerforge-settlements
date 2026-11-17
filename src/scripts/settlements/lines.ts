@@ -1,6 +1,7 @@
 // Solid guide lines in the world (owner, 2026-11-17: "like the lines in World Builder" instead of dotted particles).
 // Each segment is ONE particle (RP/particles/line.particle.json): a thin strip stretched between two points that
-// turns around its own axis to face the camera. A plot edge of 9 blocks is 1 particle instead of 9 dots, so the
+// turns around its own axis to face the camera. In `lookat_direction` the billboard's Y axis follows the direction,
+// so the length goes in the second size value (play-test 2026-11-17: the other way round, lines stood up crosswise). A plot edge of 9 blocks is 1 particle instead of 9 dots, so the
 // lines can be redrawn often (no trailing while you walk) and the whole town border fits in the budget.
 
 import { type Dimension, MolangVariableMap, type Vector3 } from "@minecraft/server";
