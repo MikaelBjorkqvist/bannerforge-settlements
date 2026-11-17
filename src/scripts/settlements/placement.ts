@@ -5,7 +5,7 @@
 
 import { ItemLockMode, ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
-import { pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
+import { bedsFor, pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
 import { drawBorder } from "./border.js";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
@@ -466,6 +466,10 @@ function confirm(player: Player, p: Placing): void {
   }
 
   const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, d: f.d, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
+  if (def.category === "population") {
+    const beds = bedsFor(def, s.faction, p.variant);
+    if (beds !== undefined) site.beds = beds;
+  }
   const sites = ((s.sites ??= {})[def.id] ??= []);
   if (p.mode.kind === "new") {
     const levels = (s.buildings[def.id] ??= []);

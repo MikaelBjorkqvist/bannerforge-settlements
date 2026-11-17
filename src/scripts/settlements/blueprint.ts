@@ -108,6 +108,15 @@ function dataBlueprint(data: BlueprintData, rot: Rot): Blueprint {
 
 // ---------- imported designs (owner-built, tools/import_structures.mjs) ----------
 
+/** Beds in a design (head halves), i.e. how many people it sleeps. */
+function bedsIn(data: BlueprintData): number {
+  const heads = new Set(data.palette.flatMap((p, i) => (p.id === "minecraft:bed" && p.states?.head_piece_bit === true ? [ALPHABET[i]] : [])));
+  let n = 0;
+  for (const layer of data.layers) for (const row of layer) for (const ch of row) if (heads.has(ch)) n++;
+  return n;
+}
+
+
 function importedBlueprint(imp: ImportedDesign, rot: Rot): Blueprint {
   return { ...dataBlueprint(imp.data, rot), structure: { id: imp.structure, turns: (rot + imp.turns) % 4, yOffset: imp.yOffset } };
 }
@@ -132,6 +141,17 @@ export function plotSizeFor(def: BuildingDef, faction: string, variant: string |
   if (imp) return { w: imp.data.size[0], d: imp.data.size[2] };
   const w = PLOT_WIDTH[def.plot === "perimeter" ? "S" : def.plot];
   return { w, d: w };
+}
+
+/**
+ * How many people a house sleeps: the beds in its design (owner, 2026-11-17). Undefined when the building has no
+ * design (placeholder boxes): the building's own housing value applies.
+ */
+export function bedsFor(def: BuildingDef, faction: string, variant: string | undefined): number | undefined {
+  const data = variant && !PLACEHOLDER_DESIGN ? BLUEPRINTS[key(faction, def.id, variant, 1)] : undefined;
+  if (data) return bedsIn(data);
+  const imp = importedPlaceholder(def, faction);
+  return imp ? bedsIn(imp.data) : undefined;
 }
 
 /**

@@ -9,7 +9,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Becoming a Town or City is a button in the steward's ledger ("Upgrade to Town"), shown with a checklist: a Town Hall, prosperity, population and **defence points**. Town: 22 prosperity, 6 population, 4 defence. City: 40, 14, 12.
 - Defence points come from the new **Watchtower** (2 each, 3 / 6 / 10 per tier), the Barracks (4; garrison of 4, one per Village, two per Town, three per City) and the Keep (6). The old "Defences" purchase is gone until walls and gates are designed.
 - Buildings that need a worker can be built even when nobody is free; the ledger warns that it will wait for a worker.
-- Population is what the houses hold (2 per house), plus the garrisons, who sleep in their barracks and towers and need no house beds.
+- Houses have no limit, but each costs 1 emerald more than the last. A house sleeps one person per bed in its design (your plains house: 2).
+- Population is what the houses hold, plus the garrisons, who sleep in their barracks and towers and need no house beds.
 ### Added
 - The steward is now a villager-like NPC who lives by the village bell, named "Steward, <name>".
   - Ringing the bell calls the steward to it. It no longer opens a menu.

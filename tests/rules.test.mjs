@@ -24,9 +24,13 @@ assert.equal(promoKeys(), "needs_building,promo_prosperity,promo_population,prom
 // Unique buildings once; houses and watchtowers up to the tier's limit.
 act("town_hall");
 assert.equal(keys(R.check(s, { kind: "build", id: "town_hall" })), "already_built");
-for (let i = 0; i < 4; i++) act("house");
-assert.equal(keys(R.check(s, { kind: "build", id: "house" })), "limit");
-assert.equal(R.population(s), 8);
+// Houses (owner, 2026-11-17): no limit, each costs 1 more than the last; a house sleeps as many as its design's beds.
+for (let i = 0; i < 4; i++) assert.equal(act("house").cost[0].amount, 3 + i);
+assert.equal(R.check(s, { kind: "build", id: "house" }).cost[0].amount, 7);
+assert.equal(R.population(s), 8, "no design stored: 2 each");
+s.sites = { house: [{ beds: 4 }, null, { beds: 2 }, null] };
+assert.equal(R.population(s), 4 + 2 + 2 + 2, "a 4-bed design sleeps 4");
+delete s.sites;
 
 // Under construction (level 0) counts for limits but gives nothing yet.
 s.buildings.watchtower = [0];
@@ -48,7 +52,7 @@ assert.equal(promoKeys(), "");
 assert.equal(R.checkPromotion(s).next, "town");
 R.promote(s);
 assert.equal(R.tier(s), "town");
-assert.equal(keys(R.check(s, { kind: "build", id: "house" })), "ok", "a Town allows more houses");
+
 
 // City: 40 prosperity, 14 population, 12 defence.
 assert.equal(R.checkPromotion(s).next, "city");

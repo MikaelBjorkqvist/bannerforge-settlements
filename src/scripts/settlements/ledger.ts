@@ -6,6 +6,7 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
+import { bedsFor } from "./blueprint.js";
 import { canAfford, countItem } from "./economy.js";
 import { constructionMinutesLeft } from "./construction.js";
 import { showBorder, startPlacement } from "./placement.js";
@@ -184,12 +185,14 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     let nowMsg: RawMessage = raw(t(`bannerforge.desc.${def.id}.1`));
     const details: RawMessage[] = [txt("\n§7")];
     details.push(t("bannerforge.steward.prosperity"), txt(` +${def.prosperity}`));
-    if (def.housing) details.push(txt("  "), t("bannerforge.steward.population"), txt(` +${def.housing}`));
+    const sleeps = def.category === "population" ? bedsFor(def, s.faction, undefined) ?? def.housing : def.housing;
+    if (sleeps) details.push(txt("  "), t("bannerforge.steward.population"), txt(` +${sleeps}`));
     if (def.defence) details.push(txt("  "), t("bannerforge.steward.defence"), txt(` +${def.defence}`));
     if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
     nowMsg = raw(nowMsg, ...details);
     if (def.perTier) {
-      nowMsg = raw(nowMsg, txt("\n§f"), t("bannerforge.ledger.built_count"), txt(` ${count} / ${def.perTier[tier(s)]}`));
+      const limit = def.perTier[tier(s)];
+      nowMsg = raw(nowMsg, txt("\n§f"), t("bannerforge.ledger.built_count"), txt(Number.isFinite(limit) ? ` ${count} / ${limit}` : ` ${count}`));
       if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.steward.population"), txt(` ${housing(s)}`));
     } else {
       nowMsg = raw(nowMsg, txt("\n§f"), count ? t("bannerforge.ledger.is_built") : t("bannerforge.ledger.not_built"));

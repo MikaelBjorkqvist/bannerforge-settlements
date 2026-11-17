@@ -21,6 +21,8 @@ export interface BuildingDef {
   plot: Plot;
   /** Emeralds to build it. Buildings have one level (owner, 2026-11-17: no building tiers). */
   emeralds: number;
+  /** Repeatable buildings: each one costs this many emeralds more than the one before. */
+  priceStep?: number;
   /** Prosperity it adds (per instance). */
   prosperity: number;
   /** Workers it employs (per instance). Each takes one free person from the population. */
@@ -47,7 +49,9 @@ export const BUILDINGS: BuildingDef[] = [
   { id: "shrine", category: "centre", plot: "S", emeralds: 8, prosperity: 4, npcs: 1 },
   { id: "warehouse", category: "centre", plot: "L", emeralds: 6, prosperity: 2, npcs: 1 },
   // Population (houses raise the population)
-  { id: "house", category: "population", plot: "M", emeralds: 3, prosperity: 1, npcs: 0, housing: 2, perTier: { village: 4, town: 8, city: 12 } },
+  // Houses (owner, 2026-11-17): no limit, but each costs 1 more than the last; a house sleeps as many people as its
+  // design has beds (`housing` is only the fallback for a house without a design).
+  { id: "house", category: "population", plot: "M", emeralds: 3, priceStep: 1, prosperity: 1, npcs: 0, housing: 2, perTier: { village: Infinity, town: Infinity, city: Infinity } },
   // Trade
   { id: "market", category: "trade", plot: "M", emeralds: 6, prosperity: 4, npcs: 1 },
   { id: "tavern", category: "trade", plot: "M", emeralds: 8, prosperity: 4, npcs: 1 },

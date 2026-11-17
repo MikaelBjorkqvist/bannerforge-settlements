@@ -34,8 +34,20 @@ function sumOver(s: Settlement, pick: (def: BuildingDef) => number): number {
 
 /** Total prosperity of the standing buildings. */
 export const prosperity = (s: Settlement): number => sumOver(s, (d) => d.prosperity);
-/** Population: the people the houses hold (settlers arriving over time come with the citizens, M2.5). */
-export const housing = (s: Settlement): number => sumOver(s, (d) => d.housing ?? 0);
+/**
+ * Population: the people the buildings sleep (settlers arriving over time come with the citizens, M2.5). A house
+ * sleeps as many as its design has beds (stored on its site when placed); garrisons sleep in their own building.
+ */
+export function housing(s: Settlement): number {
+  let total = 0;
+  for (const def of BUILDINGS) {
+    if (!def.housing) continue;
+    instances(s, def.id).forEach((level, i) => {
+      if (level > 0) total += (def.category === "population" ? s.sites?.[def.id]?.[i]?.beds : undefined) ?? def.housing!;
+    });
+  }
+  return total;
+}
 export const population = housing;
 /** Workers the standing buildings employ. */
 export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
@@ -82,8 +94,9 @@ export function promote(s: Settlement): void {
   if (next) s.tier = next;
 }
 
-export function costFor(def: BuildingDef): Cost[] {
-  return [{ item: "minecraft:emerald", amount: def.emeralds }];
+/** Price of the next one: repeatable buildings with a price step cost more for every one you already have. */
+export function costFor(s: Settlement, def: BuildingDef): Cost[] {
+  return [{ item: "minecraft:emerald", amount: def.emeralds + (def.priceStep ?? 0) * instances(s, def.id).length }];
 }
 
 /** Can this building be built right now? Returns the cost, or every reason it is blocked. */
@@ -98,7 +111,7 @@ export function check(s: Settlement, action: Action): Check {
     return { ok: false, reasons: [{ key: "already_built", args: [] }] };
   }
   // Buildings without free workers can still be built (owner, 2026-11-17); they wait for one (M2.5).
-  return { ok: true, cost: costFor(def), newLevel: 1 };
+  return { ok: true, cost: costFor(s, def), newLevel: 1 };
 }
 
 /** Applies a checked build (perimeter-free buildings are placed instead, see placement.ts). */
