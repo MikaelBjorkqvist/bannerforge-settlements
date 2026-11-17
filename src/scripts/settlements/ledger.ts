@@ -86,21 +86,18 @@ export function showOverview(player: Player, s: Settlement): void {
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
-  // A coloured symbol per number, grey names, white values, two per line (owner: "only text is a bit boring").
+  // One stat per line with a coloured symbol (the game font has no fixed width, so columns never line up).
   form.divider();
   const waiting = waitingForWorkers(s).length;
-  const stat = (symbol: string, key: string, value: number, gap = true): RawMessage[] => [txt(symbol + " §7"), t(key), txt(` §f${value}${gap ? "     " : ""}`)];
+  const stat = (symbol: string, key: string, value: number, last = false): RawMessage[] => [txt(symbol + " §7"), t(key), txt(` §f${value}${last ? "" : "\n"}`)];
   const info: RawMessage[] = [
     ...stat("§6★", "bannerforge.steward.prosperity", prosperity(s)),
-    ...stat("§c⚔", "bannerforge.steward.defence", defence(s), false),
-    txt("\n"),
+    ...stat("§c⚔", "bannerforge.steward.defence", defence(s)),
     ...stat("§a☺", "bannerforge.steward.population", population(s)),
-    ...stat("§e⌂", "bannerforge.steward.housing", housing(s), false),
-    txt("\n"),
+    ...stat("§e⌂", "bannerforge.steward.housing", housing(s)),
     ...stat("§b⚒", "bannerforge.citizens.workers", workers(s)),
-    ...stat("§7○", "bannerforge.citizens.unemployed", freeSettlers(s), false),
-    txt("\n"),
-    ...stat("§9⚑", "bannerforge.steward.garrison", garrison(s), false),
+    ...stat("§7○", "bannerforge.citizens.unemployed", freeSettlers(s)),
+    ...stat("§9⚑", "bannerforge.steward.garrison", garrison(s), true),
   ];
   if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
@@ -156,7 +153,7 @@ function showGrow(player: Player, s: Settlement): void {
     ),
   );
   form.header({ translate: "bannerforge.grow.gets", with: tierArg });
-  form.label(raw(...[1, 2, 3, 4].flatMap((n) => [txt(n > 1 ? "\n§7· §r" : "§7· §r"), t(`bannerforge.grow.${next}.${n}`)])));
+  form.label(raw(...[1, 2, 3, 4].flatMap((n) => [txt(n > 1 ? "\n§a+ §r" : "§a+ §r"), t(`bannerforge.grow.${next}.${n}`)])));
   form.divider();
   form.button(t("bannerforge.grow.now"), () => go(form, () => doPromote(player, s)), { disabled: new ObservableBoolean(promo.reasons.length > 0) });
   show(form);
