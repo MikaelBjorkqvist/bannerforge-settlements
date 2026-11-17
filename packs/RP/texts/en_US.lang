@@ -216,3 +216,26 @@ bannerforge.place.design=Design
 tile.bannerforge_settlements:banner_blue.name=Kingscross Guild Banner
 tile.bannerforge_settlements:banner_green.name=Amberwood Order Banner
 tile.bannerforge_settlements:banner_red.name=Brimstone Legion Banner
+
+## Developer menu (/scriptevent bannerforge:dev)
+bannerforge.dev.title=Dev tools
+bannerforge.dev.no_settlement=No settlement in this dimension
+bannerforge.dev.construction=Construction (64 blocks around you)
+bannerforge.dev.finish=Finish construction
+bannerforge.dev.phase=Next construction phase
+bannerforge.dev.sites=%s site(s) moved on
+bannerforge.dev.time=Time
+bannerforge.dev.day=+1 day
+bannerforge.dev.day_done=One day later
+bannerforge.dev.morning=Skip to morning
+bannerforge.dev.morning_done=Good morning
+bannerforge.dev.settlement=Settlement
+bannerforge.dev.emeralds=+64 Emeralds
+bannerforge.dev.emeralds_done=+64 Emeralds
+bannerforge.dev.promote=Promote now (ignore requirements)
+bannerforge.dev.demote=Back to Village
+bannerforge.dev.settler=+1 settler
+bannerforge.dev.not_yet=Comes with the citizens
+bannerforge.dev.options=Options
+bannerforge.dev.ledger_button=Dev button in ledger
+bannerforge.dev.close=Close

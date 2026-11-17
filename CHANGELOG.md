@@ -4,6 +4,9 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Added — developer tools
+- Dev menu for play-testing: `/scriptevent bannerforge:dev` (cheats on). Finish construction or skip a phase nearby, +1 day, skip to morning, +64 emeralds, promote now or back to Village; settlers once the citizens exist. Can also show a "Dev tools" button in the steward's ledger.
+
 ### Changed — progression (owner, 2026-11-17)
 - Buildings have one level: no more upgrades, and nothing is locked by tier. Every building can be built from the start.
 - Becoming a Town or City is a button in the steward's ledger ("Upgrade to Town"), shown with a checklist: a Town Hall, prosperity, population and **defence points**. Town: 22 prosperity, 6 population, 4 defence. City: 40, 14, 12.

@@ -9,6 +9,7 @@ import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } fro
 import { bedsFor } from "./blueprint.js";
 import { canAfford, countItem } from "./economy.js";
 import { constructionMinutesLeft } from "./construction.js";
+import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { built, check, checkPromotion, defence, freeSlots, housing, instances, npcDemand, population, promote, prosperity, tier, type Check } from "./rules.js";
@@ -119,6 +120,7 @@ export function showOverview(player: Player, s: Settlement): void {
   }
   form.divider();
   form.button(t("bannerforge.ledger.show_border"), () => go(form, () => showBorder(player, s)));
+  if (devButtonInLedger()) form.button(t("bannerforge.dev.title"), () => go(form, () => showDevMenu(player)));
   show(form);
 }
 

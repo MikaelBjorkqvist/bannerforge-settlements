@@ -518,23 +518,32 @@ function registerDevCommands(): void {
     }
     if (e.id !== "bannerforge:build_finish" && e.id !== "bannerforge:build_next") return;
     const player = e.sourceEntity;
-    if (!player) return;
-    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : STEP_TICKS;
-    const touched = new Set<string>();
-    for (const a of active) {
-      if (a.dim !== player.dimension.id) continue;
-      const d = Math.hypot((a.box.x0 + a.box.x1 + 1) / 2 - player.location.x, (a.box.z0 + a.box.z1 + 1) / 2 - player.location.z);
-      if (d > 64) continue;
-      const s = settlementById(a.sid);
-      const site = s?.sites?.[a.defId]?.[a.index];
-      if (!s || !site?.build) continue;
-      site.build.start -= shift;
-      saveSettlement(s);
-      touched.add(a.defId);
-    }
-    refreshActiveSites();
-    if (player.typeId === "minecraft:player") (player as Player).sendMessage(`[BannerForge] ${e.id}: ${touched.size} site(s)`);
+    if (!player || player.typeId !== "minecraft:player") return;
+    const n = hurryConstruction(player as Player, e.id === "bannerforge:build_finish" ? "finish" : "phase");
+    (player as Player).sendMessage(`[BannerForge] ${e.id}: ${n} site(s)`);
   });
+}
+
+/**
+ * Developer: moves construction near the player (64 blocks) on by one phase, or to the end. The work loop then
+ * catches up within a second. Returns how many sites were moved on.
+ */
+export function hurryConstruction(player: Player, how: "phase" | "finish"): number {
+  const shift = how === "finish" ? BUILD_TICKS : STEP_TICKS;
+  let n = 0;
+  for (const a of active) {
+    if (a.dim !== player.dimension.id) continue;
+    const d = Math.hypot((a.box.x0 + a.box.x1 + 1) / 2 - player.location.x, (a.box.z0 + a.box.z1 + 1) / 2 - player.location.z);
+    if (d > 64) continue;
+    const s = settlementById(a.sid);
+    const site = s?.sites?.[a.defId]?.[a.index];
+    if (!s || !site?.build) continue;
+    site.build.start -= shift;
+    saveSettlement(s);
+    n++;
+  }
+  refreshActiveSites();
+  return n;
 }
 
 /**
