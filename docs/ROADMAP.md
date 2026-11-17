@@ -54,8 +54,8 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 
 ## M2.5 — Citizens
 - [ ] Faction citizen prototype: our own NPC that sleeps, works and meets at the bell like villagers, wearing our skin
-- [ ] Buildings bring their worker; population slots from houses; unstaffed buildings shown in the ledger
-- [ ] Settlers arrive while housing is free
+- [x] Step 1 (numbers, 2026-11-17): settlers arrive at dawn into free beds, free settlers take jobs automatically, professions locked, unemployed leave first, unstaffed buildings give no prosperity and show in the ledger
+- [ ] Step 2: visible settlers and workers in town (needs the citizen prototype)
 - [ ] Recruiting vanilla villagers through the steward (optional)
 - [ ] NPC ranks: tier cap + quests (quests once the citizen systems exist)
 

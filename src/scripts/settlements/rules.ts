@@ -3,7 +3,7 @@
 // points are met). Pure functions (no game imports) so they can be unit-tested.
 
 import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost } from "./buildings.js";
-import type { BuildingLevel, Settlement, Tier } from "./types.js";
+import type { BuildingLevel, Citizens, Settlement, Tier } from "./types.js";
 
 /** Why an action isn't possible. `key` is a lang key suffix (bannerforge.rule.<key>); args fill its %s slots. */
 export interface Reason {
@@ -32,12 +32,112 @@ function sumOver(s: Settlement, pick: (def: BuildingDef) => number): number {
   return total;
 }
 
-/** Total prosperity of the standing buildings. */
-export const prosperity = (s: Settlement): number => sumOver(s, (d) => d.prosperity);
+// ---------- citizens (M2.5 step 1) ----------
+
+export const citizensOf = (s: Settlement): Citizens => (s.citizens ??= { free: 0, staffed: {} });
+const staffedAt = (s: Settlement, id: string, i: number): number => s.citizens?.staffed[id]?.[i] ?? 0;
+
+/** Is this standing building instance working? Buildings without workers always are. */
+export function isStaffed(s: Settlement, def: BuildingDef, i: number): boolean {
+  return staffedAt(s, def.id, i) >= def.npcs;
+}
+
+/** Workers employed in total. */
+export function workers(s: Settlement): number {
+  let n = 0;
+  for (const list of Object.values(s.citizens?.staffed ?? {})) for (const w of list) n += w ?? 0;
+  return n;
+}
+
+/** Settlers without a job. */
+export const freeSettlers = (s: Settlement): number => s.citizens?.free ?? 0;
+
+/** Standing buildings still waiting for (some of) their workers. */
+export function waitingForWorkers(s: Settlement): { id: string; index: number; missing: number }[] {
+  const out: { id: string; index: number; missing: number }[] = [];
+  for (const def of BUILDINGS) {
+    if (!def.npcs) continue;
+    instances(s, def.id).forEach((level, i) => {
+      const missing = def.npcs - staffedAt(s, def.id, i);
+      if (level > 0 && missing > 0) out.push({ id: def.id, index: i, missing });
+    });
+  }
+  return out;
+}
+
+/** Free settlers take open jobs, oldest buildings first. Returns the building ids that got a worker. */
+export function assignJobs(s: Settlement): string[] {
+  const c = citizensOf(s);
+  const hired: string[] = [];
+  for (const w of waitingForWorkers(s)) {
+    const n = Math.min(c.free, w.missing);
+    if (n <= 0) break;
+    const list = (c.staffed[w.id] ??= []);
+    list[w.index] = (list[w.index] ?? 0) + n;
+    c.free -= n;
+    hired.push(w.id);
+  }
+  return hired;
+}
+
 /**
- * Population: the townsfolk the houses sleep (settlers arriving over time come with the citizens, M2.5). A house
- * sleeps as many as its design has beds (stored on its site when placed). Garrisons are not population.
+ * A workplace that no longer stands (destroyed or removed): its workers become free settlers again, they keep
+ * nothing of their old job (owner, 2026-11-17: profession locked while the workplace stands).
  */
+export function releaseWorkers(s: Settlement): number {
+  const c = citizensOf(s);
+  let released = 0;
+  for (const [id, list] of Object.entries(c.staffed)) {
+    list.forEach((w, i) => {
+      if (w && !(instances(s, id)[i]! > 0)) {
+        c.free += w;
+        released += w;
+        list[i] = 0;
+      }
+    });
+  }
+  return released;
+}
+
+/**
+ * Dawn: settlers move into every free bed; if people outnumber beds, the unemployed leave first, then the newest
+ * workers (their building waits for a new one). Returns how many arrived and left.
+ */
+export function morning(s: Settlement): { arrived: number; left: number } {
+  const c = citizensOf(s);
+  releaseWorkers(s);
+  const beds = housing(s);
+  let people = c.free + workers(s);
+  let arrived = 0;
+  let left = 0;
+  if (people < beds) {
+    arrived = beds - people;
+    c.free += arrived;
+  } else if (people > beds) {
+    const leaveFree = Math.min(c.free, people - beds);
+    c.free -= leaveFree;
+    left += leaveFree;
+    people -= leaveFree;
+    // Still too many: the newest workers go (the last-built buildings lose theirs first).
+    const posts = Object.entries(c.staffed).flatMap(([id, list]) => list.map((w, i) => ({ id, i, w: w ?? 0 }))).filter((p) => p.w > 0).reverse();
+    for (const p of posts) {
+      if (people <= beds) break;
+      const n = Math.min(p.w, people - beds);
+      c.staffed[p.id][p.i] -= n;
+      people -= n;
+      left += n;
+    }
+  }
+  return { arrived, left };
+}
+
+/** Total prosperity of the standing buildings that are working (owner, 2026-11-17: no worker, no prosperity). */
+export function prosperity(s: Settlement): number {
+  let total = 0;
+  for (const def of BUILDINGS) instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (total += def.prosperity));
+  return total;
+}
+/** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). */
 export function housing(s: Settlement): number {
   let total = 0;
   for (const def of BUILDINGS) {
@@ -48,7 +148,8 @@ export function housing(s: Settlement): number {
   }
   return total;
 }
-export const population = housing;
+/** Population: the townsfolk who live there (free settlers and workers). Garrisons are not population. */
+export const population = (s: Settlement): number => freeSettlers(s) + workers(s);
 /** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */
@@ -56,10 +157,10 @@ export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
 /** Defence points: towers, barracks, the Keep. */
 export const defence = (s: Settlement): number => sumOver(s, (d) => d.defence ?? 0);
 
-/** People without a job (can be negative: buildings waiting for workers). */
-export function freeSlots(s: Settlement): number {
-  return population(s) - npcDemand(s);
-}
+/** Free beds: settlers move into them at the next dawn. */
+export const freeBeds = (s: Settlement): number => Math.max(0, housing(s) - population(s));
+/** Settlers free for a new job. */
+export const freeSlots = freeSettlers;
 
 /** The settlement's tier. Older saves had none: their Town Hall level was the tier (2 = Town, 3 = City). */
 export function tier(s: Settlement): Tier {

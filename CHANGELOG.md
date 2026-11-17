@@ -4,6 +4,15 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Added — townsfolk, step 1 (numbers)
+- **Settlers** move into every free bed at dawn (from 7:00, never in the evening or at night). A house finished in the evening fills the next morning.
+- **Jobs**: free settlers start work at buildings that need a worker, automatically. A worker keeps their job while the building stands; if it's gone they are free again.
+- A building without its worker gives **no prosperity** until someone starts work there. The ledger shows waiting buildings.
+- When people outnumber beds, the unemployed leave first at dawn, then the newest workers.
+- **Population** for promotion is the townsfolk who actually live there (free settlers and workers), not the number of beds.
+- The ledger shows townsfolk / beds, free settlers, when settlers arrive and which buildings wait for a worker. Chat tells you when settlers arrive, leave or start work.
+- Dev menu: "+1 settler" (needs a free bed) and "Dawn now".
+
 ### Fixed / changed — play-test 2026-11-17 evening
 - Doors, beds, torches and other blocks that hang on something no longer pop off during construction: they go in when the building is finished.
 - When placing, aim at where the entrance should be: the building goes behind it.

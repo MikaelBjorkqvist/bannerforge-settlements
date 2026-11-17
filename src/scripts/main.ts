@@ -1,5 +1,6 @@
 import { system } from "@minecraft/server";
 import { registerBanners } from "./settlements/banners.js";
+import { registerCitizens } from "./settlements/citizens.js";
 import { registerConstruction } from "./settlements/construction.js";
 import { registerDevMenu } from "./settlements/dev.js";
 import { registerPlacement } from "./settlements/placement.js";
@@ -13,6 +14,7 @@ registerPlacement();
 registerBanners();
 registerImageTest();
 registerDevMenu();
+registerCitizens();
 
 system.run(() => {
   console.log("[BannerForge] Settlements loaded");

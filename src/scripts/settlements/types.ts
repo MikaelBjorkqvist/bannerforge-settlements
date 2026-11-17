@@ -38,6 +38,8 @@ export interface Settlement {
    * derived from this (see rules.ts), so rebalancing numbers also updates existing worlds.
    */
   buildings: Record<string, BuildingLevel[]>;
+  /** The townsfolk (M2.5 step 1, 2026-11-17). Missing on older worlds: nobody has arrived yet. */
+  citizens?: Citizens;
   /** Tier reached through the ledger's promotion button (2026-11-17). Missing on older worlds: see rules.tier(). */
   tier?: Tier;
   /** The steward who keeps the ledger (schema 4). Missing on older worlds until the bell is rung. */
@@ -93,3 +95,18 @@ export interface StewardRecord {
   /** gameTime() (clock.ts) when the steward died; cleared when they return. */
   diedAt?: number;
 }
+
+/**
+ * The settlement's people as numbers (M2.5 step 1, owner rules 2026-11-17): settlers arrive at dawn into free beds,
+ * free settlers take open jobs automatically, a worker keeps their profession, the unemployed leave first when
+ * people outnumber beds. Garrisons are counted by their buildings, not here.
+ */
+export interface Citizens {
+  /** Settlers without a job. */
+  free: number;
+  /** Workers per building instance: staffed[id][i] = workers at buildings[id][i]. */
+  staffed: Record<string, number[]>;
+  /** Last in-game day whose morning has been handled. */
+  day?: number;
+}
+

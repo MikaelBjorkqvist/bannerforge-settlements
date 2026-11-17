@@ -13,7 +13,7 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { built, check, checkPromotion, defence, freeSlots, garrison, housing, instances, npcDemand, population, promote, prosperity, tier, type Check } from "./rules.js";
+import { built, check, checkPromotion, defence, freeBeds, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -85,8 +85,12 @@ export function showOverview(player: Player, s: Settlement): void {
   // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
-  const waiting = npcDemand(s) - population(s);
-  if (waiting > 0) form.label(raw(txt("§6⚠ "), t("bannerforge.steward.jobs_waiting", String(waiting))));
+  // Townsfolk (M2.5 step 1): who lives here, free beds, buildings waiting for workers.
+  const waiting = waitingForWorkers(s).length;
+  const folk: RawMessage[] = [t("bannerforge.citizens.townsfolk"), txt(` ${population(s)} / ${housing(s)}§7  `), t("bannerforge.citizens.free"), txt(` ${freeSettlers(s)}`)];
+  if (freeBeds(s) > 0) folk.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
+  if (waiting > 0) folk.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
+  form.label(raw(...folk));
 
   // Promotion (owner, 2026-11-17): a checklist, and the button once everything is met.
   const promo = checkPromotion(s);
@@ -191,12 +195,14 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     if (sleeps) details.push(txt("  "), t("bannerforge.steward.population"), txt(` +${sleeps}`));
     if (def.defence) details.push(txt("  "), t("bannerforge.steward.defence"), txt(` +${def.defence}`));
     if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
+    const short = waitingForWorkers(s).filter((w) => w.id === def.id).length;
+    if (short) details.push(txt("\n§6⚠ "), t("bannerforge.citizens.this_waits", String(short)));
     if (def.garrison) details.push(txt("\n§7"), t("bannerforge.steward.garrison"), txt(": "), t(`bannerforge.garrison.${def.id}.${tier(s)}`));
     nowMsg = raw(nowMsg, ...details);
     if (def.perTier) {
       const limit = def.perTier[tier(s)];
       nowMsg = raw(nowMsg, txt("\n§f"), t("bannerforge.ledger.built_count"), txt(Number.isFinite(limit) ? ` ${count} / ${limit}` : ` ${count}`));
-      if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.steward.population"), txt(` ${housing(s)}`));
+      if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.citizens.beds"), txt(` ${housing(s)}`));
     } else {
       nowMsg = raw(nowMsg, txt("\n§f"), count ? t("bannerforge.ledger.is_built") : t("bannerforge.ledger.not_built"));
     }
@@ -216,7 +222,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
       if (wallet >= price) parts.push(txt("§a✔ "), t("bannerforge.ledger.ready"), txt("§r\n"));
       else parts.push(txt("§c✘ "), t("bannerforge.ledger.short_by", String(price - wallet)), txt("§r\n"));
       // No free person for the job: it can be built, and waits for a worker (owner, 2026-11-17).
-      if (def.npcs > 0 && freeSlots(s) < def.npcs) parts.push(txt("§6⚠ "), t("bannerforge.ledger.no_free_worker"), txt("§r\n"));
+      if (def.npcs > 0 && freeSettlers(s) < def.npcs) parts.push(txt("§6⚠ "), t("bannerforge.ledger.no_free_worker"), txt("§r\n"));
       parts.push(t("bannerforge.ledger.cost"), txt(" "), costText(c.cost), txt("\n"));
       label.setData(raw(t(def.perTier && count ? "bannerforge.ledger.build_another" : "bannerforge.ledger.build"), txt(": "), costText(c.cost)));
       disabled.setData(!canAfford(player, c.cost));

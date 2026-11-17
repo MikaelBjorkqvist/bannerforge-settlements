@@ -64,7 +64,7 @@ bannerforge.ledger.workers=Workers %s
 bannerforge.ledger.built_count=Built:
 bannerforge.ledger.is_built=Built
 bannerforge.ledger.build_another=Build another
-bannerforge.ledger.no_free_worker=No free people: it will wait for a worker
+bannerforge.ledger.no_free_worker=No free settlers: it will wait for a worker
 bannerforge.steward.prosperity=Prosperity
 bannerforge.steward.population=Population
 bannerforge.steward.population_limit=Population limit
@@ -246,7 +246,26 @@ bannerforge.dev.emeralds_done=+64 Emeralds
 bannerforge.dev.promote=Promote now (ignore requirements)
 bannerforge.dev.demote=Back to Village
 bannerforge.dev.settler=+1 settler
-bannerforge.dev.not_yet=Comes with the citizens
+bannerforge.dev.settler_done=A settler arrived
+bannerforge.dev.no_bed=No free bed: build a house
+bannerforge.dev.dawn=Dawn now (settlers arrive / leave)
+bannerforge.dev.dawn_done=Dawn done
 bannerforge.dev.options=Options
 bannerforge.dev.ledger_button=Dev button in ledger
 bannerforge.dev.close=Close
+
+## Townsfolk (settlers, workers)
+bannerforge.citizens.townsfolk=Townsfolk
+bannerforge.citizens.free=Free
+bannerforge.citizens.free_beds=Free beds
+bannerforge.citizens.beds=Beds
+bannerforge.citizens.waiting=Waiting
+bannerforge.citizens.arrive_at_dawn=%s free beds: settlers arrive at dawn
+bannerforge.citizens.buildings_waiting=%s buildings wait for a worker: build houses
+bannerforge.citizens.this_waits=%s waiting for a worker
+bannerforge.citizens.arrived=%s settlers moved into %s.
+bannerforge.citizens.arrived_one=A settler moved into %s.
+bannerforge.citizens.left=%s settlers left %s: not enough beds.
+bannerforge.citizens.left_one=A settler left %s: not enough beds.
+bannerforge.citizens.hired=A settler of %s starts work at the
+
