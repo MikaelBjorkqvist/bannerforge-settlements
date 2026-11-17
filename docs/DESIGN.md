@@ -63,6 +63,7 @@ shops and missions.
 | 2026-11-17 | **Defence points** replace defence-building prerequisites: towers, barracks and other defensive buildings each give defence points. The wall / gate / tower system (with a wall-building interface so the player designs it) and the Keep are not decided yet. |
 | 2026-11-17 | No tier locks on buildings at this point (reconfirmed). |
 | 2026-11-17 | Military garrisons keep their size and rise in rank with the tier: Barracks 4 militia → soldiers → knights; Watchtower 1 archer → marksman → ranger. Bigger towns may build more barracks (1 / 2 / 3) and towers (3 / 6 / 10). Civilian NPCs rank up 1 → 3 through a small quest once the tier allows it. |
+| 2026-11-17 | **Garrisons sleep in their own building**: barracks bunks for its 4, a bed in each watchtower for its archer. They don't take house beds, arrive like settlers (daytime) when the building is finished, count as population, and leave or become free settlers if their building is destroyed. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

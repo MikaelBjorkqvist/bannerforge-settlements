@@ -33,6 +33,8 @@ s.buildings.watchtower = [0];
 assert.equal(R.defence(s), 0);
 s.buildings.watchtower = [1, 1];
 assert.equal(R.defence(s), 4, "two watchtowers = 4 defence points");
+assert.equal(R.population(s), 10, "garrisons sleep in their own building and count as population");
+assert.equal(R.freeSlots(s), 8, "...but take no house beds");
 act("watchtower");
 assert.equal(keys(R.check(s, { kind: "build", id: "watchtower" })), "limit");
 

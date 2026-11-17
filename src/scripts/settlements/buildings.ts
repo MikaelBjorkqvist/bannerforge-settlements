@@ -25,7 +25,10 @@ export interface BuildingDef {
   prosperity: number;
   /** Workers it employs (per instance). Each takes one free person from the population. */
   npcs: number;
-  /** Population it houses (houses only). */
+  /**
+   * People it houses: houses, and garrisons sleeping in their own building (owner, 2026-11-17: soldiers don't
+   * take house beds but count as population), so barracks and towers house exactly their own garrison.
+   */
   housing?: number;
   /** Defence points it adds (per instance): towers, barracks, the Keep (owner, 2026-11-17). */
   defence?: number;
@@ -60,10 +63,10 @@ export const BUILDINGS: BuildingDef[] = [
   { id: "docks", category: "food", plot: "L", emeralds: 8, prosperity: 3, npcs: 1 },
   // Defence: defence points instead of a walls prerequisite (owner, 2026-11-17). The wall / gate / tower system
   // with its own building interface is not decided yet; the old "Defences" perimeter purchase is gone.
-  { id: "watchtower", category: "defence", plot: "S", emeralds: 6, prosperity: 1, npcs: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
+  { id: "watchtower", category: "defence", plot: "S", emeralds: 6, prosperity: 1, npcs: 1, housing: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
   // Garrisons keep their size and rise in rank with the tier (owner, 2026-11-17): barracks 4 militia -> soldiers ->
   // knights, watchtower 1 archer -> marksman -> ranger. Bigger towns may spread more barracks around.
-  { id: "barracks", category: "defence", plot: "L", emeralds: 12, prosperity: 3, npcs: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
+  { id: "barracks", category: "defence", plot: "L", emeralds: 12, prosperity: 3, npcs: 4, housing: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
 ];
 
 /** What a promotion needs (owner, 2026-11-17): a Town Hall, then prosperity, population and defence points. */
