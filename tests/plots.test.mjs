@@ -35,6 +35,12 @@ assert.ok(!P.overlaps(a, { x: 9, z: 0, w: 9, d: 9, rot: 0 }, 0), "gap 0: buildin
 assert.ok(P.overlaps(a, { x: 8, z: 0, w: 9, d: 9, rot: 0 }, 0), "but never share a block");
 assert.ok(P.insideBorder({ x: -4, z: -4, w: 9, d: 9, rot: 0 }, 0, 0, 40));
 assert.ok(!P.insideBorder({ x: 35, z: 0, w: 9, d: 9, rot: 0 }, 0, 0, 40));
+// Square border: corners count (a circle would refuse this one), one block past the edge doesn't.
+assert.ok(P.insideBorder({ x: 32, z: 32, w: 9, d: 9, rot: 0 }, 0, 0, 40), "square: the corner is inside");
+assert.ok(!P.insideBorder({ x: 33, z: 32, w: 9, d: 9, rot: 0 }, 0, 0, 40));
+assert.ok(P.insideBorder({ x: -40, z: -40, w: 9, d: 9, rot: 0 }, 0, 0, 40));
+assert.ok(!P.insideBorder({ x: -41, z: 0, w: 9, d: 9, rot: 0 }, 0, 0, 40));
+assert.deepEqual(P.townSquare(10, 20, 40), { x0: -30, z0: -20, x1: 51, z1: 61 });
 
 // Construction: 4 phases over a day, then finish.
 // Phase 1 at once, phases 2 and 3 at 1/3 and 2/3 of the day, phase 4 together with completion.
@@ -53,11 +59,6 @@ for (let i = 1; i < 4; i++) assert.equal(layers[i][0], layers[i - 1][1], "phases
 assert.equal(P.minutesLeft(0), 20);
 assert.equal(P.minutesLeft(24000), 0);
 
-// Border points stay near the player and on the circle.
-// The full border ring: evenly spaced points on the circle.
-const ring = P.borderRing(0, 0, 40, 4);
-assert.equal(ring.length, Math.round((2 * Math.PI * 40) / 4));
-assert.ok(ring.every((p) => Math.abs(Math.hypot(p.x - 0.5, p.z - 0.5) - 40) < 0.01));
 
 // Rectangular plots (owner, 2026-11-16: a plot is as big as its structure). 7 wide, 9 deep.
 const r = (rot) => ({ x: 100, z: 200, w: 7, d: 9, rot });

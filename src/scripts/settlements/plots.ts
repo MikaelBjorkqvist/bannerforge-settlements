@@ -21,7 +21,8 @@ export const PLACEHOLDER_HEIGHT: Record<Exclude<Plot, "perimeter">, [number, num
 };
 
 /**
- * Town border radius around the bell (horizontal blocks). The same for every tier (owner, 2026-11-15:
+ * Town border: a square around the bell (owner, 2026-11-17: square, easier for defences later), this many blocks
+ * from the bell to each side (horizontal blocks). The same for every tier (owner, 2026-11-15:
  * "always the biggest one"). Kept per tier so growth can come back without changing callers.
  */
 export const BORDER = 160;
@@ -128,11 +129,16 @@ export function rectOverlaps(f: Footprint, r: Rect): boolean {
 }
 export const rectContains = (r: Rect, x: number, z: number) => x >= r.x && x < r.x + r.wx && z >= r.z && z < r.z + r.wz;
 
-/** Is the whole footprint inside the town border around the bell? */
-export function insideBorder(f: Footprint, bellX: number, bellZ: number, radius: number): boolean {
+/** The town square on block edges: the bell's block in the middle, `half` blocks to each side. */
+export function townSquare(bellX: number, bellZ: number, half: number): { x0: number; z0: number; x1: number; z1: number } {
+  return { x0: bellX - half, z0: bellZ - half, x1: bellX + half + 1, z1: bellZ + half + 1 };
+}
+
+/** Is the whole footprint inside the (square) town border around the bell? */
+export function insideBorder(f: Footprint, bellX: number, bellZ: number, half: number): boolean {
   const { wx, wz } = extent(f);
-  const corners = [[f.x, f.z], [f.x + wx, f.z], [f.x, f.z + wz], [f.x + wx, f.z + wz]];
-  return corners.every(([x, z]) => (x - bellX - 0.5) ** 2 + (z - bellZ - 0.5) ** 2 <= radius * radius);
+  const q = townSquare(bellX, bellZ, half);
+  return f.x >= q.x0 && f.z >= q.z0 && f.x + wx <= q.x1 && f.z + wz <= q.z1;
 }
 
 /** Does the footprint contain this block column? */
@@ -159,17 +165,3 @@ export function phaseLayers(phase: number, height: number): [number, number] {
 
 /** Real minutes left (20 ticks a second), rounded up. */
 export const minutesLeft = (elapsed: number) => Math.max(0, Math.ceil((BUILD_TICKS - elapsed) / 1200));
-
-/**
- * The whole border circle as points, about `spacing` blocks apart (block-centre coordinates around the bell).
- * Drawn as line segments between neighbours, so it is visible from anywhere inside the town (owner, 2026-11-17).
- */
-export function borderRing(bellX: number, bellZ: number, radius: number, spacing: number): { x: number; z: number }[] {
-  const pts: { x: number; z: number }[] = [];
-  const steps = Math.max(8, Math.round((2 * Math.PI * radius) / spacing));
-  for (let i = 0; i < steps; i++) {
-    const a = (i / steps) * 2 * Math.PI;
-    pts.push({ x: bellX + 0.5 + Math.cos(a) * radius, z: bellZ + 0.5 + Math.sin(a) * radius });
-  }
-  return pts;
-}

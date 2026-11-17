@@ -1,112 +1,113 @@
-// The town border as one continuous line on the ground, all the way round (owner, 2026-11-17: "visible always
-// when building, also from afar, the whole border"). It follows the terrain: ground heights along the ring are
-// read a few at a time and remembered, so a redraw only spawns particles. Lines get thicker with distance so the
-// far side of the town still reads as a line instead of vanishing.
+// The town border: a square around the bell, shown like the vanilla world border (owner, 2026-11-17: square for
+// defences later; "quite static and visible when building"; "a little bit like the world boundary").
+//
+// - Near the player: a see-through striped wall, panels fixed in the world on a grid anchored to the bell, so
+//   nothing slides around while you walk. Fixed height band around the bell's height (plus the rows at the
+//   player's own height if they stand far above or below it).
+// - The whole square: a gold line along the top of the wall, with corner posts. Particles far from the player are
+//   never shown, so parts further than FAR are drawn closer along the line of sight and scaled by the same factor
+//   (same place and size on screen). Those are redrawn every 2 ticks so they keep up with the player.
 
-import type { Player } from "@minecraft/server";
-import { line, type RGB } from "./lines.js";
-import { BORDER_RADIUS, borderRing } from "./plots.js";
+import type { Player, Vector3 } from "@minecraft/server";
+import { line, wallPanel, type RGB } from "./lines.js";
+import { BORDER_RADIUS, townSquare } from "./plots.js";
 import { tier } from "./rules.js";
-import { readColumn } from "./terrain.js";
 import type { Settlement } from "./types.js";
 
-const GOLD: RGB = { red: 1, green: 0.82, blue: 0.15 };
-/** Blocks between ring points (a 160 radius ring has about 200 segments). */
-const SPACING = 5;
-/** A short post every this many ring points, so the border shows above grass and over small hills. */
-const POST_EVERY = 5;
-const POST_HEIGHT = 2.5;
-/** Ground readings per redraw: unknown points first, then a slow refresh of the rest (terrain changes). */
-const NEW_READS = 10;
-const REFRESH_READS = 2;
+const GOLD: RGB = { red: 1, green: 0.8, blue: 0.2 };
+/** Wall panels: blocks wide and high. The grid starts at the square's corners and below the bell. */
+const PANEL = 8;
+/** The band of wall around the bell's height: from 1 panel below to 3 panels above. */
+const BAND_BELOW = 1;
+const BAND_ABOVE = 3;
+/** Wall panels are drawn within this many blocks of the player. */
+const WALL_NEAR = 48;
+/** The outline is split in pieces this long; pieces further away than FAR are drawn closer to the player. */
+const PIECE = 16;
+const FAR = 56;
 
-interface Ring {
-  key: string;
-  pts: { x: number; z: number }[];
-  ys: (number | undefined)[];
-  next: number;
-  /** Where the search for unread points continues (unloaded points don't block the rest). */
-  scan: number;
+interface Edge {
+  a: { x: number; z: number };
+  b: { x: number; z: number };
+  along: { x: number; z: number };
 }
 
-const rings = new Map<string, Ring>();
-
-function ringFor(s: Settlement): Ring {
-  const r = BORDER_RADIUS[tier(s)];
-  const key = `${s.center.x},${s.center.z},${r}`;
-  let ring = rings.get(s.id);
-  if (!ring || ring.key !== key) {
-    const pts = borderRing(s.center.x, s.center.z, r, SPACING);
-    ring = { key, pts, ys: pts.map(() => undefined), next: 0, scan: 0 };
-    rings.set(s.id, ring);
-  }
-  return ring;
+function edgesOf(s: Settlement): Edge[] {
+  const q = townSquare(s.center.x, s.center.z, BORDER_RADIUS[tier(s)]);
+  return [
+    { a: { x: q.x0, z: q.z0 }, b: { x: q.x1, z: q.z0 }, along: { x: 1, z: 0 } },
+    { a: { x: q.x1, z: q.z0 }, b: { x: q.x1, z: q.z1 }, along: { x: 0, z: 1 } },
+    { a: { x: q.x1, z: q.z1 }, b: { x: q.x0, z: q.z1 }, along: { x: -1, z: 0 } },
+    { a: { x: q.x0, z: q.z1 }, b: { x: q.x0, z: q.z0 }, along: { x: 0, z: -1 } },
+  ];
 }
 
-function readGround(player: Player, s: Settlement, ring: Ring): void {
+const bottomOf = (s: Settlement) => s.center.y - BAND_BELOW * PANEL;
+const topOf = (s: Settlement) => s.center.y + BAND_ABOVE * PANEL;
+
+/** Distance from a point to the nearest point of an edge, horizontally. */
+function edgeDistance(e: Edge, x: number, z: number): number {
+  const len = Math.abs(e.b.x - e.a.x) + Math.abs(e.b.z - e.a.z);
+  const t = Math.max(0, Math.min(len, (x - e.a.x) * e.along.x + (z - e.a.z) * e.along.z));
+  return Math.hypot(e.a.x + e.along.x * t - x, e.a.z + e.along.z * t - z);
+}
+
+/**
+ * Static parts, every 10 ticks: wall panels near the player and outline pieces within FAR (at their real place).
+ */
+export function drawBorderNear(player: Player, s: Settlement, life: number): void {
   const dim = player.dimension;
-  const floor = s.center.y - 48;
-  const read = (i: number) => {
-    const p = ring.pts[i];
-    const c = readColumn(dim, Math.floor(p.x), Math.floor(p.z), floor);
-    if (c) ring.ys[i] = c.ground + 1; // top surface of the ground block
-  };
-  const n = ring.pts.length;
-  let fresh = 0;
-  for (let k = 0; k < n && fresh < NEW_READS; k++) {
-    const i = (ring.scan + k) % n;
-    if (ring.ys[i] !== undefined) continue;
-    read(i);
-    fresh++;
-    ring.scan = (i + 1) % n;
+  const px = player.location.x;
+  const py = player.location.y;
+  const pz = player.location.z;
+  const bottom = bottomOf(s);
+  const top = topOf(s);
+  // Rows of panels: the band, and the rows within 16 blocks of the player's height, on the same grid.
+  const rows = new Set<number>();
+  for (let y = bottom; y < top; y += PANEL) rows.add(y);
+  const r0 = bottom + Math.floor((py - 16 - bottom) / PANEL) * PANEL;
+  for (let y = r0; y < py + 16; y += PANEL) rows.add(y);
+
+  for (const e of edgesOf(s)) {
+    if (edgeDistance(e, px, pz) > WALL_NEAR) continue;
+    const len = Math.abs(e.b.x - e.a.x) + Math.abs(e.b.z - e.a.z);
+    for (let t = 0; t < len; t += PANEL) {
+      const w = Math.min(PANEL, len - t);
+      const cx = e.a.x + e.along.x * (t + w / 2);
+      const cz = e.a.z + e.along.z * (t + w / 2);
+      if (Math.hypot(cx - px, cz - pz) > WALL_NEAR) continue;
+      for (const y of rows) wallPanel(dim, { x: cx, y: y + PANEL / 2, z: cz }, e.along, w, PANEL, GOLD, life);
+    }
   }
-  for (let k = 0; k < REFRESH_READS; k++) {
-    read(ring.next);
-    ring.next = (ring.next + 1) % ring.pts.length;
-  }
+  outline(player, s, life, false);
 }
 
-/** Height for a ring point: its own reading, else the nearest known neighbour, else the bell. */
-function heightAt(ring: Ring, i: number, fallback: number): number {
-  const n = ring.pts.length;
-  for (let k = 0; k < n / 2; k++) {
-    const a = ring.ys[(i + k) % n];
-    if (a !== undefined) return a;
-    const b = ring.ys[(i - k + n) % n];
-    if (b !== undefined) return b;
-  }
-  return fallback;
+/** Moving parts, every 2 ticks: outline pieces further than FAR, drawn closer to the player. */
+export function drawBorderFar(player: Player, s: Settlement, life: number): void {
+  outline(player, s, life, true);
 }
 
-/**
- * Particles far from the player are never shown (play-test 2026-11-17: the border 160 blocks out was invisible).
- * A segment further away than this is drawn closer, along the line of sight, scaled down by the same factor, so
- * on screen it is exactly where and as big as the real border. It also shows through hills and trees.
- */
-const NEAR = 40;
-
-/**
- * Draws the whole border once. `life` = seconds the lines stay (redraw a little sooner than that).
- */
-export function drawBorder(player: Player, s: Settlement, life: number): void {
-  const ring = ringFor(s);
-  readGround(player, s, ring);
+function outline(player: Player, s: Settlement, life: number, far: boolean): void {
   const dim = player.dimension;
   const eye = player.getHeadLocation();
-  const n = ring.pts.length;
-  const ys = ring.pts.map((_, i) => heightAt(ring, i, s.center.y + 1) + 0.08);
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    const a = { x: ring.pts[i].x, y: ys[i], z: ring.pts[i].z };
-    const b = { x: ring.pts[j].x, y: ys[j], z: ring.pts[j].z };
-    const top = { x: a.x, y: a.y + POST_HEIGHT, z: a.z };
+  const top = topOf(s);
+  const bottom = bottomOf(s);
+  const draw = (a: Vector3, b: Vector3) => {
     const dist = Math.hypot((a.x + b.x) / 2 - eye.x, (a.y + b.y) / 2 - eye.y, (a.z + b.z) / 2 - eye.z);
-    // About 1.5 pixels wide at any distance on a normal screen.
-    const thick = Math.min(1.4, 0.07 + dist * 0.0045);
-    const k = dist > NEAR ? NEAR / dist : 1;
-    const pull = (p: { x: number; y: number; z: number }) => (k === 1 ? p : { x: eye.x + (p.x - eye.x) * k, y: eye.y + (p.y - eye.y) * k, z: eye.z + (p.z - eye.z) * k });
-    const style = { color: GOLD, thick: thick * k, life };
-    line(dim, pull(a), pull(b), style);
-    if (i % POST_EVERY === 0) line(dim, pull(a), pull(top), style);
+    if (dist > FAR !== far) return;
+    // About 2 pixels wide at any distance on a normal screen.
+    const thick = Math.min(2, 0.1 + dist * 0.005);
+    const k = far ? FAR / dist : 1;
+    const pull = (p: Vector3) => (k === 1 ? p : { x: eye.x + (p.x - eye.x) * k, y: eye.y + (p.y - eye.y) * k, z: eye.z + (p.z - eye.z) * k });
+    line(dim, pull(a), pull(b), { color: GOLD, thick: thick * k, life });
+  };
+  for (const e of edgesOf(s)) {
+    const len = Math.abs(e.b.x - e.a.x) + Math.abs(e.b.z - e.a.z);
+    for (let t = 0; t < len; t += PIECE) {
+      const t1 = Math.min(len, t + PIECE);
+      draw({ x: e.a.x + e.along.x * t, y: top, z: e.a.z + e.along.z * t }, { x: e.a.x + e.along.x * t1, y: top, z: e.a.z + e.along.z * t1 });
+    }
+    // Corner post, in pieces so the near part stays put.
+    for (let y = bottom; y < top; y += PIECE) draw({ x: e.a.x, y, z: e.a.z }, { x: e.a.x, y: Math.min(top, y + PIECE), z: e.a.z });
   }
 }

@@ -53,3 +53,23 @@ export function box(dim: Dimension, x0: number, y0: number, z0: number, x1: numb
   rect(dim, x0, z0, x1, z1, y1, style);
   for (const [x, z] of [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]) line(dim, { x, y: y0, z }, { x, y: y1, z }, style);
 }
+
+const WALL = "bannerforge_settlements:border_wall";
+
+/**
+ * One upright, see-through striped panel (RP/particles/border_wall.particle.json), fixed in the world like the
+ * vanilla world border: `along` is the horizontal direction of the wall (x or z), the panel stands upright.
+ */
+export function wallPanel(dim: Dimension, center: Vector3, along: { x: number; z: number }, w: number, h: number, color: RGB, life: number): void {
+  const vars = new MolangVariableMap();
+  vars.setColorRGB("variable.color", color);
+  vars.setVector3("variable.dir", { x: along.x, y: 0, z: along.z });
+  vars.setFloat("variable.w", w);
+  vars.setFloat("variable.h", h);
+  vars.setFloat("variable.life", life);
+  try {
+    dim.spawnParticle(WALL, center, vars);
+  } catch {
+    // outside loaded chunks
+  }
+}
