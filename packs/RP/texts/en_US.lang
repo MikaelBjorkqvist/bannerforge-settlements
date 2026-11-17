@@ -72,6 +72,7 @@ bannerforge.steward.jobs_waiting=%s jobs are waiting for homes
 bannerforge.steward.next=Next:
 bannerforge.steward.defence=Defence
 bannerforge.steward.garrison=Garrison
+bannerforge.steward.housing=Housing
 bannerforge.garrison.barracks.village=4 militia
 bannerforge.garrison.barracks.town=4 soldiers
 bannerforge.garrison.barracks.city=4 knights
@@ -132,7 +133,7 @@ bannerforge.desc.shrine.3=Faction relic, big bonus
 bannerforge.desc.warehouse.1=Shared storage chests
 bannerforge.desc.warehouse.2=Double storage, auto-collect
 bannerforge.desc.warehouse.3=Pay costs from storage
-bannerforge.desc.house.1=Sleeps one person per bed
+bannerforge.desc.house.1=Housing: one person per bed
 bannerforge.desc.house.2=+3 limit, gardens
 bannerforge.desc.house.3=+4 limit, families
 bannerforge.desc.market.1=Basic goods and food
@@ -255,12 +256,13 @@ bannerforge.dev.ledger_button=Dev button in ledger
 bannerforge.dev.close=Close
 
 ## Townsfolk (settlers, workers)
-bannerforge.citizens.townsfolk=Townsfolk
+bannerforge.citizens.workers=Workers
+bannerforge.citizens.unemployed=Unemployed
 bannerforge.citizens.free=Free
 bannerforge.citizens.free_beds=Free beds
 bannerforge.citizens.beds=Beds
 bannerforge.citizens.waiting=Waiting
-bannerforge.citizens.arrive_at_dawn=%s free beds: settlers arrive at dawn
+bannerforge.citizens.arrive_at_dawn=Room for %s more: settlers arrive at dawn
 bannerforge.citizens.buildings_waiting=%s buildings wait for a worker: build houses
 bannerforge.citizens.this_waits=%s waiting for a worker
 bannerforge.citizens.arrived=%s settlers moved into %s.
@@ -268,4 +270,18 @@ bannerforge.citizens.arrived_one=A settler moved into %s.
 bannerforge.citizens.left=%s settlers left %s: not enough beds.
 bannerforge.citizens.left_one=A settler left %s: not enough beds.
 bannerforge.citizens.hired=A settler of %s starts work at the
+
+## Growing into the next tier
+bannerforge.grow.button=Grow into a %s
+bannerforge.grow.requirements=Requirements
+bannerforge.grow.gets=A %s gets
+bannerforge.grow.now=Upgrade now
+bannerforge.grow.town.1=Border 72 blocks (was 48)
+bannerforge.grow.town.2=Up to 6 watchtowers and 2 barracks
+bannerforge.grow.town.3=Garrison: soldiers and marksmen
+bannerforge.grow.town.4=Workers can rank up (quests, later)
+bannerforge.grow.city.1=Border 96 blocks (was 72)
+bannerforge.grow.city.2=Up to 10 watchtowers and 3 barracks
+bannerforge.grow.city.3=Garrison: knights and rangers
+bannerforge.grow.city.4=Workers reach the highest rank (quests, later)
 

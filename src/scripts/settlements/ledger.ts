@@ -13,7 +13,7 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { built, check, checkPromotion, defence, freeBeds, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, type Check } from "./rules.js";
+import { built, check, checkPromotion, defence, freeBeds, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -85,33 +85,34 @@ export function showOverview(player: Player, s: Settlement): void {
   // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
-  // Townsfolk (M2.5 step 1): who lives here, free beds, buildings waiting for workers.
+  // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there / housing.
   const waiting = waitingForWorkers(s).length;
-  const folk: RawMessage[] = [t("bannerforge.citizens.townsfolk"), txt(` ${population(s)} / ${housing(s)}§7  `), t("bannerforge.citizens.free"), txt(` ${freeSettlers(s)}`)];
-  if (freeBeds(s) > 0) folk.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
-  if (waiting > 0) folk.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
-  form.label(raw(...folk));
+  const info: RawMessage[] = [
+    t("bannerforge.steward.prosperity"),
+    txt(` ${prosperity(s)}    `),
+    t("bannerforge.steward.defence"),
+    txt(` ${defence(s)}\n`),
+    t("bannerforge.steward.population"),
+    txt(` ${population(s)} / ${housing(s)}\n`),
+    t("bannerforge.citizens.workers"),
+    txt(` ${workers(s)}    `),
+    t("bannerforge.citizens.unemployed"),
+    txt(` ${freeSettlers(s)}    `),
+    t("bannerforge.steward.garrison"),
+    txt(` ${garrison(s)}`),
+  ];
+  if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
+  if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
+  form.label(raw(...info));
 
-  // Promotion (owner, 2026-11-17): a checklist, and the button once everything is met.
+  // Growing to the next tier has its own page (requirements, what it brings, "Upgrade now").
   const promo = checkPromotion(s);
   form.divider();
   if (promo.next) {
-    const goal = PROMOTION[promo.next];
-    const line = (ok: boolean, ...body: RawMessage[]) => raw(txt(ok ? "§a✔§r " : "§c✘§r "), ...body, txt("\n"));
-    form.header(raw(t("bannerforge.steward.next"), txt(" "), t(`bannerforge.tier.${promo.next}`)));
-    form.label(
-      raw(
-        ...goal.requires.map((id) => line(built(s, id) > 0, buildingName(id))),
-        line(prosperity(s) >= goal.prosperity, t("bannerforge.steward.prosperity"), txt(` ${prosperity(s)} / ${goal.prosperity}`)),
-        line(population(s) >= goal.population, t("bannerforge.steward.population"), txt(` ${population(s)} / ${goal.population}`), garrison(s) ? raw(txt("§7  + "), t("bannerforge.steward.garrison"), txt(` ${garrison(s)}`)) : txt("")),
-        line(defence(s) >= goal.defence, t("bannerforge.steward.defence"), txt(` ${defence(s)} / ${goal.defence}`)),
-      ),
+    const ready = promo.reasons.length === 0;
+    form.button(raw({ translate: "bannerforge.grow.button", with: { rawtext: [{ translate: `bannerforge.tier.${promo.next}` }] } }, txt(ready ? "  ▲" : "")), () =>
+      go(form, () => showGrow(player, s)),
     );
-    const next = promo.next;
-    // The tier name is a lang key inside the button text: translate it as a nested argument (play-test 2026-11-17).
-    form.button({ translate: "bannerforge.steward.promote", with: { rawtext: [{ translate: `bannerforge.tier.${next}` }] } }, () => go(form, () => doPromote(player, s)), {
-      disabled: new ObservableBoolean(promo.reasons.length > 0),
-    });
   } else {
     form.label(raw(txt("§a"), t("bannerforge.steward.top_tier")));
   }
@@ -127,6 +128,36 @@ export function showOverview(player: Player, s: Settlement): void {
   form.divider();
   form.button(t("bannerforge.ledger.show_border"), () => go(form, () => showBorder(player, s)));
   if (devButtonInLedger()) form.button(t("bannerforge.dev.title"), () => go(form, () => showDevMenu(player)));
+  show(form);
+}
+
+/** What growing into the next tier takes and brings, with the "Upgrade now" button. */
+function showGrow(player: Player, s: Settlement): void {
+  s = latest(s);
+  const promo = checkPromotion(s);
+  const next = promo.next;
+  if (!next) {
+    showOverview(player, s);
+    return;
+  }
+  const tierArg = { rawtext: [{ translate: `bannerforge.tier.${next}` }] };
+  const form = new CustomForm(player, { translate: "bannerforge.grow.button", with: tierArg });
+  form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
+  const goal = PROMOTION[next];
+  const line = (ok: boolean, ...body: RawMessage[]) => raw(txt(ok ? "§a✔§r " : "§c✘§r "), ...body, txt("\n"));
+  form.header(t("bannerforge.grow.requirements"));
+  form.label(
+    raw(
+      ...goal.requires.map((id) => line(built(s, id) > 0, buildingName(id))),
+      line(prosperity(s) >= goal.prosperity, t("bannerforge.steward.prosperity"), txt(` ${prosperity(s)} / ${goal.prosperity}`)),
+      line(population(s) >= goal.population, t("bannerforge.steward.population"), txt(` ${population(s)} / ${goal.population}`)),
+      line(defence(s) >= goal.defence, t("bannerforge.steward.defence"), txt(` ${defence(s)} / ${goal.defence}`)),
+    ),
+  );
+  form.header({ translate: "bannerforge.grow.gets", with: tierArg });
+  form.label(raw(...[1, 2, 3, 4].flatMap((n) => [txt(n > 1 ? "\n§7· §r" : "§7· §r"), t(`bannerforge.grow.${next}.${n}`)])));
+  form.divider();
+  form.button(t("bannerforge.grow.now"), () => go(form, () => doPromote(player, s)), { disabled: new ObservableBoolean(promo.reasons.length > 0) });
   show(form);
 }
 
@@ -192,7 +223,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     const details: RawMessage[] = [txt("\n§7")];
     details.push(t("bannerforge.steward.prosperity"), txt(` +${def.prosperity}`));
     const sleeps = def.category === "population" ? bedsFor(def, s.faction, undefined) ?? def.housing : def.housing;
-    if (sleeps) details.push(txt("  "), t("bannerforge.steward.population"), txt(` +${sleeps}`));
+    if (sleeps) details.push(txt("  "), t("bannerforge.steward.housing"), txt(` +${sleeps}`));
     if (def.defence) details.push(txt("  "), t("bannerforge.steward.defence"), txt(` +${def.defence}`));
     if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
     const short = waitingForWorkers(s).filter((w) => w.id === def.id).length;
@@ -202,7 +233,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     if (def.perTier) {
       const limit = def.perTier[tier(s)];
       nowMsg = raw(nowMsg, txt("\n§f"), t("bannerforge.ledger.built_count"), txt(Number.isFinite(limit) ? ` ${count} / ${limit}` : ` ${count}`));
-      if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.citizens.beds"), txt(` ${housing(s)}`));
+      if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.steward.housing"), txt(` ${housing(s)}`));
     } else {
       nowMsg = raw(nowMsg, txt("\n§f"), count ? t("bannerforge.ledger.is_built") : t("bannerforge.ledger.not_built"));
     }
