@@ -107,11 +107,6 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.len
 export function survey(input: SurveyInput): Survey {
   const { dim, f } = input;
   const blocked = (reason: string, groundY = 0, entranceY = 0): Survey => ({ verdict: "blocked", reason, groundY, entranceY });
-  if (!input.insideBorder) return blocked("outside_border");
-  // Buildings may stand right next to each other (owner, 2026-11-17), they just can't share a block.
-  if (input.others.some((o) => overlaps(f, o, 0))) return blocked("overlap");
-  if (containsColumn(f, input.bell.x, input.bell.z)) return blocked("bell");
-
   const floor = input.bell.y - 48;
   // The floor lines up with the ground at the entrance (owner decision, 2026-11-15).
   const front: number[] = [];
@@ -123,6 +118,13 @@ export function survey(input: SurveyInput): Survey {
   }
   const entranceY = median(front);
   const groundY = entranceY + input.raise;
+
+  // Ground first, so a refused plot (across the border, on a building, on the bell) is still drawn on the ground
+  // (owner, 2026-11-17: the box climbed up to the player's height at the border).
+  if (!input.insideBorder) return blocked("outside_border", groundY, entranceY);
+  // Buildings may stand right next to each other (owner, 2026-11-17), they just can't share a block.
+  if (input.others.some((o) => overlaps(f, o, 0))) return blocked("overlap", groundY, entranceY);
+  if (containsColumn(f, input.bell.x, input.bell.z)) return blocked("bell", groundY, entranceY);
 
   const { wx, wz } = extent(f);
   const stride = wx * wz > 120 ? 2 : 1;
