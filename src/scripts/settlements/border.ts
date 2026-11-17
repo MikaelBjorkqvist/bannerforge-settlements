@@ -4,8 +4,8 @@
 //
 // A wall of striped panels all the way round, fixed in the world on a grid anchored to the bell: a band from one
 // panel below to three panels above the bell's height, plus the rows at the player's own height if they stand far
-// above or below it. The panels are alpha-tested (solid stripes, clear gaps), so a redraw overlapping the previous
-// one can't change the brightness.
+// above or below it. White stripes at 50% (owner, 2026-11-17); each panel fades in and out at the ends of its life
+// so overlapping redraws crossfade instead of flashing.
 
 import type { Player } from "@minecraft/server";
 import { wallPanel, type RGB } from "./lines.js";

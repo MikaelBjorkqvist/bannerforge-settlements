@@ -33,8 +33,8 @@ assert.equal(R.freeSlots(s), 0);
 assert.equal(keys(R.check(s, { kind: "build", id: "stonemason" })), "needs_population");
 assert.equal(keys(R.check(s, { kind: "upgrade", id: "market", index: 0 })), "tier_cap,needs_population");
 
-// Promote: prosperity >= 30 and population 8 >= 6.
-assert.ok(R.prosperity(s) >= 30, `prosperity ${R.prosperity(s)}`);
+// Promote: prosperity >= 22 (owner 2026-11-17, was 30) and population 8 >= 6.
+assert.ok(R.prosperity(s) >= 22, `prosperity ${R.prosperity(s)}`);
 act({ kind: "upgrade", id: "town_hall", index: 0 });
 assert.equal(R.tier(s), "town");
 

@@ -25,8 +25,11 @@ export const PLAN_ITEM = "bannerforge_settlements:building_plan";
 /** The plot box follows the player every TICK ticks; the border and other plots are redrawn every SLOW_TICK. */
 const TICK = 2;
 const SLOW_TICK = 10;
-/** The border wall is static: redrawn once a second (a few hundred panels for a city). */
-const BORDER_TICK = 20;
+/**
+ * The border wall is static: redrawn every 2 s. Each panel lives 0.2 s longer and fades in and out over 0.2 s
+ * (border_wall.particle.json), so the overlap is a crossfade and the 50% see-through wall never flashes.
+ */
+const BORDER_TICK = 40;
 /** A survey reads the land, so it runs at most this often while the plot moves. */
 const SURVEY_TICKS = 6;
 /** Placement ends if the player wanders this far from the bell. */
@@ -232,7 +235,7 @@ const TAN: RGB = { red: 0.95, green: 0.72, blue: 0.45 };
 /** Lines of the moving plot live just over one redraw, so the box never trails behind the player. */
 const PLOT_LIFE = (TICK + 1.5) / 20;
 const SLOW_LIFE = (SLOW_TICK + 2) / 20;
-const BORDER_LIFE = (BORDER_TICK + 2) / 20;
+const BORDER_LIFE = BORDER_TICK / 20 + 0.2;
 const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
 
 /**
@@ -287,7 +290,7 @@ export function showBorder(player: Player, s: Settlement): void {
   say(player, "bannerforge.border.showing");
   let runs = 0;
   const id = system.runInterval(() => {
-    if (!player.isValid || ++runs > 30) {
+    if (!player.isValid || ++runs > 15) {
       system.clearRun(id);
       return;
     }

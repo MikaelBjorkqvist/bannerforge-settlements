@@ -139,13 +139,26 @@ export function plotSizeFor(def: BuildingDef, faction: string, variant: string |
  * else the owner's imported placeholder house if it fits; else a placeholder box.
  */
 export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, d: number, rot: Rot): Blueprint {
-  const data = variant ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
+  // Generated designs are off while the owner's placeholder exists, also for old sites that remember a variant.
+  const data = variant && !PLACEHOLDER_DESIGN ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
   if (data && data.size[0] === w && data.size[2] === d) return dataBlueprint(data, rot);
   if (data) console.warn(`[BannerForge] design ${key(faction, def.id, variant!, level)} is ${data.size[0]}x${data.size[2]}, plot is ${w}x${d}: placeholder used`);
   const imp = importedPlaceholder(def, faction);
   if (imp && imp.data.size[0] === w && imp.data.size[2] === d) return importedBlueprint(imp, rot);
   // Sites placed before 2026-11-17 have the old square plots: they keep a box.
   return placeholderBlueprint(def, level, Math.min(w, d), rot);
+}
+
+/**
+ * Does upgrading from one level to the next change how the building looks? Only then is it rebuilt (owner,
+ * 2026-11-17: a building keeps its current model until the owner makes one for the new level). Today no design
+ * has levels (the generated ones are off), so upgrades never rebuild; owner level designs will plug in here.
+ */
+export function rebuildsOnUpgrade(def: BuildingDef, faction: string, variant: string | undefined, from: number, to: number): boolean {
+  if (PLACEHOLDER_DESIGN || !variant) return false;
+  const a = BLUEPRINTS[key(faction, def.id, variant, from)];
+  const b = BLUEPRINTS[key(faction, def.id, variant, to)];
+  return !!a && !!b && a !== b;
 }
 
 /** Height of the tallest level, for checking room above and protecting the site. */

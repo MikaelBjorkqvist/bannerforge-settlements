@@ -6,6 +6,7 @@
 import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
+import { rebuildsOnUpgrade } from "./blueprint.js";
 import { canAfford, countItem, pay } from "./economy.js";
 import { constructionMinutesLeft, startConstruction } from "./construction.js";
 import { showBorder, startPlacement } from "./placement.js";
@@ -290,8 +291,9 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     } else if (!canAfford(player, c.cost) || !pay(player, c.cost)) {
       message = raw(txt("§c"), t("bannerforge.ledger.cannot_afford"), txt(" "), costText(c.cost));
       player.playSound("note.bass");
-    } else if (placed && action.kind === "upgrade") {
-      // Upgrades rebuild the building on its plot over one day; the level counts when it is finished.
+    } else if (placed && action.kind === "upgrade" && rebuildsOnUpgrade(def, s.faction, siteOf(s, def.id, action.index)?.variant, c.newLevel - 1, c.newLevel)) {
+      // An upgrade with its own design rebuilds the building on its plot over one day; the level counts when it
+      // is finished. Without one (today: every building), the building stays as it is and the level counts now.
       startConstruction(s, def.id, action.index, c.newLevel);
       message = raw(txt("§a⚒ "), buildingName(def.id), txt(" "), levelName(c.newLevel), txt(": "), t("bannerforge.ledger.build_started"));
       player.playSound("random.levelup", { volume: 0.6 });
