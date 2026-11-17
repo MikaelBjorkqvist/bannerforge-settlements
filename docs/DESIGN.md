@@ -40,12 +40,28 @@ shops and missions.
 | 2026-11-15 | Construction: 4 phases over one in-game day, progress based on time so it catches up after you were away; builder NPC animations later; developer command for instant builds. Sites are protected from breaking, placing and explosions while under construction. Finished buildings are breakable; the steward repairs. |
 | 2026-11-15 | Placement controls: a temporary Building Plan item opens the panel (Build, Rotate, Raise, Lower, Move, Cancel); Sneak tap dropped. The action bar shows only a short status. |
 | 2026-11-15 | Town border: 160 blocks for every tier. Every bell inside a border belongs to that settlement; new settlements need their border clear of others (bells at least 320 apart). |
-| 2026-11-17 | Town border is a **square** around the bell (easier for defences later), growing with the tier: **48 / 72 / 96** blocks to each side (97, 145, 193 across); supersedes the fixed 160. Bells within 96 belong to the settlement; bells at least 192 apart so every village can become a city. Shown while placing like the world border: a white striped wall all round. Plots are exactly as big as their structure and may touch. Defences (walls, gates, towers, keep) not decided yet: a wall-building interface is being considered. |
 | 2026-11-15 | Floor level: the ground at the entrance, adjustable with Raise/Lower within the cut/fill limits. |
 | 2026-11-15 | Vanilla structures: smarter scan (anchor blocks + connected blocks), outlined while placing. Overriding vanilla structure files is ruled out (ADR 0003, Marketplace). Farms, wells and small water are cleared for the fee; a quarter of the plot or more under water is blocked. |
 | 2026-11-15 | The founding form uses the same DDUI style as the ledger. |
 | 2026-11-15 | Upgrades (option B): chest contents and blocks the player added (anything that differs from the old level's blueprint) are packed into barrels by the entrance before the rebuild. |
 | 2026-11-15 | Construction and steward timers use the in-game calendar (day × 24000 + time of day), so sleeping through nights counts. |
+| 2026-11-16 | Structures are built by the owner in game (superflat world, structure block export as `.mcstructure`) and imported by Claude into the blueprint pipeline. The list to build, lot sizes and export rules live in the shared Sheet "BannerForge structure build list". Generated houses are dropped. |
+| 2026-11-16 | **No building levels for now:** one design per building (Kingscross first: 16 buildings + a second house design = 17 structures). Levels 2–3 may come back later; the upgrade code stays but is unused. Tier progression must be reworked without levels (open question 5). |
+| 2026-11-16 | Founding works anywhere a bell is placed. A real generated village is a head start (villagers to recruit, vanilla houses to adopt later); a wilderness town costs more and starts empty. Bells at least 320 apart still applies *(2026-11-17: 192, square borders)*. |
+| 2026-11-16 | Buildings bring their worker: when a building finishes, its specialist arrives (smith, guards, archers...). Each worker takes one population slot. An idle settler takes a new job first; otherwise a new specialist arrives if a slot is free; otherwise the building is unstaffed and the ledger asks for more housing. |
+| 2026-11-16 | Population counts only the faction's own people. Unrecruited vanilla villagers are "locals": they keep their own beds and life and never block slots. |
+| 2026-11-16 | Recruiting (optional, the player's choice): the steward can put a nearby vanilla villager into a free job slot for a smaller fee; it becomes a faction citizen. Villagers are never converted automatically, and vanilla villager files are never changed (ADR 0003). |
+| 2026-11-16 | Settlers: while a town has free housing (and enough prosperity), a settler arrives now and then (e.g. one per in-game day). Settlers fill houses, count as population and are the town's reserve workforce. |
+| 2026-11-16 | Faction citizens are our own NPC entity. A prototype must prove that it joins village life (beds, work, the bell); if not, recruited vanilla villagers stay vanilla and are only marked by script. |
+| 2026-11-16 | **Progression without building levels:** built structures give prosperity (houses also give population) → promotion to Town and City at the Town Hall when prosperity, population and key buildings are met (no rebuild) → each tier unlocks new buildings and the next NPC rank. |
+| 2026-11-16 | **NPC ranks** (e.g. Apprentice → Journeyman → Master; Recruit → Soldier → Veteran): the town tier caps the rank; a rank-up comes from an NPC quest (deliver the items the NPC asks for; higher tiers ask for rarer items and give better rewards). A rank-up changes the badge and name and improves trades or stats. Experience from work and paying the steward are possible extras, to decide later. |
+| 2026-11-16 | No tier restrictions on buildings for now: every building can be built from the start; locks can be added later once it's clear what to lock. Prosperity thresholds are set by play-testing. NPC quests wait until the citizen systems exist. |
+| 2026-11-17 | Town border is a **square** around the bell (easier for defences later), growing with the tier: **48 / 72 / 96** blocks to each side (97, 145, 193 across); supersedes the fixed 160. Bells within 96 belong to the settlement; bells at least 192 apart so every village can become a city. Shown while placing like the world border: a white striped wall all round. Plots are exactly as big as their structure and may touch. Defences (walls, gates, towers, keep) not decided yet: a wall-building interface is being considered. |
+| 2026-11-17 | Placement visuals: the plot is a see-through line box of the building's size and height that follows the crosshair (up to 48 blocks); your other buildings and village houses show as fixed boxes; the border is a faint white striped wall like the world border (particles only; far parts out of particle range are accepted). |
+| 2026-11-17 | Upgrades never rebuild a building unless the owner made a design for the new level; the building keeps its model. |
+| 2026-11-17 | **No building tiers (levels) at all for now:** every building has one level. Promotion to Town / City is a button at the steward, offered when the prerequisites are met: **prosperity, population and defence points**. Town needs 22 prosperity (play-test). |
+| 2026-11-17 | **Defence points** replace defence-building prerequisites: towers, barracks and other defensive buildings each give defence points. The wall / gate / tower system (with a wall-building interface so the player designs it) and the Keep are not decided yet. |
+| 2026-11-17 | No tier locks on buildings at this point (reconfirmed). |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.
@@ -109,4 +125,7 @@ Village → Town → City tiers. It is the source of truth for game data.
 2. Banner patterns per faction, and whether factions play differently (bonuses, NPCs).
 3. Which other resources join emeralds as upgrade costs, and when?
 4. The tier beyond City (Capital / Stronghold): requirements and limits.
-5. Multiplayer: can several players own or contribute to one settlement?
+5. ~~Tiers without building levels~~ Decided 2026-11-16 (see the decisions log): no building locks for now; thresholds by play-testing.
+6. NPC ranks: decided in outline 2026-11-16 (tier cap + quests). Still open: the quests per role, rewards, and whether rank-ups add prosperity.
+7. Multiplayer: can several players own or contribute to one settlement?
+8. Defences: wall / gate / tower system and its building interface, the Keep's role, defence point values and thresholds.
