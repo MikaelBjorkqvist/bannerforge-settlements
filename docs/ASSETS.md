@@ -9,7 +9,7 @@ vanilla install, never committed and never shipped. Structures exported from it 
 | File (in packs/) | Source file (assets-src/) | Author | Method | Licence / rights | Added |
 | --- | --- | --- | --- | --- | --- |
 | BP/pack_icon.png, RP/pack_icon.png | pack_icon.svg | Claude (for BannerForge) | Hand-written 32×32 pixel SVG, rendered with sharp | Original, owned by BannerForge | 2026-11-12 |
-| RP/textures/bannerforge/settlements/ui/*.png (22 icons, 3 faction banners) | ui/make_ui_icons.py (character maps) → ui/svg/*.svg | Claude (for BannerForge) | Hand-made 8×8 / 8×12 pixel maps, rendered to 64 px PNG with sharp (nearest) | Original, owned by BannerForge | 2026-11-13 |
+| RP/textures/bannerforge/settlements/ui/*.png (23 icons, 3 faction banners; watchtower added 2026-11-17, rendered with PIL nearest) | ui/make_ui_icons.py (character maps) → ui/svg/*.svg | Claude (for BannerForge) | Hand-made 8×8 / 8×12 pixel maps, rendered to 64 px PNG with sharp (nearest) | Original, owned by BannerForge | 2026-11-13 |
 | RP/textures/bannerforge/settlements/entity/npc/steward_*.png (4 placeholder outfits; layer sources in assets-src/entity/layers/) | entity/make_npc.py (layer tables) | Claude (for BannerForge) | Pixel layers painted by script on our own 64×64 box layout | Original, owned by BannerForge | 2026-11-15 |
 | RP/models/entity/npc.geo.json | written by hand | Claude (for BannerForge) | Plain humanoid boxes (head, hat, body, arms, legs) | Original, owned by BannerForge | 2026-11-15 |
 | RP/animations/npc.animation.json | written by hand | Claude (for BannerForge) | Walk swing and head look, Molang | Original, owned by BannerForge | 2026-11-15 |

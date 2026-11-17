@@ -50,7 +50,7 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Owner's first house is the placeholder for every non-defence building (PR #21)
 - [x] Plots exactly as big as the structure, may touch; line-box placement following the crosshair; square border shown like the world border (PR #22)
 - [ ] The 17 Kingscross structures in game
-- [ ] Tiers reworked without building levels: promotion button by prosperity, population and defence points; no building locks (minTier / requires removed)
+- [x] Tiers reworked without building levels: promotion button by prosperity, population and defence points; no building locks (PR #24)
 
 ## M2.5 — Citizens
 - [ ] Faction citizen prototype: our own NPC that sleeps, works and meets at the bell like villagers, wearing our skin

@@ -3,6 +3,13 @@
 All notable changes to this add-on. Format: [Keep a Changelog](https://keepachangelog.com/), versions: SemVer.
 
 ## [Unreleased]
+
+### Changed — progression (owner, 2026-11-17)
+- Buildings have one level: no more upgrades, and nothing is locked by tier. Every building can be built from the start.
+- Becoming a Town or City is a button in the steward's ledger ("Upgrade to Town"), shown with a checklist: a Town Hall, prosperity, population and **defence points**. Town: 22 prosperity, 6 population, 4 defence. City: 40, 14, 12.
+- Defence points come from the new **Watchtower** (2 each, 3 / 6 / 10 per tier), the Barracks (4) and the Keep (6). The old "Defences" purchase is gone until walls and gates are designed.
+- Buildings that need a worker can be built even when nobody is free; the ledger warns that it will wait for a worker.
+- Population is what the houses hold (2 per house).
 ### Added
 - The steward is now a villager-like NPC who lives by the village bell, named "Steward, <name>".
   - Ringing the bell calls the steward to it. It no longer opens a menu.

@@ -38,6 +38,8 @@ export interface Settlement {
    * derived from this (see rules.ts), so rebalancing numbers also updates existing worlds.
    */
   buildings: Record<string, BuildingLevel[]>;
+  /** Tier reached through the ledger's promotion button (2026-11-17). Missing on older worlds: see rules.tier(). */
+  tier?: Tier;
   /** The steward who keeps the ledger (schema 4). Missing on older worlds until the bell is rung. */
   steward?: StewardRecord;
   /**

@@ -22,7 +22,7 @@ import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
 import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
 import { forgetVanillaIn } from "./vanilla.js";
-import { buildingName, levelName, raw, t, txt } from "./text.js";
+import { buildingName, raw, t, txt } from "./text.js";
 import type { BuildingLevel, Settlement, Site } from "./types.js";
 
 /** Work happens only when a player is this close (chunks further away may not be loaded). */
@@ -176,7 +176,7 @@ function announcePhase(s: Settlement, a: ActiveSite, phase: number): void {
 }
 
 function announceFinished(s: Settlement, a: ActiveSite, level: BuildingLevel, promoted: boolean): void {
-  const msg = raw(t("bannerforge.build.finished", s.name), txt(" "), buildingName(a.defId), txt(" "), levelName(level));
+  const msg = raw(t("bannerforge.build.finished", s.name), txt(" "), buildingName(a.defId));
   const dim = world.getDimension(a.dim);
   for (const p of dim.getPlayers({ location: { x: a.site.x, y: a.site.y, z: a.site.z }, maxDistance: 128 })) {
     p.sendMessage(msg);
@@ -399,8 +399,7 @@ function placeFinishedStructure(dim: Dimension, site: Pick<Site, "x" | "y" | "z"
 function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): void {
   const a = active.find((x) => x.dim === dim.id && at.x >= x.box.x0 && at.x <= x.box.x1 && at.z >= x.box.z0 && at.z <= x.box.z1);
   if (!a) return;
-  const level = a.site.build?.to ?? a.site.built;
-  const text: RawMessage = raw(buildingName(a.defId), txt("\n"), levelName(level));
+  const text: RawMessage = buildingName(a.defId);
   system.run(() => {
     try {
       dim.getBlock(at)?.getComponent("minecraft:sign")?.setText(text);
