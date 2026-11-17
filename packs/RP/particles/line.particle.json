@@ -13,7 +13,7 @@
       "minecraft:particle_appearance_billboard": {
         "size": ["variable.thick * 0.5", "variable.len * 0.5"],
         "facing_camera_mode": "lookat_direction",
-        "direction": { "mode": "custom_direction", "custom_direction": ["variable.dir.x", "variable.dir.y", "variable.dir.z"] },
+        "direction": { "mode": "custom", "custom_direction": ["variable.dir.x", "variable.dir.y", "variable.dir.z"] },
         "uv": { "texture_width": 4, "texture_height": 4, "uv": [0, 0], "uv_size": [4, 4] }
       },
       "minecraft:particle_appearance_tinting": {
