@@ -85,7 +85,7 @@ export function showOverview(player: Player, s: Settlement): void {
   // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
-  // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there / housing.
+  // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
   const waiting = waitingForWorkers(s).length;
   const info: RawMessage[] = [
     t("bannerforge.steward.prosperity"),
@@ -93,7 +93,9 @@ export function showOverview(player: Player, s: Settlement): void {
     t("bannerforge.steward.defence"),
     txt(` ${defence(s)}\n`),
     t("bannerforge.steward.population"),
-    txt(` ${population(s)} / ${housing(s)}\n`),
+    txt(` ${population(s)}    `),
+    t("bannerforge.steward.housing"),
+    txt(` ${housing(s)}\n`),
     t("bannerforge.citizens.workers"),
     txt(` ${workers(s)}    `),
     t("bannerforge.citizens.unemployed"),

@@ -10,7 +10,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - A building without its worker gives **no prosperity** until someone starts work there. The ledger shows waiting buildings.
 - When people outnumber beds, the unemployed leave first at dawn, then the newest workers.
 - **Population** for promotion is the townsfolk who actually live there (free settlers and workers), not the number of beds.
-- The ledger's front page is a town overview: prosperity, defence, population / housing, workers, unemployed and garrison, with warnings (room for settlers, buildings waiting for a worker). "Grow into a Town" opens its own page: requirements, what the new tier brings, and "Upgrade now". Houses show "Housing +2". Chat tells you when settlers arrive, leave or start work.
+- The ledger's front page is a town overview: prosperity, defence, population, housing, workers, unemployed and garrison, with warnings (room for settlers, buildings waiting for a worker). "Grow into a Town" opens its own page: requirements, what the new tier brings, and "Upgrade now". Houses show "Housing +2". Chat tells you when settlers arrive, leave or start work.
 - Dev menu: "+1 settler" (needs a free bed) and "Dawn now".
 
 ### Fixed / changed — play-test 2026-11-17 evening
