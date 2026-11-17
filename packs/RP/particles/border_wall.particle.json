@@ -51,7 +51,7 @@
           "variable.color.r",
           "variable.color.g",
           "variable.color.b",
-          "0.5 * math.clamp(math.min(variable.particle_age, variable.particle_lifetime - variable.particle_age) / 0.2, 0, 1)"
+          "0.25 * math.clamp(math.min(variable.particle_age, variable.particle_lifetime - variable.particle_age) / 0.2, 0, 1)"
         ]
       }
     }

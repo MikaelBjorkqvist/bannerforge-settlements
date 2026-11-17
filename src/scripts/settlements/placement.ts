@@ -11,7 +11,7 @@ import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
 import { canAfford, pay } from "./economy.js";
 import { box, line, rect, type LineStyle, type RGB } from "./lines.js";
-import { BORDER_RADIUS, CUT_MAX, FILL_MAX, extent, footprintInFront, insideBorder, rectOf, toWorld, turn, type Footprint, type Rect } from "./plots.js";
+import { BORDER_RADIUS, CUT_MAX, FILL_MAX, containsColumn, extent, footprintAt, footprintInFront, insideBorder, rectOf, toWorld, turn, type Footprint, type Rect } from "./plots.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { check, tier } from "./rules.js";
 import { survey, type Survey } from "./terrain.js";
@@ -200,9 +200,25 @@ function scanNearby(player: Player, s: Settlement, p: Placing): void {
   );
 }
 
+/** How far away the crosshair can put the plot. */
+const AIM_DISTANCE = 48;
+
+/**
+ * The plot centred on the block you look at (water surface counts, grass and flowers don't). Looking at the sky,
+ * further than AIM_DISTANCE, or so close the plot would cover your own feet: the plot just in front of you.
+ */
 function footprintAhead(player: Player, p: Placing): Footprint {
   const v = player.getViewDirection();
-  return footprintInFront(player.location.x, player.location.z, v.x, v.z, p.w, p.d, p.turns);
+  const near = footprintInFront(player.location.x, player.location.z, v.x, v.z, p.w, p.d, p.turns);
+  let hit;
+  try {
+    hit = player.getBlockFromViewDirection({ maxDistance: AIM_DISTANCE, includeLiquidBlocks: true, includePassableBlocks: false });
+  } catch {
+    return near;
+  }
+  if (!hit) return near;
+  const f = footprintAt(hit.block.location.x, hit.block.location.z, v.x, v.z, p.w, p.d, p.turns);
+  return containsColumn(f, Math.floor(player.location.x), Math.floor(player.location.z)) ? near : f;
 }
 
 function ownFootprints(s: Settlement): Footprint[] {
