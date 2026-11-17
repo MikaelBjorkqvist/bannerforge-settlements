@@ -4,6 +4,15 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Fixed / changed — play-test 2026-11-17 evening
+- Doors, beds, torches and other blocks that hang on something no longer pop off during construction: they go in when the building is finished.
+- When placing, aim at where the entrance should be: the building goes behind it.
+- The "Upgrade to Town" button shows the tier name.
+- Military lives in its own building: barracks (4), watchtowers (1) and the Keep (2) have a **garrison** that needs no free townsfolk and isn't counted as population. Its rank follows the tier (militia, soldiers, knights; archer, marksman, ranger).
+- Barracks and watchtowers use the placeholder house like every other building.
+- The Building Plan goes straight into your hand; whatever you held moves to a free slot and comes back afterwards. With a full inventory you're asked to free a slot first.
+- Becoming a Town or City is celebrated: a title for everyone around and fireworks in the faction's colour over the bell.
+
 ### Added — developer tools
 - Dev menu for play-testing: `/scriptevent bannerforge:dev` (cheats on). Finish construction or skip a phase nearby, +1 day, skip to morning, +64 emeralds, promote now or back to Village; settlers once the citizens exist. Can also show a "Dev tools" button in the steward's ledger.
 

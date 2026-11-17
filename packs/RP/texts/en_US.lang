@@ -71,6 +71,16 @@ bannerforge.steward.population_limit=Population limit
 bannerforge.steward.jobs_waiting=%s jobs are waiting for homes
 bannerforge.steward.next=Next:
 bannerforge.steward.defence=Defence
+bannerforge.steward.garrison=Garrison
+bannerforge.garrison.barracks.village=4 militia
+bannerforge.garrison.barracks.town=4 soldiers
+bannerforge.garrison.barracks.city=4 knights
+bannerforge.garrison.watchtower.village=1 archer
+bannerforge.garrison.watchtower.town=1 marksman
+bannerforge.garrison.watchtower.city=1 ranger
+bannerforge.garrison.keep.village=2 militia
+bannerforge.garrison.keep.town=2 soldiers
+bannerforge.garrison.keep.city=2 knights
 bannerforge.steward.promote=Upgrade to %s
 bannerforge.steward.top_tier=Your settlement has reached the highest tier.
 
@@ -158,8 +168,8 @@ bannerforge.desc.docks.3=Harbour
 bannerforge.desc.defences.1=Palisade, gates, lookouts
 bannerforge.desc.defences.2=Stone wall, guards, archers
 bannerforge.desc.defences.3=Fortress wall, portcullis
-bannerforge.desc.watchtower.1=Lookout: archer, marksman, ranger
-bannerforge.desc.barracks.1=Garrison of 4: militia, soldiers, knights
+bannerforge.desc.watchtower.1=Lookout over the town
+bannerforge.desc.barracks.1=Trains and houses the town guard
 bannerforge.desc.barracks.2=4 soldiers, patrols
 bannerforge.desc.barracks.3=Elite soldiers, tower
 
@@ -178,7 +188,8 @@ bannerforge.rule.needs_population=Needs %s free population (have %s)
 bannerforge.rule.unknown=Unknown building %s
 ## Placement and construction (M2a)
 bannerforge.place.start=§7Placing:
-bannerforge.place.how=Look where you want the plot; its entrance faces you. Use the Building Plan for Build, Rotate, Raise, Lower, Move or Cancel.
+bannerforge.place.how=Aim at where the entrance should be; the building goes behind it. Use the Building Plan for Build, Rotate, Raise, Lower, Move or Cancel.
+bannerforge.place.full_inventory=Free one inventory slot for the Building Plan first.
 bannerforge.place.ok=§a✔ Can build here
 bannerforge.place.clear=§6⚠ Old buildings here · clearing %s emeralds
 bannerforge.place.reason.outside_border=§c✘ Outside the town border

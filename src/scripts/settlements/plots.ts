@@ -94,14 +94,16 @@ export function footprintInFront(px: number, pz: number, dx: number, dz: number,
 }
 
 /**
- * A plot centred on the block column (cx, cz), e.g. the block under the crosshair (owner, 2026-11-17: the plot
- * should follow where you look, not only where you stand). Its entrance faces the player like footprintInFront.
+ * A plot whose entrance (the middle of its front edge) is on the block column (ax, az), e.g. the block under the
+ * crosshair, with the rest of the plot behind it (owner, 2026-11-17: aim at the front edge, not the centre).
+ * The entrance faces the player like footprintInFront.
  */
-export function footprintAt(cx: number, cz: number, dx: number, dz: number, w: number, d: number, extraTurns: number): Footprint {
+export function footprintAt(ax: number, az: number, dx: number, dz: number, w: number, d: number, extraTurns: number): Footprint {
   const towardPlayer = ((facingOf(dx, dz) + 2) % 4) as Rot;
   const rot = ((towardPlayer + extraTurns) % 4) as Rot;
-  const { wx, wz } = extent({ w, d, rot });
-  return { x: Math.floor(cx) - Math.floor(wx / 2), z: Math.floor(cz) - Math.floor(wz / 2), w, d, rot };
+  // Where the entrance block sits relative to the corner, for this size and rotation.
+  const off = toWorld({ x: 0, z: 0, w, d, rot }, Math.floor(w / 2), d - 1);
+  return { x: Math.floor(ax) - off.x, z: Math.floor(az) - off.z, w, d, rot };
 }
 
 /** A quarter turn about the plot's centre (width and depth swap in the world, so the corner moves). */

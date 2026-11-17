@@ -5,9 +5,10 @@
 
 import { ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableUIRawMessage } from "@minecraft/server-ui";
+import { celebrate } from "./celebration.js";
 import { hurryConstruction } from "./construction.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
-import { checkPromotion, defence, population, prosperity, promote, tier } from "./rules.js";
+import { defence, population, prosperity, promote, tier } from "./rules.js";
 import { raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
@@ -102,10 +103,10 @@ export function showDevMenu(player: Player): void {
   });
   form.button(t("bannerforge.dev.promote"), () => {
     if (!s) return;
-    const missing = checkPromotion(s).reasons.length;
     promote(s);
     saveSettlement(s);
-    done(raw(t(`bannerforge.tier.${tier(s)}`), txt(missing ? " (dev)" : "")));
+    form.close();
+    celebrate(s);
   });
   form.button(t("bannerforge.dev.demote"), () => {
     if (!s) return;

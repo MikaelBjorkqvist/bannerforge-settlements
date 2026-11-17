@@ -3,16 +3,17 @@
 // Each screen is a DDUI CustomForm (stable in @minecraft/server-ui 2.3.0). The Building screen updates in place
 // after a purchase, and the result is shown right above its button, with a sound.
 
-import { type Player, type RawMessage, system, world } from "@minecraft/server";
+import { type Player, type RawMessage, system } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
 import { bedsFor } from "./blueprint.js";
 import { canAfford, countItem } from "./economy.js";
+import { celebrate } from "./celebration.js";
 import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { built, check, checkPromotion, defence, freeSlots, housing, instances, npcDemand, population, promote, prosperity, tier, type Check } from "./rules.js";
+import { built, check, checkPromotion, defence, freeSlots, garrison, housing, instances, npcDemand, population, promote, prosperity, tier, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -98,12 +99,13 @@ export function showOverview(player: Player, s: Settlement): void {
       raw(
         ...goal.requires.map((id) => line(built(s, id) > 0, buildingName(id))),
         line(prosperity(s) >= goal.prosperity, t("bannerforge.steward.prosperity"), txt(` ${prosperity(s)} / ${goal.prosperity}`)),
-        line(population(s) >= goal.population, t("bannerforge.steward.population"), txt(` ${population(s)} / ${goal.population}`)),
+        line(population(s) >= goal.population, t("bannerforge.steward.population"), txt(` ${population(s)} / ${goal.population}`), garrison(s) ? raw(txt("§7  + "), t("bannerforge.steward.garrison"), txt(` ${garrison(s)}`)) : txt("")),
         line(defence(s) >= goal.defence, t("bannerforge.steward.defence"), txt(` ${defence(s)} / ${goal.defence}`)),
       ),
     );
     const next = promo.next;
-    form.button(raw(t("bannerforge.steward.promote", `bannerforge.tier.${next}`)), () => go(form, () => doPromote(player, s)), {
+    // The tier name is a lang key inside the button text: translate it as a nested argument (play-test 2026-11-17).
+    form.button({ translate: "bannerforge.steward.promote", with: { rawtext: [{ translate: `bannerforge.tier.${next}` }] } }, () => go(form, () => doPromote(player, s)), {
       disabled: new ObservableBoolean(promo.reasons.length > 0),
     });
   } else {
@@ -132,10 +134,8 @@ function doPromote(player: Player, s: Settlement): void {
   }
   promote(s);
   saveSettlement(s);
-  const promoted = raw(t("bannerforge.tier.promoted", s.name), txt(" "), t(`bannerforge.tier.${tier(s)}`), txt("!"));
-  world.sendMessage(promoted);
-  player.playSound("random.levelup", { volume: 0.8 });
-  showOverview(player, s);
+  // The ledger stays closed so the title and fireworks can be seen (play-test 2026-11-17).
+  celebrate(s);
 }
 
 // ---------- 2. Section ----------
@@ -191,6 +191,7 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     if (sleeps) details.push(txt("  "), t("bannerforge.steward.population"), txt(` +${sleeps}`));
     if (def.defence) details.push(txt("  "), t("bannerforge.steward.defence"), txt(` +${def.defence}`));
     if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
+    if (def.garrison) details.push(txt("\n§7"), t("bannerforge.steward.garrison"), txt(": "), t(`bannerforge.garrison.${def.id}.${tier(s)}`));
     nowMsg = raw(nowMsg, ...details);
     if (def.perTier) {
       const limit = def.perTier[tier(s)];

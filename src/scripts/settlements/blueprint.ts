@@ -123,10 +123,11 @@ function importedBlueprint(imp: ImportedDesign, rot: Rot): Blueprint {
 
 /**
  * The owner's placeholder design for this building and faction (owner, 2026-11-16: one hand-built house stands
- * in for every building until it has its own design; the Defence section keeps its boxes).
+ * in for every building until it has its own design).
  */
 function importedPlaceholder(def: BuildingDef, faction: string): ImportedDesign | undefined {
-  if (!PLACEHOLDER_DESIGN || def.category === "defence" || def.plot === "perimeter") return undefined;
+  // Every building, the Defence section included (owner, 2026-11-17), until it has its own design.
+  if (!PLACEHOLDER_DESIGN || def.plot === "perimeter") return undefined;
   return IMPORTED[`${PLACEHOLDER_DESIGN}/${faction}`];
 }
 

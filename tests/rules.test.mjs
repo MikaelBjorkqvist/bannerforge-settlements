@@ -37,14 +37,16 @@ s.buildings.watchtower = [0];
 assert.equal(R.defence(s), 0);
 s.buildings.watchtower = [1, 1];
 assert.equal(R.defence(s), 4, "two watchtowers = 4 defence points");
-assert.equal(R.population(s), 10, "garrisons sleep in their own building and count as population");
-assert.equal(R.freeSlots(s), 8, "...but take no house beds");
+assert.equal(R.population(s), 8, "garrisons are not population (owner, 2026-11-17)");
+assert.equal(R.garrison(s), 2, "one archer per tower");
+assert.equal(R.freeSlots(s), 8, "...and need no townsfolk");
 act("watchtower");
 assert.equal(keys(R.check(s, { kind: "build", id: "watchtower" })), "limit");
 
 // Workers: jobs beyond the population show as negative free slots (buildings wait for workers).
 for (const id of ["market", "tavern", "shrine", "blacksmith", "fletcher", "alchemist", "warehouse", "farmstead", "docks"]) act(id);
 assert.ok(R.freeSlots(s) < 0, `free ${R.freeSlots(s)}`);
+assert.equal(R.npcDemand(s), 9, "nine workshops, nine workers; the archers aren't counted as workers");
 
 // Town: 22 prosperity, 6 population, 4 defence, Town Hall. The button promotes; nothing is rebuilt.
 assert.ok(R.prosperity(s) >= 22, `prosperity ${R.prosperity(s)}`);

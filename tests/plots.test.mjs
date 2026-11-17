@@ -95,3 +95,13 @@ assert.ok(!P.rectOverlaps({ x: 0, z: 3, w: 5, d: 5, rot: 0 }, farm), "rectangles
 assert.ok(P.rectContains(farm, 8, 2) && !P.rectContains(farm, 9, 0));
 assert.deepEqual(P.BORDER_RADIUS, { village: 48, town: 72, city: 96 }, "owner 2026-11-17: 48 / 72 / 96");
 assert.equal(P.BORDER, 96, "the largest border sets bell ownership and town spacing");
+
+// Aiming (owner, 2026-11-17): the crosshair block is the middle of the entrance edge, the plot lies behind it.
+for (const [dx, dz] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) {
+  const g = P.footprintAt(50, 80, dx, dz, 7, 9, 0);
+  assert.deepEqual(P.toWorld(g, 3, 8), { x: 50, z: 80 }, `looking ${dx},${dz}: entrance on the aimed block`);
+  // The plot is behind the aimed block, seen from the player.
+  const c = P.toWorld(g, 3, 0);
+  assert.ok((c.x - 50) * dx + (c.z - 80) * dz > 0, `looking ${dx},${dz}: the back is further away`);
+}
+

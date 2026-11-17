@@ -360,8 +360,15 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
       for (let lz = 0; lz < f.d; lz++) {
         const spec = bp.at(lx, ly, lz);
         if (!spec) continue;
+        // Doors, beds, torches and other blocks that hang on a neighbour pop off (and drop) when their other half
+        // or support isn't there yet (play-test 2026-11-17). With an imported design the finished structure puts
+        // them in at the end; otherwise a door's top half is placed together with its bottom half.
+        if (isFragile(spec.id)) {
+          if (bp.structure || spec.states?.upper_block_bit === true) continue;
+        }
         const p = toWorld(f, lx, lz);
         set(dim, p.x, site.y + ly, p.z, spec.id, spec.states);
+        if (spec.states?.upper_block_bit === false) set(dim, p.x, site.y + ly + 1, p.z, spec.id, { ...spec.states, upper_block_bit: true });
         if (spec.sign) signs.push({ x: p.x, y: site.y + ly, z: p.z });
         if (++n % BLOCKS_PER_YIELD === 0) yield;
       }
@@ -369,6 +376,10 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
   }
   for (const at of signs) labelSign(dim, at);
 }
+
+/** Blocks that need a neighbour (their other half, a wall or a floor) to stay put. */
+const FRAGILE = /door|_bed$|^minecraft:bed$|torch|lantern|button|lever|ladder|vine|_sign$|banner|candle|pressure_plate|flower_pot|_hanging_sign|chain$|bell$|tripwire|rail$|redstone_wire|carpet|tall_grass|large_fern|sunflower|lilac|rose_bush|peony|pitcher_plant/;
+const isFragile = (id: string) => FRAGILE.test(id);
 
 const ROTATIONS = [StructureRotation.None, StructureRotation.Rotate90, StructureRotation.Rotate180, StructureRotation.Rotate270];
 

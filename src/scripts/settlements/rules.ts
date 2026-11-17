@@ -35,8 +35,8 @@ function sumOver(s: Settlement, pick: (def: BuildingDef) => number): number {
 /** Total prosperity of the standing buildings. */
 export const prosperity = (s: Settlement): number => sumOver(s, (d) => d.prosperity);
 /**
- * Population: the people the buildings sleep (settlers arriving over time come with the citizens, M2.5). A house
- * sleeps as many as its design has beds (stored on its site when placed); garrisons sleep in their own building.
+ * Population: the townsfolk the houses sleep (settlers arriving over time come with the citizens, M2.5). A house
+ * sleeps as many as its design has beds (stored on its site when placed). Garrisons are not population.
  */
 export function housing(s: Settlement): number {
   let total = 0;
@@ -49,7 +49,9 @@ export function housing(s: Settlement): number {
   return total;
 }
 export const population = housing;
-/** Workers the standing buildings employ. */
+/** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
+export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
+/** Workers the standing buildings employ (from the townsfolk). */
 export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
 /** Defence points: towers, barracks, the Keep. */
 export const defence = (s: Settlement): number => sumOver(s, (d) => d.defence ?? 0);
