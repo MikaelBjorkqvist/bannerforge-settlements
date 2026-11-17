@@ -25,6 +25,11 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Buildings bought before this version can be placed for free from the ledger ("Place building").
 - The first designed building: Kingscross Guild houses in two designs (house at the back or in the corner), three levels each, with real crop gardens. Other buildings and factions still use placeholder boxes.
 - The placement panel has a Design button when a building has more than one design.
+### Changed
+- A building's plot is now exactly as big as the building (the hand-built plains house is 7 × 9), not a fixed 9 / 13 / 17 square. Its outline matches the house that will stand there.
+- Placement outlines are solid lines instead of dots: the plot is a box the size and height of the building that follows you smoothly, with an arrow out of the entrance.
+- While you place a building the whole town border is drawn, all the way round, following the ground, with posts so it shows over grass. It stays readable from the far side of town. "Show town border" in the ledger draws the whole border too.
+- Items packed up from a plot go into barrels just in front of the building (and any that don't fit are dropped by the door instead of being lost).
 ### Fixed
 - Ringing the bell several times no longer spawns extra stewards.
 - Founding now completes after you pay (it took the emeralds and stopped before).

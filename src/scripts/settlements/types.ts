@@ -53,8 +53,10 @@ export interface Site {
   x: number;
   y: number;
   z: number;
-  /** Plot width (square). */
+  /** Plot width along the entrance side. */
   w: number;
+  /** Plot depth, back to entrance. Missing on sites placed before 2026-11-17 (square plots): same as w. */
+  d?: number;
   /** Entrance direction, see plots.ts. */
   rot: 0 | 1 | 2 | 3;
   /** Design variant (generated/blueprints.ts), kept through upgrades. Missing = placeholder box. */

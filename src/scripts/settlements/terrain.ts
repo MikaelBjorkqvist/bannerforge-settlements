@@ -2,7 +2,7 @@
 // Used by placement (green / orange / red) and by construction (clearing and the foundation).
 
 import type { Block, Dimension } from "@minecraft/server";
-import { CUT_MAX, FILL_MAX, containsColumn, overlaps, rectOverlaps, toWorld, type Footprint, type Rect } from "./plots.js";
+import { CUT_MAX, FILL_MAX, containsColumn, extent, overlaps, rectOverlaps, toWorld, type Footprint, type Rect } from "./plots.js";
 
 /** Plants, trees and snow: cleared freely when building. */
 const CLEARABLE =
@@ -115,7 +115,7 @@ export function survey(input: SurveyInput): Survey {
   // The floor lines up with the ground at the entrance (owner decision, 2026-11-15).
   const front: number[] = [];
   for (let lx = 1; lx < f.w - 1; lx++) {
-    const p = toWorld(f, lx, f.w - 1);
+    const p = toWorld(f, lx, f.d - 1);
     const c = readColumn(dim, p.x, p.z, floor);
     if (!c) return blocked("unloaded");
     front.push(c.ground);
@@ -123,10 +123,11 @@ export function survey(input: SurveyInput): Survey {
   const entranceY = median(front);
   const groundY = entranceY + input.raise;
 
-  const stride = f.w > 9 ? 2 : 1;
+  const { wx, wz } = extent(f);
+  const stride = wx * wz > 120 ? 2 : 1;
   const columns: Column[] = [];
-  for (let dx = 0; dx < f.w; dx += stride) {
-    for (let dz = 0; dz < f.w; dz += stride) {
+  for (let dx = 0; dx < wx; dx += stride) {
+    for (let dz = 0; dz < wz; dz += stride) {
       const c = readColumn(dim, f.x + dx, f.z + dz, floor);
       if (!c) return blocked("unloaded", groundY, entranceY);
       columns.push(c);
@@ -164,8 +165,12 @@ export function localGround(dim: Dimension, f: Footprint, floor: number): { surf
   const surface = new Map<string, number>();
   const fill = new Map<string, number>();
   const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
-  for (let i = -1; i <= f.w; i += 2) {
-    for (const [x, z] of [[f.x + i, f.z - 1], [f.x + i, f.z + f.w], [f.x - 1, f.z + i], [f.x + f.w, f.z + i]]) {
+  const { wx, wz } = extent(f);
+  const ring: [number, number][] = [];
+  for (let i = -1; i <= wx; i += 2) ring.push([f.x + i, f.z - 1], [f.x + i, f.z + wz]);
+  for (let i = -1; i <= wz; i += 2) ring.push([f.x - 1, f.z + i], [f.x + wx, f.z + i]);
+  {
+    for (const [x, z] of ring) {
       const c = readColumn(dim, x, z, floor);
       if (!c || c.water || c.house) continue;
       try {

@@ -1,7 +1,8 @@
 // Plot geometry and construction timing. Pure functions (no game imports), unit-tested in tests/plots.test.mjs.
 //
-// A building stands on a square plot. Local coordinates: lx 0..w-1 left to right, lz 0..w-1 back to front
-// (lz = w-1 is the entrance side), ly 0 = ground level of the plot. `rot` says which way the entrance faces:
+// A building stands on a rectangular plot the size of its design (owner, 2026-11-16: lot sizes dropped; the old
+// square S/M/L plots remain only for the placeholder boxes). Local coordinates: lx 0..w-1 left to right,
+// lz 0..d-1 back to front (lz = d-1 is the entrance side), ly 0 = ground level of the plot. `rot` says which way the entrance faces:
 // 0 = south (+z), 1 = west (-x), 2 = north (-z), 3 = east (+x).
 
 import type { Plot } from "./buildings.js";
@@ -9,7 +10,7 @@ import type { Tier } from "./types.js";
 
 export type Rot = 0 | 1 | 2 | 3;
 
-/** Plot widths (docs/BUILDINGS.md rule 7). Width and depth never change; only height grows. */
+/** Plot widths of the placeholder boxes (buildings without an imported design, e.g. the Defence section). */
 export const PLOT_WIDTH: Record<Exclude<Plot, "perimeter">, number> = { S: 9, M: 13, L: 17 };
 
 /** Placeholder building heights per level (M2a boxes). Room above is checked for the level-3 height. */
@@ -41,20 +42,27 @@ export const PHASES = 4;
 export const STEPS = PHASES;
 
 export interface Footprint {
-  x: number; // min corner
+  x: number; // min corner in the world
   z: number;
+  /** Width along the entrance side (local x). */
   w: number;
+  /** Depth from the back to the entrance (local z). */
+  d: number;
   rot: Rot;
 }
 
+/** Size of the footprint along world x and z (width and depth swap when the entrance faces west or east). */
+export const extent = (f: Pick<Footprint, "w" | "d" | "rot">): { wx: number; wz: number } => (f.rot % 2 === 0 ? { wx: f.w, wz: f.d } : { wx: f.d, wz: f.w });
+
 /** Local plot position -> world x/z offset for a rotation. */
 export function toWorld(f: Footprint, lx: number, lz: number): { x: number; z: number } {
-  const m = f.w - 1;
+  const mw = f.w - 1;
+  const md = f.d - 1;
   switch (f.rot) {
     case 0: return { x: f.x + lx, z: f.z + lz };
-    case 1: return { x: f.x + (m - lz), z: f.z + lx };
-    case 2: return { x: f.x + (m - lx), z: f.z + (m - lz) };
-    default: return { x: f.x + lz, z: f.z + (m - lx) };
+    case 1: return { x: f.x + (md - lz), z: f.z + lx };
+    case 2: return { x: f.x + (mw - lx), z: f.z + (md - lz) };
+    default: return { x: f.x + lz, z: f.z + (mw - lx) };
   }
 }
 
@@ -70,21 +78,37 @@ const STEP: Record<Rot, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1],
  * Footprint in front of a player: the plot sits a few blocks ahead, and its entrance faces back toward the
  * player (owner decision, 2026-11-15), turned by `extraTurns` quarter turns after pressing Rotate.
  */
-export function footprintInFront(px: number, pz: number, dx: number, dz: number, w: number, extraTurns: number): Footprint {
+export function footprintInFront(px: number, pz: number, dx: number, dz: number, w: number, d: number, extraTurns: number): Footprint {
   const facing = facingOf(dx, dz);
   const [sx, sz] = STEP[facing];
-  const dist = Math.floor(w / 2) + 3;
+  const towardPlayer = ((facing + 2) % 4) as Rot;
+  const rot = ((towardPlayer + extraTurns) % 4) as Rot;
+  const { wx, wz } = extent({ w, d, rot });
+  // The plot's near edge stays 3 blocks ahead of the player, whatever its size along the view.
+  const dist = Math.floor((sx !== 0 ? wx : wz) / 2) + 3;
   const cx = Math.floor(px) + sx * dist;
   const cz = Math.floor(pz) + sz * dist;
-  const towardPlayer = ((facing + 2) % 4) as Rot;
-  return { x: cx - Math.floor(w / 2), z: cz - Math.floor(w / 2), w, rot: ((towardPlayer + extraTurns) % 4) as Rot };
+  return { x: cx - Math.floor(wx / 2), z: cz - Math.floor(wz / 2), w, d, rot };
 }
 
-export const turn = (f: Footprint): Footprint => ({ ...f, rot: ((f.rot + 1) % 4) as Rot });
+/** A quarter turn about the plot's centre (width and depth swap in the world, so the corner moves). */
+export function turn(f: Footprint): Footprint {
+  const before = extent(f);
+  const rot = ((f.rot + 1) % 4) as Rot;
+  const after = extent({ ...f, rot });
+  const cx = f.x + Math.floor(before.wx / 2);
+  const cz = f.z + Math.floor(before.wz / 2);
+  return { ...f, rot, x: cx - Math.floor(after.wx / 2), z: cz - Math.floor(after.wz / 2) };
+}
+
+/** The footprint as a world rectangle. */
+export const rectOf = (f: Footprint): Rect => ({ x: f.x, z: f.z, ...extent(f) });
 
 /** Do two footprints overlap (or touch, with `gap` blocks of clearance)? */
 export function overlaps(a: Footprint, b: Footprint, gap = 1): boolean {
-  return a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.z < b.z + b.w + gap && b.z < a.z + a.w + gap;
+  const ea = extent(a);
+  const eb = extent(b);
+  return a.x < b.x + eb.wx + gap && b.x < a.x + ea.wx + gap && a.z < b.z + eb.wz + gap && b.z < a.z + ea.wz + gap;
 }
 
 /** A non-square area (vanilla structures): min corner and size along x and z. */
@@ -95,17 +119,24 @@ export interface Rect {
   wz: number;
 }
 
-export const rectOverlaps = (f: Footprint, r: Rect) => f.x < r.x + r.wx && r.x < f.x + f.w && f.z < r.z + r.wz && r.z < f.z + f.w;
+export function rectOverlaps(f: Footprint, r: Rect): boolean {
+  const { wx, wz } = extent(f);
+  return f.x < r.x + r.wx && r.x < f.x + wx && f.z < r.z + r.wz && r.z < f.z + wz;
+}
 export const rectContains = (r: Rect, x: number, z: number) => x >= r.x && x < r.x + r.wx && z >= r.z && z < r.z + r.wz;
 
 /** Is the whole footprint inside the town border around the bell? */
 export function insideBorder(f: Footprint, bellX: number, bellZ: number, radius: number): boolean {
-  const corners = [[f.x, f.z], [f.x + f.w, f.z], [f.x, f.z + f.w], [f.x + f.w, f.z + f.w]];
+  const { wx, wz } = extent(f);
+  const corners = [[f.x, f.z], [f.x + wx, f.z], [f.x, f.z + wz], [f.x + wx, f.z + wz]];
   return corners.every(([x, z]) => (x - bellX - 0.5) ** 2 + (z - bellZ - 0.5) ** 2 <= radius * radius);
 }
 
 /** Does the footprint contain this block column? */
-export const containsColumn = (f: Footprint, x: number, z: number) => x >= f.x && x < f.x + f.w && z >= f.z && z < f.z + f.w;
+export function containsColumn(f: Footprint, x: number, z: number): boolean {
+  const { wx, wz } = extent(f);
+  return x >= f.x && x < f.x + wx && z >= f.z && z < f.z + wz;
+}
 
 /** Construction steps that should be done `elapsed` ticks after the start (1..STEPS). */
 export function stepsDue(elapsed: number): number {
@@ -126,15 +157,16 @@ export function phaseLayers(phase: number, height: number): [number, number] {
 /** Real minutes left (20 ticks a second), rounded up. */
 export const minutesLeft = (elapsed: number) => Math.max(0, Math.ceil((BUILD_TICKS - elapsed) / 1200));
 
-/** Points along the border circle within `near` blocks of (px, pz), every `spacing` blocks. */
-export function borderPointsNear(bellX: number, bellZ: number, radius: number, px: number, pz: number, near: number, spacing: number): { x: number; z: number }[] {
+/**
+ * The whole border circle as points, about `spacing` blocks apart (block-centre coordinates around the bell).
+ * Drawn as line segments between neighbours, so it is visible from anywhere inside the town (owner, 2026-11-17).
+ */
+export function borderRing(bellX: number, bellZ: number, radius: number, spacing: number): { x: number; z: number }[] {
   const pts: { x: number; z: number }[] = [];
   const steps = Math.max(8, Math.round((2 * Math.PI * radius) / spacing));
   for (let i = 0; i < steps; i++) {
     const a = (i / steps) * 2 * Math.PI;
-    const x = bellX + 0.5 + Math.cos(a) * radius;
-    const z = bellZ + 0.5 + Math.sin(a) * radius;
-    if ((x - px) ** 2 + (z - pz) ** 2 <= near * near) pts.push({ x, z });
+    pts.push({ x: bellX + 0.5 + Math.cos(a) * radius, z: bellZ + 0.5 + Math.sin(a) * radius });
   }
   return pts;
 }

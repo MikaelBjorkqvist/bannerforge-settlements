@@ -3,13 +3,15 @@
 // red = blocked (with the reason). Using the Building Plan item opens the panel: Build, Rotate, Raise, Lower,
 // Move, Cancel. The floor lines up with the ground at the entrance; Raise/Lower adjust it within limits.
 
-import { ItemLockMode, ItemStack, MolangVariableMap, type Player, type RawMessage, system, world } from "@minecraft/server";
+import { ItemLockMode, ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
-import { pickVariant, topHeightFor, variantsFor } from "./blueprint.js";
+import { pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
+import { drawBorder } from "./border.js";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
 import { canAfford, pay } from "./economy.js";
-import { BORDER_RADIUS, CUT_MAX, FILL_MAX, PLOT_WIDTH, borderPointsNear, footprintInFront, insideBorder, turn, type Footprint, type Rect } from "./plots.js";
+import { box, line, rect, type LineStyle, type RGB } from "./lines.js";
+import { BORDER_RADIUS, CUT_MAX, FILL_MAX, extent, footprintInFront, insideBorder, rectOf, toWorld, turn, type Footprint, type Rect } from "./plots.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { check, tier } from "./rules.js";
 import { survey, type Survey } from "./terrain.js";
@@ -20,8 +22,11 @@ import { scanAround, vanillaBoxes } from "./vanilla.js";
 /** Emeralds the steward asks to clear village buildings or farms on a plot (placeholder price). */
 export const CLEAR_FEE = 5;
 export const PLAN_ITEM = "bannerforge_settlements:building_plan";
-const PARTICLE = "bannerforge_settlements:marker";
+/** The plot box follows the player every TICK ticks; the border and other plots are redrawn every SLOW_TICK. */
 const TICK = 2;
+const SLOW_TICK = 10;
+/** A survey reads the land, so it runs at most this often while the plot moves. */
+const SURVEY_TICKS = 6;
 /** Placement ends if the player wanders this far from the bell. */
 const GIVE_UP_DISTANCE = 200;
 const SCAN_RADIUS = 40;
@@ -34,7 +39,9 @@ interface Placing {
   sid: string;
   defId: string;
   mode: PlaceMode;
+  /** Plot width and depth: the size of the design (owner, 2026-11-16). */
   w: number;
+  d: number;
   topHeight: number;
   variant?: string;
   turns: number;
@@ -43,6 +50,7 @@ interface Placing {
   current?: Footprint;
   surveyed?: Survey;
   surveyedKey?: string;
+  surveyedAt: number;
   panelOpen: boolean;
   age: number;
   scanning: boolean;
@@ -61,12 +69,13 @@ export function startPlacement(player: Player, s: Settlement, def: BuildingDef, 
     sid: s.id,
     defId: def.id,
     mode,
-    w: PLOT_WIDTH[def.plot],
+    ...plotSizeFor(def, s.faction, variant),
     variant,
     topHeight: topHeightFor(def, s.faction, variant),
     turns: 0,
     raise: 0,
     panelOpen: false,
+    surveyedAt: -SURVEY_TICKS,
     age: 0,
     scanning: false,
   });
@@ -148,18 +157,20 @@ function tick(): void {
       continue;
     }
     p.age += TICK;
-    if (p.age % 6 !== 0) continue;
 
     scanNearby(player, s, p);
     const f = p.locked ?? footprintAhead(player, p);
     p.current = f;
-    const key = `${f.x},${f.z},${f.rot},${p.raise},${vanillaBoxes(s.id).length}`;
-    if (key !== p.surveyedKey) {
+    const key = `${f.x},${f.z},${f.rot},${p.raise},${p.w},${p.d},${vanillaBoxes(s.id).length}`;
+    if (key !== p.surveyedKey && (!p.surveyed || p.age - p.surveyedAt >= SURVEY_TICKS)) {
       p.surveyed = runSurvey(s, p, f);
       p.surveyedKey = key;
+      p.surveyedAt = p.age;
     }
-    draw(player, s, f, p.surveyed!);
-    if (!p.panelOpen && p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p.surveyed!));
+    // Until the first survey: the player's feet as ground, white (unknown) lines.
+    drawPlot(player, f, p, p.surveyed);
+    if (p.age % SLOW_TICK === 0) drawSurroundings(player, s);
+    if (!p.panelOpen && p.surveyed && p.age % 12 === 0) player.onScreenDisplay.setActionBar(statusLine(p.surveyed));
   }
 }
 
@@ -184,12 +195,12 @@ function scanNearby(player: Player, s: Settlement, p: Placing): void {
 
 function footprintAhead(player: Player, p: Placing): Footprint {
   const v = player.getViewDirection();
-  return footprintInFront(player.location.x, player.location.z, v.x, v.z, p.w, p.turns);
+  return footprintInFront(player.location.x, player.location.z, v.x, v.z, p.w, p.d, p.turns);
 }
 
 function ownFootprints(s: Settlement): Footprint[] {
   const list: Footprint[] = [];
-  for (const sites of Object.values(s.sites ?? {})) for (const site of sites) if (site) list.push({ x: site.x, z: site.z, w: site.w, rot: site.rot });
+  for (const sites of Object.values(s.sites ?? {})) for (const site of sites) if (site) list.push({ x: site.x, z: site.z, w: site.w, d: site.d ?? site.w, rot: site.rot });
   return list;
 }
 
@@ -208,73 +219,61 @@ function runSurvey(s: Settlement, p: Placing, f: Footprint): Survey {
 
 // ---------- drawing ----------
 
-type RGB = { red: number; green: number; blue: number };
 const GREEN: RGB = { red: 0.2, green: 1, blue: 0.25 };
 const ORANGE: RGB = { red: 1, green: 0.6, blue: 0.05 };
 const RED: RGB = { red: 1, green: 0.15, blue: 0.1 };
-const WHITE: RGB = { red: 0.85, green: 0.85, blue: 0.9 };
-const TAN: RGB = { red: 0.95, green: 0.75, blue: 0.5 };
-const GOLD: RGB = { red: 1, green: 0.85, blue: 0.2 };
+const WHITE: RGB = { red: 0.9, green: 0.9, blue: 0.95 };
+const TAN: RGB = { red: 0.95, green: 0.72, blue: 0.45 };
 
-type Dim = ReturnType<typeof world.getDimension>;
+/** Lines of the moving plot live just over one redraw, so the box never trails behind the player. */
+const PLOT_LIFE = (TICK + 1.5) / 20;
+const SLOW_LIFE = (SLOW_TICK + 2) / 20;
+const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
 
-function particle(dim: Dim, x: number, y: number, z: number, color: RGB): void {
-  const vars = new MolangVariableMap();
-  vars.setColorRGB("variable.color", color);
-  try {
-    dim.spawnParticle(PARTICLE, { x, y, z }, vars);
-  } catch {
-    // outside loaded chunks
-  }
-}
-
-function rectOutline(dim: Dim, r: Rect, y: number, color: RGB, spacing: number): void {
-  for (let i = 0; i <= r.wx; i += spacing) {
-    particle(dim, r.x + i, y, r.z, color);
-    particle(dim, r.x + i, y, r.z + r.wz, color);
-  }
-  for (let i = 0; i <= r.wz; i += spacing) {
-    particle(dim, r.x, y, r.z + i, color);
-    particle(dim, r.x + r.wx, y, r.z + i, color);
-  }
-}
-
-const asRect = (f: Footprint): Rect => ({ x: f.x, z: f.z, wx: f.w, wz: f.w });
-
-function draw(player: Player, s: Settlement, f: Footprint, sv: Survey): void {
+/**
+ * The plot as a wireframe box the size of the building (World Builder style): ground rectangle, corner posts and
+ * roof line, coloured green / orange / red, with an arrow on the ground pointing out of the entrance.
+ */
+function drawPlot(player: Player, f: Footprint, p: Placing, sv: Survey | undefined): void {
   const dim = player.dimension;
-  const y = (sv.groundY || Math.floor(player.location.y) - 1) + 1.1;
-  const color = sv.verdict === "ok" ? GREEN : sv.verdict === "clear" ? ORANGE : RED;
-  rectOutline(dim, asRect(f), y, color, 1);
-  // Entrance arrow: three dots leading out of the front edge.
-  const STEP: Record<number, [number, number]> = { 0: [0, 1], 1: [-1, 0], 2: [0, -1], 3: [1, 0] };
+  const color = !sv ? WHITE : sv.verdict === "ok" ? GREEN : sv.verdict === "clear" ? ORANGE : RED;
+  const style: LineStyle = { color, thick: 0.06, life: PLOT_LIFE };
+  const ground = (sv?.groundY || Math.floor(player.location.y) - 1) + 1.02; // just above the ground block
+  const { wx, wz } = extent(f);
+  box(dim, f.x, ground, f.z, f.x + wx, ground + p.topHeight - 1, f.z + wz, style);
+
+  // Entrance arrow: a chevron on the ground in front of the middle of the entrance side.
+  const mid = toWorld(f, Math.floor(f.w / 2), f.d - 1);
   const [sx, sz] = STEP[f.rot];
-  for (let k = 0; k < 3; k++) {
-    const r = f.w / 2 + 0.5 + k;
-    particle(dim, f.x + f.w / 2 + sx * r, y + 0.2, f.z + f.w / 2 + sz * r, color);
-  }
-  const near = (r: Rect) => Math.hypot(r.x - player.location.x, r.z - player.location.z) < 48;
-  for (const o of ownFootprints(s)) if (near(asRect(o))) rectOutline(dim, asRect(o), y, WHITE, 2);
-  for (const v of vanillaBoxes(s.id)) if (near(v)) rectOutline(dim, v, y, TAN, 2);
-  showBorderNear(player, s, y);
+  const cx = mid.x + 0.5 + sx * 0.5;
+  const cz = mid.z + 0.5 + sz * 0.5;
+  const at = (along: number, side: number) => ({ x: cx + sx * along - sz * side, y: ground, z: cz + sz * along + sx * side });
+  line(dim, at(0.6, -0.9), at(1.6, 0), style);
+  line(dim, at(0.6, 0.9), at(1.6, 0), style);
 }
 
-function showBorderNear(player: Player, s: Settlement, y: number): void {
-  const r = BORDER_RADIUS[tier(s)];
-  for (const pt of borderPointsNear(s.center.x, s.center.z, r, player.location.x, player.location.z, 28, 2)) particle(player.dimension, pt.x, y, pt.z, GOLD);
+/** Every 10 ticks: the whole town border, and the plots of other buildings and village structures nearby. */
+function drawSurroundings(player: Player, s: Settlement): void {
+  const dim = player.dimension;
+  const y = Math.floor(player.location.y) + 0.05;
+  const near = (r: Rect) => Math.hypot(r.x + r.wx / 2 - player.location.x, r.z + r.wz / 2 - player.location.z) < 64;
+  const flat = (r: Rect, color: RGB) => rect(dim, r.x, r.z, r.x + r.wx, r.z + r.wz, y, { color, thick: 0.05, life: SLOW_LIFE });
+  for (const o of ownFootprints(s)) if (near(rectOf(o))) flat(rectOf(o), WHITE);
+  for (const v of vanillaBoxes(s.id)) if (near(v)) flat(v, TAN);
+  drawBorder(player, s, SLOW_LIFE);
 }
 
-/** "Show town border" from the ledger: the border near the player, for 30 seconds. */
+/** "Show town border" from the ledger: the whole border, for 30 seconds. */
 export function showBorder(player: Player, s: Settlement): void {
   say(player, "bannerforge.border.showing");
   let runs = 0;
   const id = system.runInterval(() => {
-    if (!player.isValid || ++runs > 60) {
+    if (!player.isValid || ++runs > (30 * 20) / SLOW_TICK) {
       system.clearRun(id);
       return;
     }
-    showBorderNear(player, s, player.location.y + 0.2);
-  }, 10);
+    drawBorder(player, s, SLOW_LIFE);
+  }, SLOW_TICK);
 }
 
 // ---------- text ----------
@@ -358,7 +357,15 @@ function openPanel(player: Player, p: Placing): void {
     form.button(t("bannerforge.place.variant"), () => {
       p.variant = variants[(variants.indexOf(p.variant ?? "") + 1) % variants.length];
       const def = buildingById(p.defId);
-      if (def) p.topHeight = topHeightFor(def, s.faction, p.variant);
+      if (def) {
+        p.topHeight = topHeightFor(def, s.faction, p.variant);
+        const size = plotSizeFor(def, s.faction, p.variant);
+        if (size.w !== p.w || size.d !== p.d) {
+          p.w = size.w;
+          p.d = size.d;
+          p.locked = { ...p.locked!, ...size };
+        }
+      }
       update();
     });
   }
@@ -410,7 +417,7 @@ function confirm(player: Player, p: Placing): void {
     return;
   }
 
-  const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
+  const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, d: f.d, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
   const sites = ((s.sites ??= {})[def.id] ??= []);
   if (p.mode.kind === "new") {
     const levels = (s.buildings[def.id] ??= []);

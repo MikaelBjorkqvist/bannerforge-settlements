@@ -4,7 +4,7 @@
 // Results are cached per settlement for this game session.
 
 import type { Dimension } from "@minecraft/server";
-import { rectContains, rectOverlaps, type Footprint, type Rect } from "./plots.js";
+import { containsColumn, rectContains, rectOverlaps, type Footprint, type Rect } from "./plots.js";
 import { ANCHOR, isLiquid, isManMade } from "./terrain.js";
 
 interface Cache {
@@ -45,7 +45,7 @@ export function* scanAround(dim: Dimension, sid: string, cx: number, cz: number,
     for (let z = z0; z <= cz + radius; z += STRIDE) {
       const key = `${x},${z}`;
       if (cache.scanned.has(key)) continue;
-      if (cache.boxes.some((b) => rectContains(b, x, z)) || skip.some((f) => x >= f.x && x < f.x + f.w && z >= f.z && z < f.z + f.w)) {
+      if (cache.boxes.some((b) => rectContains(b, x, z)) || skip.some((f) => containsColumn(f, x, z))) {
         cache.scanned.add(key);
         continue;
       }
