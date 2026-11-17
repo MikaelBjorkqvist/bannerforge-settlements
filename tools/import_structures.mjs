@@ -3,11 +3,11 @@
 //   node tools/import_structures.mjs        (npm run structures:import)
 //
 // Input:  assets-src/structures/imported/imports.json + the .mcstructure files next to it.
-// Output: packs/BP/structures/bannerforge_settlements/<design>_<faction>_<plot width>.mcstructure
+// Output: packs/BP/structures/bannerforge_settlements/<design>_<faction>.mcstructure
 //         src/scripts/settlements/generated/imported.ts (blueprints for the construction phases + structure ids)
 //
-// For each design, faction and plot width:
-// - the structure is centred on the square plot; the rest of the plot is structure void (the ground stays);
+// For each design and faction:
+// - the plot is exactly as big as the structure (owner, 2026-11-16: lot sizes dropped);
 // - faction colours (owner, 2026-11-16): white wall banners become the faction banner block (top + bottom part),
 //   white beds, wool and carpet take the faction colour, white cushions too;
 // - a sign whose text contains "[HOUSE NAME]" gets the building's name in game;
@@ -27,7 +27,6 @@ const OUT_TS = path.join(ROOT, "src", "scripts", "settlements", "generated", "im
 const NS = "bannerforge_settlements";
 const ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&()*+-/:;<=>?@[]^_{|}~";
 
-export const PLOT_WIDTHS = { S: 9, M: 13, L: 17 };
 /** Clockwise quarter turns that bring an entrance on this side to the south. */
 export const FRONT_TURNS = { south: 0, east: 1, north: 2, west: 3 };
 
@@ -91,17 +90,19 @@ export function stripOwnerIds(node) {
 // ---------- transforming ----------
 
 /**
- * Pads the structure to a square plot of width W (centred), applies faction colours, and returns the new
- * .mcstructure bytes plus a plain view used for the blueprint.
+ * Applies faction colours and returns the new .mcstructure bytes plus a plain view used for the blueprint.
+ * `W` x `L` (x by z) pads the structure, centred, with structure void; by default it keeps its own size.
  */
-export function buildVariant(src, W, faction) {
+export function buildVariant(src, faction, W, L) {
   const m = clone(src);
   const r = m.file.root.v;
   const s = m.inner.root.v;
   const [w, h, l] = r.size.v.v;
-  if (w > W || l > W) return undefined;
+  W ??= w;
+  L ??= l;
+  if (w > W || l > L) return undefined;
   const ox = Math.floor((W - w) / 2);
-  const oz = Math.floor((W - l) / 2);
+  const oz = Math.floor((L - l) / 2);
   const idx = (x, y, z, L) => (x * h + y) * L + z;
 
   const palNode = s.palette.v.default.v;
@@ -113,17 +114,17 @@ export function buildVariant(src, W, faction) {
 
   // 1. Pad: new layers full of void (-1), copy the old blocks in at the offset; move block entity data.
   const newLayers = layers.map((old) => {
-    const out = new Array(W * h * W).fill(-1);
-    for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) for (let z = 0; z < l; z++) out[idx(x + ox, y, z + oz, W)] = old[idx(x, y, z, l)];
+    const out = new Array(W * h * L).fill(-1);
+    for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) for (let z = 0; z < l; z++) out[idx(x + ox, y, z + oz, L)] = old[idx(x, y, z, l)];
     return out;
   });
   const newPos = {};
   for (const [k, v] of Object.entries(posData)) {
     const i = Number(k);
     const x = Math.floor(i / (h * l)), y = Math.floor(i / l) % h, z = i % l;
-    newPos[String(idx(x + ox, y, z + oz, W))] = v;
+    newPos[String(idx(x + ox, y, z + oz, L))] = v;
   }
-  r.size.v.v = [W, h, W];
+  r.size.v.v = [W, h, L];
   // Entity and block entity positions are stored in world coordinates relative to this origin.
   if (r.structure_world_origin) r.structure_world_origin.v.v = [r.structure_world_origin.v.v[0] - ox, r.structure_world_origin.v.v[1], r.structure_world_origin.v.v[2] - oz];
 
@@ -159,8 +160,8 @@ export function buildVariant(src, W, faction) {
       const facing = WALL_BANNER_FACING[palette[layer0[i]].states.v.facing_direction?.v] ?? "south";
       layer0[i] = addEntry(`${NS}:banner_${f.name}`, { [`${NS}:part`]: "top", "minecraft:cardinal_direction": facing });
       delete newPos[k];
-      const below = i - W; // y - 1 (index = (x*h + y)*W + z)
-      const y = Math.floor(i / W) % h;
+      const below = i - L; // y - 1 (index = (x*h + y)*L + z)
+      const y = Math.floor(i / L) % h;
       if (y > 0 && ["minecraft:air", "void"].includes(nameOf(layer0[below]))) {
         layer0[below] = addEntry(`${NS}:banner_${f.name}`, { [`${NS}:part`]: "bottom", "minecraft:cardinal_direction": facing });
       } else notes.push(`banner at index ${i}: no room below for the bottom part`);
@@ -173,7 +174,7 @@ export function buildVariant(src, W, faction) {
   s.block_indices.v.v = newLayers.map((v) => (layerType === T.INTS ? v : { et: T.INT, v }));
   palNode.block_position_data = { t: T.COMPOUND, v: newPos };
 
-  return { bytes: saveMcstructure(m), view: { size: [W, h, W], layer0, palette: palette.map((p) => ({ name: p.name.v, states: p.states.v })), posData: newPos }, notes };
+  return { bytes: saveMcstructure(m), view: { size: [W, h, L], layer0, palette: palette.map((p) => ({ name: p.name.v, states: p.states.v })), posData: newPos }, notes };
 }
 
 /** States for BlockPermutation.resolve: bytes (bit states) become booleans. */
@@ -183,9 +184,12 @@ function plainStates(states) {
   return Object.keys(out).length ? out : undefined;
 }
 
-/** Blueprint (south-facing, '.' = leave as is) from a padded view. */
+/** Blueprint (south-facing, '.' = leave as is) from a view. Odd turns swap width and depth. */
 export function toBlueprint(view, turns, yOffset) {
-  const [W, h] = view.size;
+  const [W, h, L] = view.size;
+  const odd = turns % 2 === 1;
+  const BW = odd ? L : W; // blueprint width (x) and depth (z) after turning
+  const BD = odd ? W : L;
   const signAt = new Set(
     Object.entries(view.posData)
       .filter(([, e]) => {
@@ -210,21 +214,21 @@ export function toBlueprint(view, turns, yOffset) {
     return ALPHABET[keyIndex.get(key)];
   };
   const layers = [];
-  for (let k = 0; k < yOffset; k++) layers.push(Array.from({ length: W }, () => ".".repeat(W)));
+  for (let k = 0; k < yOffset; k++) layers.push(Array.from({ length: BD }, () => ".".repeat(BW)));
   for (let y = 0; y < h; y++) {
-    const rows = Array.from({ length: W }, () => new Array(W).fill("."));
+    const rows = Array.from({ length: BD }, () => new Array(BW).fill("."));
     for (let x = 0; x < W; x++) {
-      for (let z = 0; z < W; z++) {
-        const i = (x * h + y) * W + z;
+      for (let z = 0; z < L; z++) {
+        const i = (x * h + y) * L + z;
         const pi = view.layer0[i];
         if (pi < 0) continue;
-        const [tx, tz] = rotatePos(x, z, W, W, turns);
+        const [tx, tz] = rotatePos(x, z, W, L, turns);
         rows[tz][tx] = charFor(pi, signAt.has(i));
       }
     }
     layers.push(rows.map((r) => r.join("")));
   }
-  return { size: [W, h + yOffset, W], palette: entries, layers };
+  return { size: [BW, h + yOffset, BD], palette: entries, layers };
 }
 
 // ---------- main ----------
@@ -233,7 +237,7 @@ function main() {
   const cfg = JSON.parse(fs.readFileSync(path.join(SRC, "imports.json"), "utf8"));
   fs.mkdirSync(OUT_DIR, { recursive: true });
   // Remove our old outputs (only files this tool writes), so renamed designs don't linger.
-  for (const f of fs.readdirSync(OUT_DIR)) if (/_(blue|green|red)_(9|13|17)\.mcstructure$/.test(f)) fs.rmSync(path.join(OUT_DIR, f));
+  for (const f of fs.readdirSync(OUT_DIR)) if (/_(blue|green|red)(_(9|13|17))?\.mcstructure$/.test(f)) fs.rmSync(path.join(OUT_DIR, f));
 
   const imported = {};
   let placeholder;
@@ -249,20 +253,15 @@ function main() {
     const yOffset = 1 - groundLayers;
     const [w, h, l] = src.file.root.v.size.v.v;
     console.log(`${design}: ${w}x${h}x${l}, front ${d.front}, ${groundLayers} ground layer(s)`);
-    for (const [plot, W] of Object.entries(PLOT_WIDTHS)) {
-      for (const faction of Object.keys(FACTIONS)) {
-        const v = buildVariant(src, W, faction);
-        if (!v) {
-          if (faction === "blue") console.log(`  ${plot} (${W}): too small, skipped`);
-          continue;
-        }
-        const file = `${design}_${faction}_${W}`;
-        fs.writeFileSync(path.join(OUT_DIR, `${file}.mcstructure`), v.bytes);
-        imported[`${design}/${faction}/${W}`] = { data: toBlueprint(v.view, turns, yOffset), structure: `${NS}:${file}`, turns, yOffset };
-        if (faction === "blue") {
-          console.log(`  ${plot} (${W}): ${NS}:${design}_<faction>_${W}`);
-          for (const n of v.notes) console.log(`    note: ${n}`);
-        }
+    for (const faction of Object.keys(FACTIONS)) {
+      const v = buildVariant(src, faction);
+      const file = `${design}_${faction}`;
+      fs.writeFileSync(path.join(OUT_DIR, `${file}.mcstructure`), v.bytes);
+      const data = toBlueprint(v.view, turns, yOffset);
+      imported[`${design}/${faction}`] = { data, structure: `${NS}:${file}`, turns, yOffset };
+      if (faction === "blue") {
+        console.log(`  plot ${data.size[0]} wide x ${data.size[2]} deep (entrance south): ${NS}:${design}_<faction>`);
+        for (const n of v.notes) console.log(`    note: ${n}`);
       }
     }
     if (d.placeholderFor === "all") placeholder = design;
@@ -281,7 +280,7 @@ function main() {
     "  /** Layers between the plot's ground (ly 0) and the structure's bottom. */\n" +
     "  yOffset: number;\n" +
     "}\n\n" +
-    "/** Key: <design>/<faction>/<plot width>. */\n" +
+    "/** Key: <design>/<faction>. The plot is as big as the structure (data.size: width, height, depth). */\n" +
     `export const IMPORTED: Record<string, ImportedDesign> = ${JSON.stringify(imported)};\n\n` +
     "/** Design that stands in for every plot building without a design of its own (Defence section excluded). */\n" +
     `export const PLACEHOLDER_DESIGN: string | undefined = ${JSON.stringify(placeholder)};\n`;

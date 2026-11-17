@@ -17,7 +17,9 @@ export interface BlockSpec {
 }
 
 export interface Blueprint {
+  /** Width (local x) and depth (local z, entrance at d - 1). */
   w: number;
+  d: number;
   height: number;
   /** Block at a local position, or undefined for air. */
   at(lx: number, ly: number, lz: number): BlockSpec | undefined;
@@ -49,6 +51,7 @@ export function placeholderBlueprint(def: BuildingDef, level: 1 | 2 | 3, w: numb
   const hi = w - 2; // walls stand one block in, leaving a garden ring around the building
   return {
     w,
+    d: w,
     height,
     at(lx, ly, lz) {
       const inside = lx >= lo && lx <= hi && lz >= lo && lz <= hi;
@@ -75,8 +78,12 @@ export function placeholderBlueprint(def: BuildingDef, level: 1 | 2 | 3, w: numb
 
 const key = (faction: string, building: string, variant: string, level: number) => `${faction}/${building}/${variant}/${level}`;
 
-/** Variants designed for a building in a faction's style (empty = placeholder). */
-export const variantsFor = (faction: string, building: string): string[] => VARIANTS[`${faction}/${building}`] ?? [];
+/**
+ * Variants designed for a building in a faction's style (empty = placeholder). The generated designs
+ * (generated/blueprints.ts) are switched off while the owner's hand-built placeholder exists: owner decision
+ * 2026-11-16, generated houses dropped, the owner's house stands in for every building.
+ */
+export const variantsFor = (faction: string, building: string): string[] => (PLACEHOLDER_DESIGN ? [] : VARIANTS[`${faction}/${building}`] ?? []);
 
 /** A random variant, so a village doesn't fill up with copies of one house. */
 export function pickVariant(faction: string, building: string): string | undefined {
@@ -85,10 +92,11 @@ export function pickVariant(faction: string, building: string): string | undefin
 }
 
 function dataBlueprint(data: BlueprintData, rot: Rot): Blueprint {
-  const [w, height] = data.size;
+  const [w, height, d] = data.size;
   const turned = data.palette.map((p) => ({ id: p.id, states: rotateStates(p.id, p.states, rot), sign: p.sign }));
   return {
     w,
+    d,
     height,
     at(lx, ly, lz) {
       const ch = data.layers[ly]?.[lz]?.[lx];
@@ -105,36 +113,64 @@ function importedBlueprint(imp: ImportedDesign, rot: Rot): Blueprint {
 }
 
 /**
- * The owner's placeholder design for this building, faction and plot width (owner, 2026-11-16: one hand-built
- * house stands in for every building until it has its own design; the Defence section keeps its boxes).
+ * The owner's placeholder design for this building and faction (owner, 2026-11-16: one hand-built house stands
+ * in for every building until it has its own design; the Defence section keeps its boxes).
  */
-function importedPlaceholder(def: BuildingDef, faction: string, w: number): ImportedDesign | undefined {
+function importedPlaceholder(def: BuildingDef, faction: string): ImportedDesign | undefined {
   if (!PLACEHOLDER_DESIGN || def.category === "defence" || def.plot === "perimeter") return undefined;
-  return IMPORTED[`${PLACEHOLDER_DESIGN}/${faction}/${w}`];
+  return IMPORTED[`${PLACEHOLDER_DESIGN}/${faction}`];
 }
 
 /**
- * The blueprint to build: the designed one if it exists for this faction, plot width and variant; else the
- * owner's imported placeholder house; else a placeholder box.
+ * Plot size (width, depth) of a building: as big as its design (owner, 2026-11-16: lot sizes dropped).
+ * Buildings without a design (the Defence section) keep the square placeholder plot.
  */
-export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, rot: Rot): Blueprint {
-  const data = variant ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
-  if (data && data.size[0] === w && data.size[2] === w) return dataBlueprint(data, rot);
-  if (data) console.warn(`[BannerForge] design ${key(faction, def.id, variant!, level)} is ${data.size[0]}x${data.size[2]}, plot is ${w}x${w}: placeholder used`);
-  const imp = importedPlaceholder(def, faction, w);
-  if (imp) return importedBlueprint(imp, rot);
-  return placeholderBlueprint(def, level, w, rot);
+export function plotSizeFor(def: BuildingDef, faction: string, variant: string | undefined): { w: number; d: number } {
+  const data = variant ? BLUEPRINTS[key(faction, def.id, variant, 1)] : undefined;
+  if (data) return { w: data.size[0], d: data.size[2] };
+  const imp = importedPlaceholder(def, faction);
+  if (imp) return { w: imp.data.size[0], d: imp.data.size[2] };
+  const w = PLOT_WIDTH[def.plot === "perimeter" ? "S" : def.plot];
+  return { w, d: w };
+}
+
+/**
+ * The blueprint to build on a w x d plot: the designed one if it exists for this faction and variant and fits;
+ * else the owner's imported placeholder house if it fits; else a placeholder box.
+ */
+export function blueprintFor(def: BuildingDef, faction: string, variant: string | undefined, level: 1 | 2 | 3, w: number, d: number, rot: Rot): Blueprint {
+  // Generated designs are off while the owner's placeholder exists, also for old sites that remember a variant.
+  const data = variant && !PLACEHOLDER_DESIGN ? BLUEPRINTS[key(faction, def.id, variant, level)] : undefined;
+  if (data && data.size[0] === w && data.size[2] === d) return dataBlueprint(data, rot);
+  if (data) console.warn(`[BannerForge] design ${key(faction, def.id, variant!, level)} is ${data.size[0]}x${data.size[2]}, plot is ${w}x${d}: placeholder used`);
+  const imp = importedPlaceholder(def, faction);
+  if (imp && imp.data.size[0] === w && imp.data.size[2] === d) return importedBlueprint(imp, rot);
+  // Sites placed before 2026-11-17 have the old square plots: they keep a box.
+  return placeholderBlueprint(def, level, Math.min(w, d), rot);
+}
+
+/**
+ * Does upgrading from one level to the next change how the building looks? Only then is it rebuilt (owner,
+ * 2026-11-17: a building keeps its current model until the owner makes one for the new level). Today no design
+ * has levels (the generated ones are off), so upgrades never rebuild; owner level designs will plug in here.
+ */
+export function rebuildsOnUpgrade(def: BuildingDef, faction: string, variant: string | undefined, from: number, to: number): boolean {
+  if (PLACEHOLDER_DESIGN || !variant) return false;
+  const a = BLUEPRINTS[key(faction, def.id, variant, from)];
+  const b = BLUEPRINTS[key(faction, def.id, variant, to)];
+  return !!a && !!b && a !== b;
 }
 
 /** Height of the tallest level, for checking room above and protecting the site. */
 export function topHeightFor(def: BuildingDef, faction: string, variant: string | undefined): number {
-  const plot = def.plot === "perimeter" ? "S" : def.plot;
   const designed = variant ? [1, 2, 3].map((l) => BLUEPRINTS[key(faction, def.id, variant, l)]?.size[1] ?? 0) : [];
-  const imported = def.plot === "perimeter" ? undefined : importedPlaceholder(def, faction, PLOT_WIDTH[def.plot]);
-  return Math.max(PLACEHOLDER_HEIGHT[plot][2], imported?.data.size[1] ?? 0, ...designed);
+  if (designed.some((h) => h > 0)) return Math.max(...designed);
+  const imported = importedPlaceholder(def, faction);
+  if (imported) return imported.data.size[1];
+  return PLACEHOLDER_HEIGHT[def.plot === "perimeter" ? "S" : def.plot][2];
 }
 
-/** Any designed blueprint by its full key (developer preview command); imported ones as imported/<design>/<faction>/<w>. */
+/** Any designed blueprint by its full key (developer preview command); imported ones as imported/<design>/<faction>. */
 export function blueprintByKey(k: string, rot: Rot): Blueprint | undefined {
   if (k.startsWith("imported/")) {
     const imp = IMPORTED[k.slice("imported/".length)];

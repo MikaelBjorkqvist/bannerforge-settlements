@@ -40,9 +40,9 @@ references and rules; the owner reviews (QA); the process must be repeatable and
 Owner decision 2026-11-16: the owner builds structures by hand in game and exports them with a structure block
 (**Export**, `.mcstructure`). They go in `assets-src/structures/imported/` with an entry in `imports.json`
 (`front` = entrance side as built, `groundLayers` = layers sunk into the ground, 0 or 1).
-`npm run structures:import` writes, per faction and plot width (S 9, M 13, L 17):
-- `packs/BP/structures/bannerforge_settlements/<design>_<faction>_<w>.mcstructure`: centred on the plot, the rest
-  structure void (the ground stays). Faction colours: **white wall banners → faction banner blocks** (top + bottom),
+`npm run structures:import` writes, per faction (the plot is **exactly as big as the structure**, 2026-11-17;
+the old S 9 / M 13 / L 17 plots only remain for the Defence placeholder boxes):
+- `packs/BP/structures/bannerforge_settlements/<design>_<faction>.mcstructure`. Faction colours: **white wall banners → faction banner blocks** (top + bottom),
   **white beds, wool, carpet and cushions → faction colour**. A sign that says `[HOUSE NAME]` gets the building's name.
 - `src/scripts/settlements/generated/imported.ts`: a south-facing blueprint for the construction phases, and the
   structure id. When the building is finished the structure is placed over it (`world.structureManager.place`),
@@ -51,7 +51,7 @@ Owner decision 2026-11-16: the owner builds structures by hand in game and expor
 Export rules: start the box at the building's lowest layer; fill the ground-layer spots that aren't part of the
 build with **structure void**; leave "Remove Blocks" off; include entities only for cushions and the like.
 `imports.json` `placeholderFor: "all"` makes a design the stand-in for every plot building without its own
-design (the Defence section keeps its boxes). Preview: `/scriptevent bannerforge:preview imported/<design>/<faction>/<w>`.
+design (the Defence section keeps its boxes). Preview: `/scriptevent bannerforge:preview imported/<design>/<faction>`.
 
 ## Conventions
 

@@ -2,7 +2,7 @@
 // Used by placement (green / orange / red) and by construction (clearing and the foundation).
 
 import type { Block, Dimension } from "@minecraft/server";
-import { CUT_MAX, FILL_MAX, containsColumn, overlaps, rectOverlaps, toWorld, type Footprint, type Rect } from "./plots.js";
+import { CUT_MAX, FILL_MAX, containsColumn, extent, overlaps, rectOverlaps, toWorld, type Footprint, type Rect } from "./plots.js";
 
 /** Plants, trees and snow: cleared freely when building. */
 const CLEARABLE =
@@ -107,15 +107,11 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.len
 export function survey(input: SurveyInput): Survey {
   const { dim, f } = input;
   const blocked = (reason: string, groundY = 0, entranceY = 0): Survey => ({ verdict: "blocked", reason, groundY, entranceY });
-  if (!input.insideBorder) return blocked("outside_border");
-  if (input.others.some((o) => overlaps(f, o))) return blocked("overlap");
-  if (containsColumn(f, input.bell.x, input.bell.z)) return blocked("bell");
-
   const floor = input.bell.y - 48;
   // The floor lines up with the ground at the entrance (owner decision, 2026-11-15).
   const front: number[] = [];
   for (let lx = 1; lx < f.w - 1; lx++) {
-    const p = toWorld(f, lx, f.w - 1);
+    const p = toWorld(f, lx, f.d - 1);
     const c = readColumn(dim, p.x, p.z, floor);
     if (!c) return blocked("unloaded");
     front.push(c.ground);
@@ -123,10 +119,18 @@ export function survey(input: SurveyInput): Survey {
   const entranceY = median(front);
   const groundY = entranceY + input.raise;
 
-  const stride = f.w > 9 ? 2 : 1;
+  // Ground first, so a refused plot (across the border, on a building, on the bell) is still drawn on the ground
+  // (owner, 2026-11-17: the box climbed up to the player's height at the border).
+  if (!input.insideBorder) return blocked("outside_border", groundY, entranceY);
+  // Buildings may stand right next to each other (owner, 2026-11-17), they just can't share a block.
+  if (input.others.some((o) => overlaps(f, o, 0))) return blocked("overlap", groundY, entranceY);
+  if (containsColumn(f, input.bell.x, input.bell.z)) return blocked("bell", groundY, entranceY);
+
+  const { wx, wz } = extent(f);
+  const stride = wx * wz > 120 ? 2 : 1;
   const columns: Column[] = [];
-  for (let dx = 0; dx < f.w; dx += stride) {
-    for (let dz = 0; dz < f.w; dz += stride) {
+  for (let dx = 0; dx < wx; dx += stride) {
+    for (let dz = 0; dz < wz; dz += stride) {
       const c = readColumn(dim, f.x + dx, f.z + dz, floor);
       if (!c) return blocked("unloaded", groundY, entranceY);
       columns.push(c);
@@ -164,8 +168,12 @@ export function localGround(dim: Dimension, f: Footprint, floor: number): { surf
   const surface = new Map<string, number>();
   const fill = new Map<string, number>();
   const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
-  for (let i = -1; i <= f.w; i += 2) {
-    for (const [x, z] of [[f.x + i, f.z - 1], [f.x + i, f.z + f.w], [f.x - 1, f.z + i], [f.x + f.w, f.z + i]]) {
+  const { wx, wz } = extent(f);
+  const ring: [number, number][] = [];
+  for (let i = -1; i <= wx; i += 2) ring.push([f.x + i, f.z - 1], [f.x + i, f.z + wz]);
+  for (let i = -1; i <= wz; i += 2) ring.push([f.x - 1, f.z + i], [f.x + wx, f.z + i]);
+  {
+    for (const [x, z] of ring) {
       const c = readColumn(dim, x, z, floor);
       if (!c || c.water || c.house) continue;
       try {

@@ -86,7 +86,7 @@ export interface Promotion {
   requires: BuildingReq[];
 }
 export const PROMOTION: Record<"town" | "city", Promotion> = {
-  town: { townHallLevel: 2, prosperity: 30, population: 6, requires: [{ id: "defences", level: 1 }] },
+  town: { townHallLevel: 2, prosperity: 22, population: 6, requires: [{ id: "defences", level: 1 }] },
   city: { townHallLevel: 3, prosperity: 120, population: 16, requires: [{ id: "defences", level: 2 }, { id: "barracks", level: 2 }] },
 };
 

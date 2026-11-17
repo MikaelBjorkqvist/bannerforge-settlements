@@ -168,7 +168,7 @@ bannerforge.rule.needs_population=Needs %s free population (have %s)
 bannerforge.rule.unknown=Unknown building %s
 ## Placement and construction (M2a)
 bannerforge.place.start=§7Placing:
-bannerforge.place.how=Walk to move the plot; its entrance faces you. Use the Building Plan for Build, Rotate, Raise, Lower, Move or Cancel.
+bannerforge.place.how=Look where you want the plot; its entrance faces you. Use the Building Plan for Build, Rotate, Raise, Lower, Move or Cancel.
 bannerforge.place.ok=§a✔ Can build here
 bannerforge.place.clear=§6⚠ Old buildings here · clearing %s emeralds
 bannerforge.place.reason.outside_border=§c✘ Outside the town border

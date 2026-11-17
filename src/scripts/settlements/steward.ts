@@ -24,9 +24,9 @@ export const STEWARD_ID = "bannerforge_settlements:steward";
  */
 const TITLE = "Steward";
 const BELL_ID = "minecraft:bell";
-/** Every bell inside a settlement's border belongs to it (owner, 2026-11-15: fixes villages with two bells). */
+/** Every bell within a city-sized border belongs to the settlement (owner, 2026-11-15: fixes villages with two bells). */
 const SETTLEMENT_RADIUS = BORDER;
-/** New settlements need their border clear of every other settlement's border. */
+/** New settlements need room to grow into a city without touching another settlement's city-sized border. */
 const FOUNDING_DISTANCE = 2 * BORDER;
 /** How far from the bell we look for the steward. Their home radius is 12 (BP/entities/steward.json). */
 const SEARCH_RADIUS = 96;

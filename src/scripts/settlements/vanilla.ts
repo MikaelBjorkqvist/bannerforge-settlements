@@ -4,7 +4,7 @@
 // Results are cached per settlement for this game session.
 
 import type { Dimension } from "@minecraft/server";
-import { rectContains, rectOverlaps, type Footprint, type Rect } from "./plots.js";
+import { containsColumn, rectContains, rectOverlaps, type Footprint, type Rect } from "./plots.js";
 import { ANCHOR, isLiquid, isManMade } from "./terrain.js";
 
 interface Cache {
@@ -45,7 +45,7 @@ export function* scanAround(dim: Dimension, sid: string, cx: number, cz: number,
     for (let z = z0; z <= cz + radius; z += STRIDE) {
       const key = `${x},${z}`;
       if (cache.scanned.has(key)) continue;
-      if (cache.boxes.some((b) => rectContains(b, x, z)) || skip.some((f) => x >= f.x && x < f.x + f.w && z >= f.z && z < f.z + f.w)) {
+      if (cache.boxes.some((b) => rectContains(b, x, z)) || skip.some((f) => containsColumn(f, x, z))) {
         cache.scanned.add(key);
         continue;
       }
@@ -80,7 +80,7 @@ function findAnchor(dim: Dimension, x: number, z: number, floorY: number): { x: 
 function traceStructure(dim: Dimension, sx: number, sy: number, sz: number): Rect | undefined {
   const seen = new Set<string>();
   const queue: [number, number, number][] = [[sx, sy, sz]];
-  let minX = sx, maxX = sx, minZ = sz, maxZ = sz;
+  let minX = sx, maxX = sx, minZ = sz, maxZ = sz, minY = sy, maxY = sy;
   const DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
   while (queue.length && seen.size < MAX_FILL) {
     const [x, y, z] = queue.pop()!;
@@ -89,6 +89,7 @@ function traceStructure(dim: Dimension, sx: number, sy: number, sz: number): Rec
     seen.add(k);
     minX = Math.min(minX, x); maxX = Math.max(maxX, x);
     minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
     for (const [dx, dy, dz] of DIRS) {
       const nx = x + dx, ny = y + dy, nz = z + dz;
       if (seen.has(`${nx},${ny},${nz}`)) continue;
@@ -104,7 +105,7 @@ function traceStructure(dim: Dimension, sx: number, sy: number, sz: number): Rec
     }
   }
   if (seen.size < 6) return undefined; // a lone door or bed in the wild is not a structure
-  return { x: minX, z: minZ, wx: maxX - minX + 1, wz: maxZ - minZ + 1 };
+  return { x: minX, z: minZ, wx: maxX - minX + 1, wz: maxZ - minZ + 1, y: minY, h: maxY - minY + 1 };
 }
 
 function nearFarmland(dim: Dimension, x: number, y: number, z: number): boolean {

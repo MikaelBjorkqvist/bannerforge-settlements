@@ -90,13 +90,15 @@ export function settlementById(id: string): Settlement | undefined {
   }
 }
 
-/** Nearest settlement in the same dimension within `radius` blocks (horizontal), if any. */
+/** Nearest settlement in the same dimension whose square border (half-width `radius`) contains pos, if any. */
 export function settlementNear(dimension: string, pos: Vec3, radius: number): Settlement | undefined {
+  // Square distance (the larger of the x and z distances): town borders are squares (owner, 2026-11-17), so
+  // "within `radius`" means inside the square of that half-width, and two borders overlap within 2 * half-width.
   let best: Settlement | undefined;
-  let bestDist = radius * radius;
+  let bestDist = radius;
   for (const s of allSettlements()) {
     if (s.dimension !== dimension) continue;
-    const d = (s.center.x - pos.x) ** 2 + (s.center.z - pos.z) ** 2;
+    const d = Math.max(Math.abs(s.center.x - pos.x), Math.abs(s.center.z - pos.z));
     if (d <= bestDist) {
       best = s;
       bestDist = d;
