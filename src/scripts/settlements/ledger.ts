@@ -86,22 +86,21 @@ export function showOverview(player: Player, s: Settlement): void {
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
+  // A coloured symbol per number, grey names, white values, two per line (owner: "only text is a bit boring").
+  form.divider();
   const waiting = waitingForWorkers(s).length;
+  const stat = (symbol: string, key: string, value: number, gap = true): RawMessage[] => [txt(symbol + " §7"), t(key), txt(` §f${value}${gap ? "     " : ""}`)];
   const info: RawMessage[] = [
-    t("bannerforge.steward.prosperity"),
-    txt(` ${prosperity(s)}    `),
-    t("bannerforge.steward.defence"),
-    txt(` ${defence(s)}\n`),
-    t("bannerforge.steward.population"),
-    txt(` ${population(s)}    `),
-    t("bannerforge.steward.housing"),
-    txt(` ${housing(s)}\n`),
-    t("bannerforge.citizens.workers"),
-    txt(` ${workers(s)}    `),
-    t("bannerforge.citizens.unemployed"),
-    txt(` ${freeSettlers(s)}    `),
-    t("bannerforge.steward.garrison"),
-    txt(` ${garrison(s)}`),
+    ...stat("§6★", "bannerforge.steward.prosperity", prosperity(s)),
+    ...stat("§c⚔", "bannerforge.steward.defence", defence(s), false),
+    txt("\n"),
+    ...stat("§a☺", "bannerforge.steward.population", population(s)),
+    ...stat("§e⌂", "bannerforge.steward.housing", housing(s), false),
+    txt("\n"),
+    ...stat("§b⚒", "bannerforge.citizens.workers", workers(s)),
+    ...stat("§7○", "bannerforge.citizens.unemployed", freeSettlers(s), false),
+    txt("\n"),
+    ...stat("§9⚑", "bannerforge.steward.garrison", garrison(s), false),
   ];
   if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
