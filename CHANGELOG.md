@@ -4,6 +4,13 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Changed — categories and scores (owner, 2026-11-18)
+- The ledger's sections are **Housing, Economy, Military and Civic**. Economy has Shops, Craftsmen and Food inside.
+- **Prosperity** is now the sum of three scores: Economy (staffed shops, craftsmen, food), Military (defence of towers, barracks and the Keep) and Civic (Town Hall, shrine). The overview shows all three.
+- Growing needs a Town Hall, Prosperity, Population and a minimum Military: Town 26 / 6 / 4, City 52 / 14 / 12.
+- "A Town gets" is worked out from the real numbers: expanded border (48 → 72), 3 more watchtowers (6 in total), 1 more barracks (2 in total), Captain training (later), worker ranks (later).
+- Garrisons no longer rank up by themselves when the town grows: a Captain will train them (coming later).
+
 ### Added — townsfolk, step 1 (numbers)
 - **Settlers** move into every free bed at dawn (from 7:00, never in the evening or at night). A house finished in the evening fills the next morning.
 - **Jobs**: free settlers start work at buildings that need a worker, automatically. A worker keeps their job while the building stands; if it's gone they are free again.

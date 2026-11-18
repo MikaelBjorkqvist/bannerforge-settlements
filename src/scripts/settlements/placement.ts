@@ -503,7 +503,7 @@ function confirm(player: Player, p: Placing): void {
   }
 
   const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, d: f.d, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
-  if (def.category === "population") {
+  if (def.category === "housing") {
     const beds = bedsFor(def, s.faction, p.variant);
     if (beds !== undefined) site.beds = beds;
   }

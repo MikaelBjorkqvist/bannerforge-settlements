@@ -2,7 +2,7 @@
 // one level, no tier locks; a settlement is promoted with a ledger button once prosperity, population and defence
 // points are met). Pure functions (no game imports) so they can be unit-tested.
 
-import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost } from "./buildings.js";
+import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost, type ScoreCategory } from "./buildings.js";
 import type { BuildingLevel, Citizens, Settlement, Tier } from "./types.js";
 
 /** Why an action isn't possible. `key` is a lang key suffix (bannerforge.rule.<key>); args fill its %s slots. */
@@ -131,19 +131,29 @@ export function morning(s: Settlement): { arrived: number; left: number } {
   return { arrived, left };
 }
 
-/** Total prosperity of the standing buildings that are working (owner, 2026-11-17: no worker, no prosperity). */
-export function prosperity(s: Settlement): number {
+/**
+ * A category's score (owner, 2026-11-18): Economy and Civic from their standing, staffed buildings (no worker, no
+ * points); Military from its buildings' defence points (garrisons sleep there, so they are always staffed).
+ */
+export function score(s: Settlement, category: ScoreCategory): number {
   let total = 0;
-  for (const def of BUILDINGS) instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (total += def.prosperity));
+  for (const def of BUILDINGS) {
+    if (def.category !== category) continue;
+    const points = category === "military" ? def.defence ?? 0 : def.prosperity;
+    instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (total += points));
+  }
   return total;
 }
+
+/** Prosperity, the town's overall score: Economy + Military + Civic. */
+export const prosperity = (s: Settlement): number => score(s, "economy") + score(s, "military") + score(s, "civic");
 /** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). */
 export function housing(s: Settlement): number {
   let total = 0;
   for (const def of BUILDINGS) {
     if (!def.housing) continue;
     instances(s, def.id).forEach((level, i) => {
-      if (level > 0) total += (def.category === "population" ? s.sites?.[def.id]?.[i]?.beds : undefined) ?? def.housing!;
+      if (level > 0) total += (def.category === "housing" ? s.sites?.[def.id]?.[i]?.beds : undefined) ?? def.housing!;
     });
   }
   return total;
@@ -154,8 +164,8 @@ export const population = (s: Settlement): number => freeSettlers(s) + workers(s
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */
 export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
-/** Defence points: towers, barracks, the Keep. */
-export const defence = (s: Settlement): number => sumOver(s, (d) => d.defence ?? 0);
+/** Military score: defence points of towers, barracks and the Keep (Captain training adds more later). */
+export const military = (s: Settlement): number => score(s, "military");
 
 /** Free beds: settlers move into them at the next dawn. */
 export const freeBeds = (s: Settlement): number => Math.max(0, housing(s) - population(s));
@@ -187,7 +197,7 @@ export function checkPromotion(s: Settlement): { next?: "town" | "city"; reasons
   }
   if (prosperity(s) < promo.prosperity) reasons.push({ key: "promo_prosperity", args: [String(prosperity(s)), String(promo.prosperity)] });
   if (population(s) < promo.population) reasons.push({ key: "promo_population", args: [String(population(s)), String(promo.population)] });
-  if (defence(s) < promo.defence) reasons.push({ key: "promo_defence", args: [String(defence(s)), String(promo.defence)] });
+  if (military(s) < promo.military) reasons.push({ key: "promo_military", args: [String(military(s)), String(promo.military)] });
   return { next, reasons };
 }
 

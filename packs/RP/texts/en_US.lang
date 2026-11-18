@@ -89,12 +89,13 @@ bannerforge.steward.top_tier=Your settlement has reached the highest tier.
 bannerforge.currency.minecraft.emerald=Emeralds
 
 ## Ledger sections (Town Centre: name to be decided)
-bannerforge.category.centre=Town Centre
-bannerforge.category.population=Population
-bannerforge.category.trade=Trade
-bannerforge.category.food=Food
-bannerforge.category.defence=Defence
+bannerforge.category.housing=Housing
+bannerforge.category.economy=Economy
+bannerforge.category.military=Military
+bannerforge.category.civic=Civic
+bannerforge.group.shops=Shops
 bannerforge.group.craftsmen=Craftsmen
+bannerforge.group.food=Food
 
 ## Buildings and levels
 bannerforge.building.town_hall=Town Hall
@@ -183,7 +184,7 @@ bannerforge.rule.already_built=Already built
 bannerforge.rule.max_level=Fully upgraded
 bannerforge.rule.promo_prosperity=Prosperity %s/%s
 bannerforge.rule.promo_population=Population %s/%s
-bannerforge.rule.promo_defence=Defence %s/%s
+bannerforge.rule.promo_military=Military %s/%s
 bannerforge.rule.top_tier=Highest tier reached
 bannerforge.rule.needs_population=Needs %s free population (have %s)
 bannerforge.rule.unknown=Unknown building %s
@@ -276,12 +277,12 @@ bannerforge.grow.button=Grow into a %s
 bannerforge.grow.requirements=Requirements
 bannerforge.grow.gets=A %s gets
 bannerforge.grow.now=Upgrade now
-bannerforge.grow.town.1=Border 72 (was 48)
-bannerforge.grow.town.2=6 watchtowers, 2 barracks
-bannerforge.grow.town.3=Soldiers and marksmen
-bannerforge.grow.town.4=Worker ranks (later)
-bannerforge.grow.city.1=Border 96 (was 72)
-bannerforge.grow.city.2=10 watchtowers, 3 barracks
-bannerforge.grow.city.3=Knights and rangers
-bannerforge.grow.city.4=Top worker ranks (later)
+bannerforge.grow.border=Expanded border (%s → %s)
+bannerforge.grow.more=%s more %s (%s in total)
+bannerforge.grow.training.town=Captain can train soldiers and marksmen (later)
+bannerforge.grow.training.city=Captain can train knights and rangers (later)
+bannerforge.grow.worker_ranks=Worker ranks (later)
+bannerforge.plural.watchtower=watchtowers
+bannerforge.plural.barracks=barracks
+bannerforge.plural.house=houses
 

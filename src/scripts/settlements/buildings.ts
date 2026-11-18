@@ -9,9 +9,16 @@ export interface Cost {
   amount: number;
 }
 
-/** Player-facing groups in the steward ledger (lang: bannerforge.category.<id>). */
-export type Category = "centre" | "population" | "trade" | "food" | "defence";
-export const CATEGORIES: Category[] = ["centre", "population", "trade", "food", "defence"];
+/**
+ * Ledger sections, which are also the scores (owner, 2026-11-18): Housing gives room for people; Economy, Military
+ * and Civic each have a score, and Prosperity is their sum. "I need Economy, so I pick something from Economy."
+ * (lang: bannerforge.category.<id>)
+ */
+export type Category = "housing" | "economy" | "military" | "civic";
+export const CATEGORIES: Category[] = ["housing", "economy", "military", "civic"];
+/** The categories that score (Housing gives room, not points). */
+export type ScoreCategory = Exclude<Category, "housing">;
+export const SCORES: ScoreCategory[] = ["economy", "military", "civic"];
 export type Plot = "S" | "M" | "L" | "perimeter";
 
 export interface BuildingDef {
@@ -23,7 +30,10 @@ export interface BuildingDef {
   emeralds: number;
   /** Repeatable buildings: each one costs this many emeralds more than the one before. */
   priceStep?: number;
-  /** Prosperity it adds (per instance). */
+  /**
+   * Points it adds to its category's score (per instance, once it is staffed): Economy and Civic. Military
+   * buildings score with `defence` instead.
+   */
   prosperity: number;
   /** Workers it employs (per instance). Each takes one free person from the population. */
   npcs: number;
@@ -38,54 +48,53 @@ export interface BuildingDef {
   defence?: number;
   /** Repeatable buildings: how many instances each tier allows. Absent = unique. */
   perTier?: Record<Tier, number>;
-  /** Optional sub-heading inside its section (lang: bannerforge.group.<id>), e.g. Craftsmen under Trade. */
-  group?: "craftsmen";
+  /** Optional sub-heading inside its section (lang: bannerforge.group.<id>), e.g. Craftsmen under Economy. */
+  group?: "shops" | "craftsmen" | "food";
 }
 
 // No tier locks and no building levels (owner, 2026-11-16 / 2026-11-17): everything can be built from the start.
-// Military NPC ranks (militia -> soldier -> knight) and civilian ranks come with the citizens (M2.5).
 export const BUILDINGS: BuildingDef[] = [
-  // Town centre
-  { id: "town_hall", category: "centre", plot: "M", emeralds: 8, prosperity: 5, npcs: 0 },
-  { id: "keep", category: "centre", plot: "L", emeralds: 16, prosperity: 6, npcs: 0, garrison: 2, defence: 6 },
-  { id: "shrine", category: "centre", plot: "S", emeralds: 8, prosperity: 4, npcs: 1 },
-  { id: "warehouse", category: "centre", plot: "L", emeralds: 6, prosperity: 2, npcs: 1 },
-  // Population (houses raise the population)
+  // Housing: room for people (not points)
   // Houses (owner, 2026-11-17): no limit, but each costs 1 more than the last; a house sleeps as many people as its
   // design has beds (`housing` is only the fallback for a house without a design).
-  { id: "house", category: "population", plot: "M", emeralds: 3, priceStep: 1, prosperity: 1, npcs: 0, housing: 2, perTier: { village: Infinity, town: Infinity, city: Infinity } },
-  // Trade
-  { id: "market", category: "trade", plot: "M", emeralds: 6, prosperity: 4, npcs: 1 },
-  { id: "tavern", category: "trade", plot: "M", emeralds: 8, prosperity: 4, npcs: 1 },
-  { id: "stables", category: "trade", plot: "M", emeralds: 8, prosperity: 2, npcs: 1 },
-  // Trade › Craftsmen
-  { id: "blacksmith", category: "trade", group: "craftsmen", plot: "M", emeralds: 8, prosperity: 3, npcs: 1 },
-  { id: "fletcher", category: "trade", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
-  { id: "alchemist", category: "trade", group: "craftsmen", plot: "S", emeralds: 8, prosperity: 3, npcs: 1 },
-  { id: "stonemason", category: "trade", group: "craftsmen", plot: "M", emeralds: 6, prosperity: 2, npcs: 1 },
-  { id: "woodcarver", category: "trade", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
-  // Food
-  { id: "farmstead", category: "food", plot: "L", emeralds: 6, prosperity: 3, npcs: 1 },
-  { id: "docks", category: "food", plot: "L", emeralds: 8, prosperity: 3, npcs: 1 },
-  // Defence: defence points instead of a walls prerequisite (owner, 2026-11-17). The wall / gate / tower system
-  // with its own building interface is not decided yet; the old "Defences" perimeter purchase is gone.
-  { id: "watchtower", category: "defence", plot: "S", emeralds: 6, prosperity: 1, npcs: 0, garrison: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
-  // Garrisons keep their size and rise in rank with the tier (owner, 2026-11-17): barracks 4 militia -> soldiers ->
-  // knights, watchtower 1 archer -> marksman -> ranger. Bigger towns may spread more barracks around.
-  { id: "barracks", category: "defence", plot: "L", emeralds: 12, prosperity: 3, npcs: 0, garrison: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
+  { id: "house", category: "housing", plot: "M", emeralds: 3, priceStep: 1, prosperity: 0, npcs: 0, housing: 2, perTier: { village: Infinity, town: Infinity, city: Infinity } },
+  // Economy: shops, craftsmen, food (owner, 2026-11-18: all stores, the tavern too)
+  { id: "market", category: "economy", group: "shops", plot: "M", emeralds: 6, prosperity: 4, npcs: 1 },
+  { id: "tavern", category: "economy", group: "shops", plot: "M", emeralds: 8, prosperity: 4, npcs: 1 },
+  { id: "stables", category: "economy", group: "shops", plot: "M", emeralds: 8, prosperity: 2, npcs: 1 },
+  { id: "warehouse", category: "economy", group: "shops", plot: "L", emeralds: 6, prosperity: 2, npcs: 1 },
+  { id: "blacksmith", category: "economy", group: "craftsmen", plot: "M", emeralds: 8, prosperity: 3, npcs: 1 },
+  { id: "fletcher", category: "economy", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
+  { id: "alchemist", category: "economy", group: "craftsmen", plot: "S", emeralds: 8, prosperity: 3, npcs: 1 },
+  { id: "stonemason", category: "economy", group: "craftsmen", plot: "M", emeralds: 6, prosperity: 2, npcs: 1 },
+  { id: "woodcarver", category: "economy", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
+  { id: "farmstead", category: "economy", group: "food", plot: "L", emeralds: 6, prosperity: 3, npcs: 1 },
+  { id: "docks", category: "economy", group: "food", plot: "L", emeralds: 8, prosperity: 3, npcs: 1 },
+  // Military: defence buildings and their garrisons (owner, 2026-11-17/18). Garrisons sleep in their own building
+  // and start at the lowest rank; the tier only unlocks higher ranks, the Captain trains them (later).
+  { id: "watchtower", category: "military", plot: "S", emeralds: 6, prosperity: 0, npcs: 0, garrison: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
+  { id: "barracks", category: "military", plot: "L", emeralds: 12, prosperity: 0, npcs: 0, garrison: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
+  { id: "keep", category: "military", plot: "L", emeralds: 16, prosperity: 0, npcs: 0, garrison: 2, defence: 6 },
+  // Civic: public places without trade (owner, 2026-11-18): the Town Hall, the shrine; plazas, parks, statues later
+  { id: "town_hall", category: "civic", plot: "M", emeralds: 8, prosperity: 5, npcs: 0 },
+  { id: "shrine", category: "civic", plot: "S", emeralds: 8, prosperity: 4, npcs: 1 },
 ];
 
-/** What a promotion needs (owner, 2026-11-17): a Town Hall, then prosperity, population and defence points. */
+/**
+ * What a promotion needs (owner, 2026-11-18): a Town Hall, Prosperity (Economy + Military + Civic), Population, and
+ * a minimum Military so a town of only markets can't grow without guards.
+ */
 export interface Promotion {
   prosperity: number;
   population: number;
-  defence: number;
+  military: number;
   /** Buildings that must stand. */
   requires: string[];
 }
 export const PROMOTION: Record<"town" | "city", Promotion> = {
-  town: { prosperity: 22, population: 6, defence: 4, requires: ["town_hall"] },
-  city: { prosperity: 40, population: 14, defence: 12, requires: ["town_hall"] },
+  // Prosperity now includes Military: Town 22 + 4 and City 40 + 12 from the previous separate numbers.
+  town: { prosperity: 26, population: 6, military: 4, requires: ["town_hall"] },
+  city: { prosperity: 52, population: 14, military: 12, requires: ["town_hall"] },
 };
 
 /** Paid to the (still neutral) steward when founding a settlement. Owner decision, 2026-11-12. */

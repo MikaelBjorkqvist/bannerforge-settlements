@@ -65,6 +65,9 @@ shops and missions.
 | 2026-11-17 | Military garrisons keep their size and rise in rank with the tier: Barracks 4 militia → soldiers → knights; Watchtower 1 archer → marksman → ranger. Bigger towns may build more barracks (1 / 2 / 3) and towers (3 / 6 / 10). Civilian NPCs rank up 1 → 3 through a small quest once the tier allows it. |
 | 2026-11-17 | **Garrisons sleep in their own building**: barracks bunks for its 4, a bed in each watchtower for its archer. They don't take house beds and need no free townsfolk, arrive like settlers (daytime) when the building is finished, and leave if their building is destroyed. *(Play-test 2026-11-17 evening: garrisons do **not** count as population; the Keep has a garrison of 2.)* |
 | 2026-11-17 | **Housing:** no house limit; each house costs 1 emerald more than the last; a house sleeps as many people as its design has beds (only mod houses count, vanilla beds don't). When people outnumber beds, the unemployed leave first at dawn, workers stay as long as possible. |
+| 2026-11-18 | **Categories = ledger sections = scores:** Housing (room for people), **Economy** (all stores incl. tavern, craftsmen, food), **Military** (defence buildings and garrisons), **Civic** (Town Hall, shrine; later plazas, parks, statues, decorations: utility without trade). **Prosperity = Economy + Military + Civic.** Promotion: Town Hall + Prosperity + Population + a minimum Military (Town 26/6/4, City 52/14/12). No happiness system (Civic covers the positive side). |
+| 2026-11-18 | **Ranks are earned, not given:** a promotion unlocks the next rank; workers rank up through quests, garrisons through **training by a Captain** (in the Keep or the first barracks), paid with resources; each step adds points. Garrisons start at the lowest rank. |
+| 2026-11-18 | Custom font glyphs skipped (shared glyph pages can clash with vanilla and other add-ons). |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

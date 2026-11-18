@@ -32,11 +32,10 @@ export interface Blueprint {
 
 /** Placeholder wall colour per ledger section, so boxes are easy to tell apart in play-tests. */
 const WALL: Record<Category, string> = {
-  centre: "minecraft:yellow_concrete",
-  population: "minecraft:light_blue_concrete",
-  trade: "minecraft:orange_concrete",
-  food: "minecraft:lime_concrete",
-  defence: "minecraft:gray_concrete",
+  housing: "minecraft:light_blue_concrete",
+  economy: "minecraft:orange_concrete",
+  military: "minecraft:gray_concrete",
+  civic: "minecraft:yellow_concrete",
 };
 
 /** Sign facing the entrance side (ground_sign_direction: 0 south, 4 west, 8 north, 12 east). */

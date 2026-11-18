@@ -9,7 +9,7 @@ import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
 import { hurryConstruction } from "./construction.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
-import { defence, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
+import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
 import { raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
@@ -66,8 +66,8 @@ export function showDevMenu(player: Player): void {
         txt(` ${prosperity(s)}  `),
         t("bannerforge.steward.population"),
         txt(` ${population(s)}  `),
-        t("bannerforge.steward.defence"),
-        txt(` ${defence(s)}\n§7`),
+        t("bannerforge.category.military"),
+        txt(` ${military(s)}\n§7`),
         t("bannerforge.citizens.free"),
         txt(` ${freeSettlers(s)}  `),
         t("bannerforge.citizens.free_beds"),

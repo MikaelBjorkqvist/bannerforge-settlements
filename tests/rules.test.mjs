@@ -19,7 +19,7 @@ for (const id of ["keep", "stables", "barracks", "market"]) assert.equal(keys(R.
 assert.equal(R.check(s, { kind: "build", id: "market" }).cost[0].amount, 6);
 
 // Promotion needs a Town Hall, prosperity, population and defence points.
-assert.equal(promoKeys(), "needs_building,promo_prosperity,promo_population,promo_defence");
+assert.equal(promoKeys(), "needs_building,promo_prosperity,promo_population,promo_military");
 
 // Unique buildings once; houses and watchtowers up to the tier's limit.
 act("town_hall");
@@ -41,9 +41,9 @@ assert.deepEqual(R.morning(s), { arrived: 0, left: 0 }, "a full town: nobody new
 
 // Under construction (level 0) counts for limits but gives nothing yet.
 s.buildings.watchtower = [0];
-assert.equal(R.defence(s), 0);
+assert.equal(R.military(s), 0);
 s.buildings.watchtower = [1, 1];
-assert.equal(R.defence(s), 4, "two watchtowers = 4 defence points");
+assert.equal(R.military(s), 4, "two watchtowers = 4 defence points");
 assert.equal(R.population(s), 8, "garrisons are not population (owner, 2026-11-17)");
 assert.equal(R.garrison(s), 2, "one archer per tower");
 assert.equal(R.freeSlots(s), 8, "...and need no townsfolk");
@@ -61,15 +61,19 @@ assert.equal(R.waitingForWorkers(s).length, 1, "one workshop still waits");
 assert.ok(R.prosperity(s) > before, "staffed workshops give prosperity");
 assert.equal(R.population(s), 8, "workers are still townsfolk");
 
-// Town: 22 prosperity, 6 population, 4 defence, Town Hall. The button promotes; nothing is rebuilt.
-assert.ok(R.prosperity(s) >= 22, `prosperity ${R.prosperity(s)}`);
+// Prosperity = Economy + Military + Civic (owner, 2026-11-18).
+assert.equal(R.prosperity(s), R.score(s, "economy") + R.score(s, "military") + R.score(s, "civic"));
+assert.equal(R.score(s, "military"), 6, "three watchtowers");
+assert.equal(R.score(s, "civic"), 5, "Town Hall; the shrine still waits for a worker (no worker, no points)");
+// Town: 26 prosperity, 6 population, 4 military, Town Hall. The button promotes; nothing is rebuilt.
+assert.ok(R.prosperity(s) >= 26, `prosperity ${R.prosperity(s)}`);
 assert.equal(promoKeys(), "");
 assert.equal(R.checkPromotion(s).next, "town");
 R.promote(s);
 assert.equal(R.tier(s), "town");
 
 
-// City: 40 prosperity, 14 population, 12 defence.
+// City: 52 prosperity, 14 population, 12 military.
 assert.equal(R.checkPromotion(s).next, "city");
 assert.match(promoKeys(), /promo_population/);
 for (let i = 0; i < 4; i++) act("house");
@@ -81,7 +85,7 @@ act("barracks");
 act("keep");
 for (const id of ["stables", "stonemason", "woodcarver"]) act(id);
 R.assignJobs(s);
-assert.ok(R.defence(s) >= 12, `defence ${R.defence(s)}`);
+assert.ok(R.military(s) >= 12, `military ${R.military(s)}`);
 assert.equal(promoKeys(), "");
 R.promote(s);
 assert.equal(R.tier(s), "city");
@@ -95,12 +99,12 @@ assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "limit");
 // Older saves: no stored tier, the Town Hall level was the tier; level 2+ buildings count once.
 const old = { ...s, tier: undefined, citizens: undefined, buildings: { town_hall: [2], market: [3], house: [2, 1] } };
 assert.equal(R.tier(old), "town");
-assert.equal(R.prosperity({ ...old, citizens: { free: 0, staffed: { market: [1] } } }), 5 + 4 + 2);
-assert.equal(R.prosperity(old), 5 + 2, "the market has no worker on an old save until the first dawn");
+assert.equal(R.prosperity({ ...old, citizens: { free: 0, staffed: { market: [1] } } }), 5 + 4);
+assert.equal(R.prosperity(old), 5, "the market has no worker on an old save until the first dawn");
 assert.equal(R.housing(old), 4);
 assert.equal(R.population(old), 0, "nobody lives there until the first dawn after the update");
 // The old "Defences" perimeter purchase no longer counts for anything.
-assert.equal(R.defence({ ...old, buildings: { defences: [1] } }), 0);
+assert.equal(R.military({ ...old, buildings: { defences: [1] } }), 0);
 
 // Fewer beds than people: the unemployed leave first, then the newest workers.
 const t = { buildings: { house: [1], market: [1], tavern: [1] }, citizens: { free: 1, staffed: { market: [1], tavern: [1] } } };

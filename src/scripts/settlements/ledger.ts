@@ -6,6 +6,7 @@
 import { type Player, type RawMessage, system } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
+import { BORDER_RADIUS } from "./plots.js";
 import { bedsFor } from "./blueprint.js";
 import { canAfford, countItem } from "./economy.js";
 import { celebrate } from "./celebration.js";
@@ -13,7 +14,7 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { built, check, checkPromotion, defence, freeBeds, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
+import { built, check, checkPromotion, freeBeds, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -21,11 +22,10 @@ import type { Settlement } from "./types.js";
 const icon = uiIcon;
 
 const SECTION_ICON: Record<Category, string> = {
-  centre: "section_centre",
-  population: "section_population",
-  trade: "section_trade",
-  food: "section_food",
-  defence: "section_defence",
+  housing: "section_population",
+  economy: "section_trade",
+  military: "section_defence",
+  civic: "section_centre",
 };
 
 /** Closes the current screen and opens the next one on the following tick. */
@@ -86,18 +86,27 @@ export function showOverview(player: Player, s: Settlement): void {
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
-  // One stat per line with a coloured symbol (the game font has no fixed width, so columns never line up).
+  // Prosperity and the three scores it is made of, then people (owner, 2026-11-18). No symbols in front of the
+  // lines: their widths differ in the game font and made the left edge uneven.
   form.divider();
   const waiting = waitingForWorkers(s).length;
-  const stat = (symbol: string, key: string, value: number, last = false): RawMessage[] => [txt(symbol + " §7"), t(key), txt(` §f${value}${last ? "" : "\n"}`)];
+  const part = (key: string, value: number, sep = true): RawMessage[] => [t(key), txt(` ${value}${sep ? " · " : ""}`)];
   const info: RawMessage[] = [
-    ...stat("§6★", "bannerforge.steward.prosperity", prosperity(s)),
-    ...stat("§c⚔", "bannerforge.steward.defence", defence(s)),
-    ...stat("§a☺", "bannerforge.steward.population", population(s)),
-    ...stat("§e⌂", "bannerforge.steward.housing", housing(s)),
-    ...stat("§b⚒", "bannerforge.citizens.workers", workers(s)),
-    ...stat("§7○", "bannerforge.citizens.unemployed", freeSettlers(s)),
-    ...stat("§9⚑", "bannerforge.steward.garrison", garrison(s), true),
+    txt("§6"),
+    t("bannerforge.steward.prosperity"),
+    txt(` §f${prosperity(s)}\n§7`),
+    ...part("bannerforge.category.economy", score(s, "economy")),
+    ...part("bannerforge.category.military", score(s, "military")),
+    ...part("bannerforge.category.civic", score(s, "civic"), false),
+    txt("\n§a"),
+    t("bannerforge.steward.population"),
+    txt(` §f${population(s)}§7 · `),
+    ...part("bannerforge.steward.housing", housing(s), false),
+    txt("\n§b"),
+    t("bannerforge.citizens.workers"),
+    txt(` §f${workers(s)}§7 · `),
+    ...part("bannerforge.citizens.unemployed", freeSettlers(s)),
+    ...part("bannerforge.steward.garrison", garrison(s), false),
   ];
   if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
@@ -149,11 +158,23 @@ function showGrow(player: Player, s: Settlement): void {
       ...goal.requires.map((id) => line(built(s, id) > 0, buildingName(id))),
       line(prosperity(s) >= goal.prosperity, t("bannerforge.steward.prosperity"), txt(` ${prosperity(s)} / ${goal.prosperity}`)),
       line(population(s) >= goal.population, t("bannerforge.steward.population"), txt(` ${population(s)} / ${goal.population}`)),
-      line(defence(s) >= goal.defence, t("bannerforge.steward.defence"), txt(` ${defence(s)} / ${goal.defence}`)),
+      line(military(s) >= goal.military, t("bannerforge.category.military"), txt(` ${military(s)} / ${goal.military}`)),
     ),
   );
+  // What the new tier brings, worked out from the real numbers (owner, 2026-11-18: "+6 watchtowers" was misleading).
+  const now = tier(s);
+  const gets: RawMessage[] = [t("bannerforge.grow.border", String(BORDER_RADIUS[now]), String(BORDER_RADIUS[next]))];
+  for (const def of BUILDINGS) {
+    if (!def.perTier || !Number.isFinite(def.perTier[next])) continue;
+    const more = def.perTier[next] - def.perTier[now];
+    if (more > 0) {
+      const with_ = { rawtext: [{ text: String(more) }, { translate: `bannerforge.plural.${def.id}` }, { text: String(def.perTier[next]) }] };
+      gets.push({ translate: "bannerforge.grow.more", with: with_ });
+    }
+  }
+  gets.push(t(`bannerforge.grow.training.${next}`), t("bannerforge.grow.worker_ranks"));
   form.header({ translate: "bannerforge.grow.gets", with: tierArg });
-  form.label(raw(...[1, 2, 3, 4].flatMap((n) => [txt(n > 1 ? "\n§a+ §r" : "§a+ §r"), t(`bannerforge.grow.${next}.${n}`)])));
+  form.label(raw(...gets.flatMap((g, n) => [txt(n ? "\n§a+ §r" : "§a+ §r"), g])));
   form.divider();
   form.button(t("bannerforge.grow.now"), () => go(form, () => doPromote(player, s)), { disabled: new ObservableBoolean(promo.reasons.length > 0) });
   show(form);
@@ -184,7 +205,7 @@ export function showSection(player: Player, s: Settlement, category: Category): 
   const addRow = (def: BuildingDef) =>
     form.button(rowLabel(s, def), () => go(form, () => showBuilding(player, s, def)), { imageDetails: icon(def.id) });
   defs.filter((d) => !d.group).forEach(addRow);
-  const groups = [...new Set(defs.map((d) => d.group).filter((g): g is "craftsmen" => !!g))];
+  const groups = [...new Set(defs.map((d) => d.group).filter((g): g is NonNullable<BuildingDef["group"]> => !!g))];
   for (const g of groups) {
     form.header(t(`bannerforge.group.${g}`));
     defs.filter((d) => d.group === g).forEach(addRow);
@@ -219,14 +240,16 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     // What it is and gives (white line, grey details).
     let nowMsg: RawMessage = raw(t(`bannerforge.desc.${def.id}.1`));
     const details: RawMessage[] = [txt("\n§7")];
-    details.push(t("bannerforge.steward.prosperity"), txt(` +${def.prosperity}`));
-    const sleeps = def.category === "population" ? bedsFor(def, s.faction, undefined) ?? def.housing : def.housing;
+    // Points go to the building's own category (Economy, Civic); Military shows its defence below.
+    if (def.prosperity) details.push(t(`bannerforge.category.${def.category}`), txt(` +${def.prosperity}  `));
+    const sleeps = def.category === "housing" ? bedsFor(def, s.faction, undefined) ?? def.housing : def.housing;
     if (sleeps) details.push(txt("  "), t("bannerforge.steward.housing"), txt(` +${sleeps}`));
-    if (def.defence) details.push(txt("  "), t("bannerforge.steward.defence"), txt(` +${def.defence}`));
+    if (def.defence) details.push(txt("  "), t("bannerforge.category.military"), txt(` +${def.defence}`));
     if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
     const short = waitingForWorkers(s).filter((w) => w.id === def.id).length;
     if (short) details.push(txt("\n§6⚠ "), t("bannerforge.citizens.this_waits", String(short)));
-    if (def.garrison) details.push(txt("\n§7"), t("bannerforge.steward.garrison"), txt(": "), t(`bannerforge.garrison.${def.id}.${tier(s)}`));
+    // Garrisons start at the lowest rank; the tier only unlocks training by the Captain (owner, 2026-11-18).
+    if (def.garrison) details.push(txt("\n§7"), t("bannerforge.steward.garrison"), txt(": "), t(`bannerforge.garrison.${def.id}.village`));
     nowMsg = raw(nowMsg, ...details);
     if (def.perTier) {
       const limit = def.perTier[tier(s)];
