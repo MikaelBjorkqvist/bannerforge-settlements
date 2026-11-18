@@ -17,6 +17,20 @@
         }
       }
     },
+    "component_groups": {
+      "bannerforge:arriving": {
+        "minecraft:behavior.go_home": {
+          "priority": 2,
+          "speed_multiplier": 0.75,
+          "interval": 1,
+          "goal_radius": 2.5,
+          "on_home": {
+            "event": "bannerforge:arrived",
+            "target": "self"
+          }
+        }
+      }
+    },
     "components": {
       "minecraft:type_family": {
         "family": [
@@ -90,7 +104,21 @@
       "minecraft:conditional_bandwidth_optimization": {}
     },
     "events": {
-      "bannerforge:talked": {}
+      "bannerforge:talked": {},
+      "bannerforge:spawn_arriving": {
+        "add": {
+          "component_groups": [
+            "bannerforge:arriving"
+          ]
+        }
+      },
+      "bannerforge:arrived": {
+        "remove": {
+          "component_groups": [
+            "bannerforge:arriving"
+          ]
+        }
+      }
     }
   }
 }

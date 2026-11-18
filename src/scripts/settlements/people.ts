@@ -165,14 +165,18 @@ function spawnWalker(s: Settlement, p: Person, at: Vector3): void {
  * and no monster within SAFE_RADIUS. A few random lines; undefined if none is safe right now (try next pass).
  */
 export function safeBorderSpot(s: Settlement): Vector3 | undefined {
-  const r = BORDER_RADIUS[tier(s)] - 3;
+  return safeWalkInSpot(s.dimension, s.center, BORDER_RADIUS[tier(s)] - 3, MIN_WALK);
+}
+
+/** As safeBorderSpot, for any centre: the first safe spot between `far` and `near` blocks out on a few random lines. */
+export function safeWalkInSpot(dimensionId: string, center: Vector3, far: number, near: number): Vector3 | undefined {
   for (let i = 0; i < 4; i++) {
     const along = Math.random() * 2 - 1;
     const side = Math.floor(Math.random() * 4);
     const ux = side === 0 ? 1 : side === 1 ? -1 : along;
     const uz = side === 2 ? 1 : side === 3 ? -1 : along;
-    for (let d = r; d >= MIN_WALK; d -= 8) {
-      const spot = safeAt(s, Math.floor(s.center.x + ux * d), Math.floor(s.center.z + uz * d));
+    for (let d = far; d >= near; d -= 8) {
+      const spot = safeAt(dimensionId, Math.floor(center.x + ux * d), Math.floor(center.z + uz * d));
       if (spot === "unloaded") continue;
       if (spot) return spot;
       break; // loaded but unsafe: try another line
@@ -181,8 +185,8 @@ export function safeBorderSpot(s: Settlement): Vector3 | undefined {
   return undefined;
 }
 
-function safeAt(s: Settlement, x: number, z: number): Vector3 | undefined | "unloaded" {
-  const dim = world.getDimension(s.dimension);
+function safeAt(dimensionId: string, x: number, z: number): Vector3 | undefined | "unloaded" {
+  const dim = world.getDimension(dimensionId);
   try {
     const top = dim.getTopmostBlock({ x, z });
     if (!top) return "unloaded";

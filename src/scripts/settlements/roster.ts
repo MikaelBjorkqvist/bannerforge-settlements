@@ -19,11 +19,19 @@ export const jobBuilding = (job: string) => job.slice(0, job.lastIndexOf(":"));
 
 export const rosterOf = (s: Settlement): Person[] => (citizensOf(s).people ??= []);
 
+/** A new person with a name nobody in town has yet (if the name list allows). */
 function newPerson(s: Settlement): Person {
   const c = citizensOf(s);
-  const serial = (c.serial = (c.serial ?? 0) + 1);
-  const seed = `${s.id}:${serial}`;
-  return { seed, name: pickName(seed), state: "coming" };
+  const taken = new Set(rosterOf(s).map((p) => p.name));
+  let seed = "";
+  let name = "";
+  for (let tries = 0; tries < 12; tries++) {
+    c.serial = (c.serial ?? 0) + 1;
+    seed = `${s.id}:${c.serial}`;
+    name = pickName(seed);
+    if (!taken.has(name)) break;
+  }
+  return { seed, name, state: "coming" };
 }
 
 /**

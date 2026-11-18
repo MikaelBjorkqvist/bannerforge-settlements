@@ -11,6 +11,9 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Soldiers (dev menu: spawn militia / archer): their own fighters, not villagers. Melee and ranged, three ranks each with their own weapons and armour (Militia: leather and stone sword … Knight: full iron; Archer: leather and bow …). They guard the spot they were spawned at, fight monsters and whoever attacks townsfolk, and return to their post. Placeholder look: the steward model.
 - **Garrisons come to life:** a finished watchtower gets its archer and a barracks its four soldiers (the Keep two), standing at the building's door in the faction's colours. Their rank follows the settlement (Village: Militia/Archer, Town: Soldier/Marksman, City: Knight/Ranger). A fallen soldier is replaced the next morning; soldiers of a building that is gone leave. Soldiers can't hurt townsfolk.
 - Dev menu: "Garrisons: refill now".
+- **Townsfolk are real people now:** every settler and worker in the numbers is a citizen in the world with their own name. Newcomers walk in from a safe spot near the border (by day, on dry ground, with no monsters near); hired newcomers arrive as workers and never take vanilla jobs. Chat tells the people in town when someone arrives, starts work, loses their job, leaves, dies or is killed (and by what).
+- **The steward walks to the bell** too, a new one and one returning after death: they appear a short walk away and come over. Ringing the bell meanwhile says they are on the way.
+- Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18
 

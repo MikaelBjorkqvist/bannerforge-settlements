@@ -47,3 +47,11 @@ assert.equal(Ro.rosterOf(old).length, 0);
 const p = Ro.rosterOf(s)[0];
 Ro.removeDead(s, p);
 assert.equal(s.citizens.free, 0);
+
+// Names are unique within a town (play-test 2026-11-18: two Gretas).
+{
+  const big = { id: "b", name: "B", buildings: {}, citizens: { free: 12, staffed: {} } };
+  Ro.reconcile(big);
+  const names = Ro.rosterOf(big).map((p) => p.name);
+  assert.equal(new Set(names).size, names.length, names.join(","));
+}
