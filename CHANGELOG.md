@@ -28,6 +28,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Fixes from the 2026-11-18 play-test: vanilla houses near the border that weren't loaded at founding are looked for again after a minute (not the next day); newcomers set off in the morning only; a turned-away newcomer walks away from you instead of in circles; the steward and newcomers no longer flash at the bell/door before walking in.
 - **Ledger, shorter front page:** Population · Housing, Townsfolk · Garrison (the word follows the tier: Villagers, Townsfolk, Citizens) and one-line alerts. A new **People** page shows Workers, Tradesfolk (their own trade at a workstation), Unemployed, Nitwits and Children, free beds and births, newcomers, and every building waiting for a worker with a **Recruit** button.
 - **Town Ledger book:** a Town or City can buy its ledger as a book from the steward (3 emeralds). It opens that town's ledger anywhere inside its border, and only there; each town has its own book ("<Town> Ledger").
+- **Founding adopts every house at once:** the whole border is loaded for a moment (temporary ticking areas) before the town looks for vanilla houses and villagers, so houses at the edge are no longer missed. (Test: Nightvale, 7 houses and 7 beds adopted at founding, no loose beds.)
+- Dev (remote testing): `bannerforge:use` talks to the steward or newcomer in view, or rings a bell in view or within 4 blocks; `bannerforge:gotobell` stands you next to the nearest bell.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

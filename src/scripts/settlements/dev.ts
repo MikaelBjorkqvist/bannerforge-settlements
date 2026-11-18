@@ -3,7 +3,7 @@
 // the steward's ledger also shows a "Dev tools" button. Works on the settlement whose border you stand in (or the
 // nearest one). Nothing here is reachable for normal players.
 
-import { ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
+import { BlockVolume, ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
@@ -43,6 +43,22 @@ export function registerDevMenu(): void {
         update(s);
       }
     }
+    // Remote play-testing: stand next to the nearest bell (within 32 blocks), looking at it.
+    if (e.id === "bannerforge:gotobell") {
+      const p = e.sourceEntity as Player;
+      const { x, y, z } = p.location;
+      try {
+        const vol = new BlockVolume({ x: x - 32, y: y - 40, z: z - 32 }, { x: x + 32, y: y + 16, z: z + 32 });
+        const at = [...p.dimension.getBlocks(vol, { includeTypes: ["minecraft:bell"] }, true).getBlockLocationIterator()][0];
+        if (!at) p.sendMessage("gotobell: no bell near");
+        else {
+          p.teleport({ x: at.x + 2.5, y: at.y, z: at.z + 0.5 }, { facingLocation: { x: at.x + 0.5, y: at.y + 0.5, z: at.z + 0.5 } });
+          p.sendMessage(`gotobell: bell at ${at.x} ${at.y} ${at.z}`);
+        }
+      } catch (err) {
+        p.sendMessage(`gotobell: ${String(err)}`);
+      }
+    }
     // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
     if (e.id === "bannerforge:use") {
@@ -53,7 +69,14 @@ export function registerDevMenu(): void {
       const hit =
         p.getEntitiesFromViewDirection({ maxDistance: 12 })[0]?.entity ??
         p.dimension.getEntities({ location: p.location, maxDistance: 8, excludeTypes: ["minecraft:player"] }).find(talkable);
-      const bell = hit ? undefined : p.getBlockFromViewDirection({ maxDistance: 8 })?.block;
+      let bell = hit ? undefined : p.getBlockFromViewDirection({ maxDistance: 8 })?.block;
+      if (!hit && bell?.typeId !== "minecraft:bell") {
+        // Or a bell within 4 blocks (it hangs under a roof the view often hits first).
+        const { x, y, z } = p.location;
+        const vol = new BlockVolume({ x: x - 4, y: y - 3, z: z - 4 }, { x: x + 4, y: y + 4, z: z + 4 });
+        const at = [...p.dimension.getBlocks(vol, { includeTypes: ["minecraft:bell"] }, true).getBlockLocationIterator()][0];
+        bell = at ? p.dimension.getBlock(at) : undefined;
+      }
       if (bell?.typeId === "minecraft:bell") onBellRung(p, bell);
       else if (!hit) p.sendMessage("use: nothing in view");
       else if (hit.typeId === STEWARD_ID) onTalk(p, hit);
