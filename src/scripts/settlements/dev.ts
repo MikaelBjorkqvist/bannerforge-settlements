@@ -13,6 +13,8 @@ import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
 import { showOverview, showSection } from "./ledger.js";
+import { onTalk, STEWARD_ID } from "./steward.js";
+import { talk } from "./growth.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { scanHouses } from "./vanilla_houses.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
@@ -40,6 +42,16 @@ export function registerDevMenu(): void {
         saveSettlement(s);
         update(s);
       }
+    }
+    // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
+    // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
+    if (e.id === "bannerforge:use") {
+      const p = e.sourceEntity as Player;
+      const hit = p.getEntitiesFromViewDirection({ maxDistance: 12 })[0]?.entity;
+      if (!hit) p.sendMessage("use: nothing in view");
+      else if (hit.typeId === STEWARD_ID) onTalk(p, hit);
+      else if (hit.typeId === CITIZEN_ID && hit.getProperty("bannerforge_settlements:role") === "applicant") talk(p, hit);
+      else p.sendMessage(`use: ${hit.typeId} has no talk`);
     }
     // Opens the nearest settlement's ledger without the steward (testing): "/scriptevent bannerforge:ledger [economy]".
     if (e.id === "bannerforge:ledger") {

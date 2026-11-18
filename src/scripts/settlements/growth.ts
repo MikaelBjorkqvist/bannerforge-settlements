@@ -174,7 +174,7 @@ function setOutfit(e: Entity, s: Settlement): void {
 }
 
 /** Talking to a newcomer: Welcome (needs a free bed) or Not now. */
-function talk(player: Player, e: Entity): void {
+export function talk(player: Player, e: Entity): void {
   if (!e.isValid) return;
   const s = allSettlements().find((x) => applicantsOf(x).some((p) => p.eid === e.id));
   const p = s && applicantsOf(s).find((q) => q.eid === e.id);

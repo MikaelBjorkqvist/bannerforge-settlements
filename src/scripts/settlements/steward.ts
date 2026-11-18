@@ -135,7 +135,7 @@ function callNeutralSteward(player: Player, dim: Dimension, bell: Vec3): void {
 
 // ---- talking -------------------------------------------------------------
 
-function onTalk(player: Player, steward: Entity): void {
+export function onTalk(player: Player, steward: Entity): void {
   if (!steward.isValid) return;
   const sid = steward.getDynamicProperty(P_SETTLEMENT);
   if (typeof sid === "string") {
