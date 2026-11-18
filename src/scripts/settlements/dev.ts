@@ -47,7 +47,12 @@ export function registerDevMenu(): void {
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
     if (e.id === "bannerforge:use") {
       const p = e.sourceEntity as Player;
-      const hit = p.getEntitiesFromViewDirection({ maxDistance: 12 })[0]?.entity;
+      // The NPC in view, else the nearest steward or newcomer within 8 blocks (NPCs walk while commands are typed).
+      const talkable = (x: { typeId: string; getProperty(k: string): unknown }) =>
+        x.typeId === STEWARD_ID || (x.typeId === CITIZEN_ID && x.getProperty("bannerforge_settlements:role") === "applicant");
+      const hit =
+        p.getEntitiesFromViewDirection({ maxDistance: 12 })[0]?.entity ??
+        p.dimension.getEntities({ location: p.location, maxDistance: 8, excludeTypes: ["minecraft:player"] }).find(talkable);
       if (!hit) p.sendMessage("use: nothing in view");
       else if (hit.typeId === STEWARD_ID) onTalk(p, hit);
       else if (hit.typeId === CITIZEN_ID && hit.getProperty("bannerforge_settlements:role") === "applicant") talk(p, hit);
