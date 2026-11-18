@@ -5,6 +5,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 ## [Unreleased]
 
 ### Changed
+- **Soldiers have duties instead of crowding the door:** the watchtower archer stands on top of the tower; a barracks keeps one soldier at its door, one patrolling through the town (like an iron golem) and the others on watch at the border on the four sides; the Keep has one at its door and one at the bell. A fallen soldier's replacement takes the same duty.
+- Creepers: archers shoot them and step back when one comes close; melee soldiers keep their distance.
 - The ledger is titled after its town ("Nightvale Ledger"), from the steward and from the book.
 
 ### Added — townsfolk, garrisons and growth (M2.5)
