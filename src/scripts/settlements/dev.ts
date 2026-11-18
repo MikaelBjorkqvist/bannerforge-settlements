@@ -23,7 +23,6 @@ import { raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
 const DEV_LEDGER = "bannerforge:dev_ledger";
-const LAB_ID = "bannerforge_settlements:lab_villager";
 
 /** Is the "Dev tools" button shown in the ledger? Toggled from the dev menu, saved with the world. */
 export const devButtonInLedger = (): boolean => world.getDynamicProperty(DEV_LEDGER) === true;
@@ -254,25 +253,6 @@ export function showDevMenu(player: Player): void {
     done(t("bannerforge.dev.removed", String(n)));
   });
 
-  // Citizen research lab (draft only): an exact villager_v2 copy under our identifier, next to vanilla villagers.
-  form.header(t("bannerforge.dev.lab"));
-  form.button(t("bannerforge.dev.lab_spawn"), () => {
-    player.dimension.spawnEntity(LAB_ID, player.location);
-    done(t("bannerforge.dev.spawned", LAB_ID));
-  });
-  form.button(t("bannerforge.dev.lab_report"), () => {
-    form.close();
-    census(player);
-  });
-  form.button(t("bannerforge.dev.lab_remove"), () => {
-    let n = 0;
-    for (const e of player.dimension.getEntities({ type: LAB_ID, location: player.location, maxDistance: 64 })) {
-      e.remove();
-      n++;
-    }
-    done(t("bannerforge.dev.removed", String(n)));
-  });
-
   form.header(t("bannerforge.dev.options"));
   form.button(raw(t("bannerforge.dev.ledger_button"), txt(devButtonInLedger() ? ": ON" : ": OFF")), () => {
     world.setDynamicProperty(DEV_LEDGER, !devButtonInLedger());
@@ -286,7 +266,7 @@ export function showDevMenu(player: Player): void {
 }
 
 /**
- * Citizen lab census (draft only): every villager, lab villager and citizen within 48 blocks, with its name, role,
+ * Census (dev): every soldier, villager and citizen within 48 blocks, with its name, role,
  * job (variant) and whether it lies in a bed. Also  /scriptevent bannerforge:census . Plain text: dev only.
  */
 function census(player: Player): void {
@@ -299,21 +279,21 @@ function census(player: Player): void {
         ` hp=${hp ? Math.round(hp.currentValue) : "?"} @${p.x | 0},${p.z | 0}`,
     );
   }
-  for (const type of [CITIZEN_ID, LAB_ID, VILLAGER_ID]) {
+  for (const type of [CITIZEN_ID, VILLAGER_ID]) {
     for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
       const p = e.location;
       let role = "-";
       try {
         role = String(e.getProperty("bannerforge_settlements:role") ?? "-");
       } catch {
-        // vanilla and lab villagers have no role property
+        // vanilla villagers have no role property
       }
       const job = e.getComponent("minecraft:variant")?.value ?? -1;
       const skin = e.getComponent("minecraft:skin_id")?.value ?? -1;
       const look = e.getComponent("minecraft:mark_variant")?.value ?? -1;
       const block = e.dimension.getBlock({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) });
       const inBed = block?.typeId === "minecraft:bed";
-      const kind = type === CITIZEN_ID ? "CIT" : type === LAB_ID ? "LAB" : "VAN";
+      const kind = type === CITIZEN_ID ? "CIT" : "VAN";
       const hp = Math.round(e.getComponent("minecraft:health")?.currentValue ?? -1);
       lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} skin=${skin}/${look} hp=${hp} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
     }

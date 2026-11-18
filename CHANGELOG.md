@@ -4,7 +4,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
-### Added — citizen prototype (dev only)
+### Added — townsfolk, garrisons and growth (M2.5)
 - Dev menu: spawn a settler, worker or guard NPC where you stand, to try their daily life. Citizens are now full villagers underneath: settlers and workers claim a free bed, take a free vanilla job block (lectern, composter…), trade and follow the villager day; a guard stays at its post and fights monsters. For now they wear the vanilla villager look.
 - Dev: `/scriptevent bannerforge:census` lists soldiers, villagers and citizens nearby with role, job, health and whether they are in bed; `/scriptevent bannerforge:convert` turns vanilla villagers within 8 blocks into citizens (same job, skin, outfit, name).
 - Workers no longer take vanilla job blocks.
