@@ -26,6 +26,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - **One people:** converted villagers and settlers are treated the same. Anyone with a vanilla job keeps it: automatic hiring only takes the jobless, and the Recruit list shows everyone with a vanilla job. The overview shows three kinds of people: **Workers**, **Villagers / Townsfolk / Citizens** (the word follows the tier) and the **Garrison**; the Housing page shows what the villagers do (employed, unemployed, nitwits, children).
 - **Workers' name tags** show their title: "Fisher, Maren", "Merchant, Bram"…
 - Fixes from the 2026-11-18 play-test: vanilla houses near the border that weren't loaded at founding are looked for again after a minute (not the next day); newcomers set off in the morning only; a turned-away newcomer walks away from you instead of in circles; the steward and newcomers no longer flash at the bell/door before walking in.
+- **Ledger, shorter front page:** Population · Housing, Townsfolk · Garrison (the word follows the tier: Villagers, Townsfolk, Citizens) and one-line alerts. A new **People** page shows Workers, Tradesfolk (their own trade at a workstation), Unemployed, Nitwits and Children, free beds and births, newcomers, and every building waiting for a worker with a **Recruit** button.
+- **Town Ledger book:** a Town or City can buy its ledger as a book from the steward (3 emeralds). It opens that town's ledger anywhere inside its border, and only there; each town has its own book ("<Town> Ledger").
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

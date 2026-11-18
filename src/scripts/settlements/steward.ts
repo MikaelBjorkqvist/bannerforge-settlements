@@ -1,7 +1,7 @@
 import { gameTime } from "./clock.js";
 import { type Block, type Dimension, type Entity, type Player, system, world } from "@minecraft/server";
 import { showClaimForm } from "./founding.js";
-import { showOverview } from "./ledger.js";
+import { openLedger } from "./ledger.js";
 import { NPC_NAMES, pickIndex, pickName, respawnTicksLeft, ticksToMinutes } from "./npc.js";
 import { allSettlements, saveSettlement, settlementById, settlementNear } from "./registry.js";
 import { raw, say, t } from "./text.js";
@@ -141,7 +141,7 @@ function onTalk(player: Player, steward: Entity): void {
   if (typeof sid === "string") {
     const s = settlementById(sid);
     if (s) {
-      showOverview(player, s);
+      openLedger(player, s, false);
       return;
     }
     // The settlement's data is gone (e.g. removed by an admin): the steward is neutral again.
