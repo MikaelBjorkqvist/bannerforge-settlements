@@ -9,89 +9,93 @@ export interface Cost {
   amount: number;
 }
 
-/** Player-facing groups in the steward ledger (lang: bannerforge.category.<id>). */
-export type Category = "centre" | "population" | "trade" | "food" | "defence";
-export const CATEGORIES: Category[] = ["centre", "population", "trade", "food", "defence"];
+/**
+ * Ledger sections, which are also the scores (owner, 2026-11-18): Housing gives room for people; Economy, Military
+ * and Civic each have a score, and Prosperity is their sum. "I need Economy, so I pick something from Economy."
+ * (lang: bannerforge.category.<id>)
+ */
+export type Category = "housing" | "economy" | "military" | "civic";
+export const CATEGORIES: Category[] = ["housing", "economy", "military", "civic"];
+/** The categories that score (Housing gives room, not points). */
+export type ScoreCategory = Exclude<Category, "housing">;
+export const SCORES: ScoreCategory[] = ["economy", "military", "civic"];
 export type Plot = "S" | "M" | "L" | "perimeter";
-
-/** A requirement on another building: `id` must exist at `level` or higher. */
-export interface BuildingReq {
-  id: string;
-  level: 1 | 2 | 3;
-}
 
 export interface BuildingDef {
   /** Also the lang key suffix: bannerforge.building.<id> */
   id: string;
   category: Category;
   plot: Plot;
-  /** Emeralds to reach level 1, 2 and 3. */
-  emeralds: [number, number, number];
-  /** Prosperity added by level 1, 2 and 3 (per instance). */
-  prosperity: [number, number, number];
-  /** NPCs the building employs at level 1, 2 and 3 (per instance). Each takes one population slot. */
-  npcs: [number, number, number];
-  /** Population cap added at level 1, 2 and 3 (houses only). */
-  housing?: [number, number, number];
+  /** Emeralds to build it. Buildings have one level (owner, 2026-11-17: no building tiers). */
+  emeralds: number;
+  /** Repeatable buildings: each one costs this many emeralds more than the one before. */
+  priceStep?: number;
+  /**
+   * Points it adds to its category's score (per instance, once it is staffed): Economy and Civic. Military
+   * buildings score with `defence` instead.
+   */
+  prosperity: number;
+  /** Workers it employs (per instance). Each takes one free person from the population. */
+  npcs: number;
+  /** People it houses (houses; a house with a design sleeps as many as its beds). */
+  housing?: number;
+  /**
+   * Military living and serving in the building itself (owner, 2026-11-17): they sleep there, need no free
+   * townsfolk, and don't count as population. Their rank follows the tier (lang bannerforge.garrison.<id>.<tier>).
+   */
+  garrison?: number;
+  /** Defence points it adds (per instance): towers, barracks, the Keep (owner, 2026-11-17). */
+  defence?: number;
   /** Repeatable buildings: how many instances each tier allows. Absent = unique. */
   perTier?: Record<Tier, number>;
-  /** Lowest tier that can build level 1. */
-  minTier?: Tier;
-  /** Buildings needed before level 1. */
-  requires?: BuildingReq[];
-  /** Optional sub-heading inside its section (lang: bannerforge.group.<id>), e.g. Craftsmen under Trade. */
-  group?: "craftsmen";
-  /** Town Hall only: may be one level above the tier cap, because upgrading it is the promotion step. */
-  promotes?: true;
+  /** Optional sub-heading inside its section (lang: bannerforge.group.<id>), e.g. Craftsmen under Economy. */
+  group?: "shops" | "craftsmen" | "food";
 }
 
+// No tier locks and no building levels (owner, 2026-11-16 / 2026-11-17): everything can be built from the start.
 export const BUILDINGS: BuildingDef[] = [
-  // Town centre (name to be decided by the owner)
-  { id: "town_hall", category: "centre", plot: "M", emeralds: [8, 20, 40], prosperity: [5, 10, 15], npcs: [0, 0, 0], promotes: true },
-  { id: "keep", category: "centre", plot: "L", emeralds: [16, 32, 56], prosperity: [6, 10, 15], npcs: [1, 3, 3], minTier: "town", requires: [{ id: "defences", level: 1 }] },
-  { id: "shrine", category: "centre", plot: "S", emeralds: [8, 18, 36], prosperity: [4, 6, 10], npcs: [1, 1, 1] },
-  { id: "warehouse", category: "centre", plot: "L", emeralds: [6, 12, 24], prosperity: [2, 3, 5], npcs: [1, 1, 1] },
-  // Population (houses raise the population limit)
-  { id: "house", category: "population", plot: "M", emeralds: [3, 6, 10], prosperity: [1, 2, 3], npcs: [0, 0, 0], housing: [2, 3, 4], perTier: { village: 4, town: 8, city: 12 } },
-  // Trade
-  { id: "market", category: "trade", plot: "M", emeralds: [6, 14, 28], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
-  { id: "tavern", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [4, 6, 8], npcs: [1, 2, 3] },
-  { id: "stables", category: "trade", plot: "M", emeralds: [8, 16, 32], prosperity: [2, 4, 6], npcs: [1, 1, 1], minTier: "town" },
-  // Trade › Craftsmen
-  { id: "blacksmith", category: "trade", group: "craftsmen", plot: "M", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "fletcher", category: "trade", group: "craftsmen", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  { id: "alchemist", category: "trade", group: "craftsmen", plot: "S", emeralds: [8, 18, 36], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "stonemason", category: "trade", group: "craftsmen", plot: "M", emeralds: [6, 14, 28], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  { id: "woodcarver", category: "trade", group: "craftsmen", plot: "S", emeralds: [5, 12, 24], prosperity: [2, 4, 6], npcs: [1, 1, 1] },
-  // Food
-  { id: "farmstead", category: "food", plot: "L", emeralds: [6, 14, 28], prosperity: [3, 5, 7], npcs: [1, 1, 1] },
-  { id: "docks", category: "food", plot: "L", emeralds: [8, 16, 32], prosperity: [3, 5, 8], npcs: [1, 1, 1] },
-  // Defence. Walls, gates and towers upgrade together as one perimeter (owner decision, 2026-11-12);
-  // gates go where roads cross the wall (placement: roadmap M3). NPCs: gate guards + tower archers.
-  { id: "defences", category: "defence", plot: "perimeter", emeralds: [16, 32, 64], prosperity: [4, 7, 10], npcs: [0, 4, 4] },
-  { id: "barracks", category: "defence", plot: "L", emeralds: [12, 24, 48], prosperity: [3, 5, 7], npcs: [3, 5, 5], requires: [{ id: "defences", level: 1 }] },
+  // Housing: room for people (not points)
+  // Houses (owner, 2026-11-17): no limit, but each costs 1 more than the last; a house sleeps as many people as its
+  // design has beds (`housing` is only the fallback for a house without a design).
+  { id: "house", category: "housing", plot: "M", emeralds: 3, priceStep: 1, prosperity: 0, npcs: 0, housing: 2, perTier: { village: Infinity, town: Infinity, city: Infinity } },
+  // Economy: shops, craftsmen, food (owner, 2026-11-18: all stores, the tavern too)
+  { id: "market", category: "economy", group: "shops", plot: "M", emeralds: 6, prosperity: 4, npcs: 1 },
+  { id: "tavern", category: "economy", group: "shops", plot: "M", emeralds: 8, prosperity: 4, npcs: 1 },
+  { id: "stables", category: "economy", group: "shops", plot: "M", emeralds: 8, prosperity: 2, npcs: 1 },
+  { id: "warehouse", category: "economy", group: "shops", plot: "L", emeralds: 6, prosperity: 2, npcs: 1 },
+  { id: "blacksmith", category: "economy", group: "craftsmen", plot: "M", emeralds: 8, prosperity: 3, npcs: 1 },
+  { id: "fletcher", category: "economy", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
+  { id: "alchemist", category: "economy", group: "craftsmen", plot: "S", emeralds: 8, prosperity: 3, npcs: 1 },
+  { id: "stonemason", category: "economy", group: "craftsmen", plot: "M", emeralds: 6, prosperity: 2, npcs: 1 },
+  { id: "woodcarver", category: "economy", group: "craftsmen", plot: "S", emeralds: 5, prosperity: 2, npcs: 1 },
+  { id: "farmstead", category: "economy", group: "food", plot: "L", emeralds: 6, prosperity: 3, npcs: 1 },
+  { id: "docks", category: "economy", group: "food", plot: "L", emeralds: 8, prosperity: 3, npcs: 1 },
+  // Military: defence buildings and their garrisons (owner, 2026-11-17/18). Garrisons sleep in their own building
+  // and start at the lowest rank; the tier only unlocks higher ranks, the Captain trains them (later).
+  { id: "watchtower", category: "military", plot: "S", emeralds: 6, prosperity: 0, npcs: 0, garrison: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
+  { id: "barracks", category: "military", plot: "L", emeralds: 12, prosperity: 0, npcs: 0, garrison: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
+  { id: "keep", category: "military", plot: "L", emeralds: 16, prosperity: 0, npcs: 0, garrison: 2, defence: 6 },
+  // Civic: public places without trade (owner, 2026-11-18): the Town Hall, the shrine; plazas, parks, statues later
+  { id: "town_hall", category: "civic", plot: "M", emeralds: 8, prosperity: 5, npcs: 0 },
+  { id: "shrine", category: "civic", plot: "S", emeralds: 8, prosperity: 4, npcs: 1 },
 ];
 
-/** Level 3 of `from` gives `percent` off every level of the `to` buildings (BUILDINGS.md). */
-export const DISCOUNTS: { from: string; to: string[]; percent: number }[] = [
-  { from: "stonemason", to: ["defences"], percent: 20 },
-  { from: "woodcarver", to: ["house", "tavern"], percent: 20 },
-];
-
-/** What a promotion needs. It happens when the matching Town Hall level is bought. */
+/**
+ * What a promotion needs (owner, 2026-11-18): a Town Hall, Prosperity (Economy + Military + Civic), Population, and
+ * a minimum Military so a town of only markets can't grow without guards.
+ */
 export interface Promotion {
-  townHallLevel: 2 | 3;
   prosperity: number;
   population: number;
-  requires: BuildingReq[];
+  military: number;
+  /** Buildings that must stand. */
+  requires: string[];
 }
 export const PROMOTION: Record<"town" | "city", Promotion> = {
-  town: { townHallLevel: 2, prosperity: 22, population: 6, requires: [{ id: "defences", level: 1 }] },
-  city: { townHallLevel: 3, prosperity: 120, population: 16, requires: [{ id: "defences", level: 2 }, { id: "barracks", level: 2 }] },
+  // Prosperity now includes Military: Town 22 + 4 and City 40 + 12 from the previous separate numbers.
+  town: { prosperity: 26, population: 6, military: 4, requires: ["town_hall"] },
+  city: { prosperity: 52, population: 14, military: 12, requires: ["town_hall"] },
 };
-
-/** Highest level a normal building may reach in each tier (the Town Hall may go one higher). */
-export const TIER_MAX_LEVEL: Record<Tier, 1 | 2 | 3> = { village: 1, town: 2, city: 3 };
 
 /** Paid to the (still neutral) steward when founding a settlement. Owner decision, 2026-11-12. */
 export const FOUNDING_COST: Cost[] = [{ item: "minecraft:emerald", amount: 10 }];

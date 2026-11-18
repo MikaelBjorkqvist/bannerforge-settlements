@@ -22,7 +22,7 @@ import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
 import { isClearable, isLiquid, localGround, readColumn } from "./terrain.js";
 import { forgetVanillaIn } from "./vanilla.js";
-import { buildingName, levelName, raw, t, txt } from "./text.js";
+import { buildingName, raw, t, txt } from "./text.js";
 import type { BuildingLevel, Settlement, Site } from "./types.js";
 
 /** Work happens only when a player is this close (chunks further away may not be loaded). */
@@ -176,7 +176,7 @@ function announcePhase(s: Settlement, a: ActiveSite, phase: number): void {
 }
 
 function announceFinished(s: Settlement, a: ActiveSite, level: BuildingLevel, promoted: boolean): void {
-  const msg = raw(t("bannerforge.build.finished", s.name), txt(" "), buildingName(a.defId), txt(" "), levelName(level));
+  const msg = raw(t("bannerforge.build.finished", s.name), txt(" "), buildingName(a.defId));
   const dim = world.getDimension(a.dim);
   for (const p of dim.getPlayers({ location: { x: a.site.x, y: a.site.y, z: a.site.z }, maxDistance: 128 })) {
     p.sendMessage(msg);
@@ -360,8 +360,15 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
       for (let lz = 0; lz < f.d; lz++) {
         const spec = bp.at(lx, ly, lz);
         if (!spec) continue;
+        // Doors, beds, torches and other blocks that hang on a neighbour pop off (and drop) when their other half
+        // or support isn't there yet (play-test 2026-11-17). With an imported design the finished structure puts
+        // them in at the end; otherwise a door's top half is placed together with its bottom half.
+        if (isFragile(spec.id)) {
+          if (bp.structure || spec.states?.upper_block_bit === true) continue;
+        }
         const p = toWorld(f, lx, lz);
         set(dim, p.x, site.y + ly, p.z, spec.id, spec.states);
+        if (spec.states?.upper_block_bit === false) set(dim, p.x, site.y + ly + 1, p.z, spec.id, { ...spec.states, upper_block_bit: true });
         if (spec.sign) signs.push({ x: p.x, y: site.y + ly, z: p.z });
         if (++n % BLOCKS_PER_YIELD === 0) yield;
       }
@@ -369,6 +376,10 @@ function* placePhase(dim: Dimension, site: Site, bp: Blueprint, phase: number): 
   }
   for (const at of signs) labelSign(dim, at);
 }
+
+/** Blocks that need a neighbour (their other half, a wall or a floor) to stay put. */
+const FRAGILE = /door|_bed$|^minecraft:bed$|torch|lantern|button|lever|ladder|vine|_sign$|banner|candle|pressure_plate|flower_pot|_hanging_sign|chain$|bell$|tripwire|rail$|redstone_wire|carpet|tall_grass|large_fern|sunflower|lilac|rose_bush|peony|pitcher_plant/;
+const isFragile = (id: string) => FRAGILE.test(id);
 
 const ROTATIONS = [StructureRotation.None, StructureRotation.Rotate90, StructureRotation.Rotate180, StructureRotation.Rotate270];
 
@@ -399,8 +410,7 @@ function placeFinishedStructure(dim: Dimension, site: Pick<Site, "x" | "y" | "z"
 function labelSign(dim: Dimension, at: { x: number; y: number; z: number }): void {
   const a = active.find((x) => x.dim === dim.id && at.x >= x.box.x0 && at.x <= x.box.x1 && at.z >= x.box.z0 && at.z <= x.box.z1);
   if (!a) return;
-  const level = a.site.build?.to ?? a.site.built;
-  const text: RawMessage = raw(buildingName(a.defId), txt("\n"), levelName(level));
+  const text: RawMessage = buildingName(a.defId);
   system.run(() => {
     try {
       dim.getBlock(at)?.getComponent("minecraft:sign")?.setText(text);
@@ -519,23 +529,32 @@ function registerDevCommands(): void {
     }
     if (e.id !== "bannerforge:build_finish" && e.id !== "bannerforge:build_next") return;
     const player = e.sourceEntity;
-    if (!player) return;
-    const shift = e.id === "bannerforge:build_finish" ? BUILD_TICKS : STEP_TICKS;
-    const touched = new Set<string>();
-    for (const a of active) {
-      if (a.dim !== player.dimension.id) continue;
-      const d = Math.hypot((a.box.x0 + a.box.x1 + 1) / 2 - player.location.x, (a.box.z0 + a.box.z1 + 1) / 2 - player.location.z);
-      if (d > 64) continue;
-      const s = settlementById(a.sid);
-      const site = s?.sites?.[a.defId]?.[a.index];
-      if (!s || !site?.build) continue;
-      site.build.start -= shift;
-      saveSettlement(s);
-      touched.add(a.defId);
-    }
-    refreshActiveSites();
-    if (player.typeId === "minecraft:player") (player as Player).sendMessage(`[BannerForge] ${e.id}: ${touched.size} site(s)`);
+    if (!player || player.typeId !== "minecraft:player") return;
+    const n = hurryConstruction(player as Player, e.id === "bannerforge:build_finish" ? "finish" : "phase");
+    (player as Player).sendMessage(`[BannerForge] ${e.id}: ${n} site(s)`);
   });
+}
+
+/**
+ * Developer: moves construction near the player (64 blocks) on by one phase, or to the end. The work loop then
+ * catches up within a second. Returns how many sites were moved on.
+ */
+export function hurryConstruction(player: Player, how: "phase" | "finish"): number {
+  const shift = how === "finish" ? BUILD_TICKS : STEP_TICKS;
+  let n = 0;
+  for (const a of active) {
+    if (a.dim !== player.dimension.id) continue;
+    const d = Math.hypot((a.box.x0 + a.box.x1 + 1) / 2 - player.location.x, (a.box.z0 + a.box.z1 + 1) / 2 - player.location.z);
+    if (d > 64) continue;
+    const s = settlementById(a.sid);
+    const site = s?.sites?.[a.defId]?.[a.index];
+    if (!s || !site?.build) continue;
+    site.build.start -= shift;
+    saveSettlement(s);
+    n++;
+  }
+  refreshActiveSites();
+  return n;
 }
 
 /**

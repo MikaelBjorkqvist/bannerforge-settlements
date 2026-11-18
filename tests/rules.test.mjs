@@ -1,49 +1,121 @@
-// Settlement rules (docs/BUILDINGS.md). Run with: npm test
+// Settlement rules (owner, 2026-11-17: one level per building, no tier locks, promotion button by prosperity,
+// population and defence points). Run with: npm test
 import assert from "node:assert/strict";
 import * as R from "../.test-build/rules.mjs";
 
 const s = { schema: 3, id: "t", name: "T", faction: "blue", dimension: "overworld", center: { x: 0, y: 0, z: 0 }, foundedBy: "p", foundedAt: 0, buildings: {} };
 const keys = (c) => (c.ok ? "ok" : c.reasons.map((r) => r.key).join(","));
-const act = (a) => {
-  const c = R.check(s, a);
-  assert.equal(c.ok, true, `${a.kind} ${a.id}: ${keys(c)}`);
-  R.apply(s, a, c.newLevel);
+const act = (id) => {
+  const c = R.check(s, { kind: "build", id });
+  assert.equal(c.ok, true, `build ${id}: ${keys(c)}`);
+  R.apply(s, { kind: "build", id }, c.newLevel);
   return c;
 };
+const promoKeys = () => R.checkPromotion(s).reasons.map((r) => r.key).join(",");
 
-// A new settlement is a Village; tier-gated and prerequisite buildings are locked.
+// A new settlement is a Village. Nothing is locked by tier, and no free workers doesn't block building.
 assert.equal(R.tier(s), "village");
-assert.equal(keys(R.check(s, { kind: "build", id: "keep" })), "needs_tier,needs_building,needs_population");
-assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "needs_building,needs_population");
+for (const id of ["keep", "stables", "barracks", "market"]) assert.equal(keys(R.check(s, { kind: "build", id })), "ok", id);
+assert.equal(R.check(s, { kind: "build", id: "market" }).cost[0].amount, 6);
 
-// No houses = no free population slots: buildings with workers are blocked; worker-free ones are not.
-assert.equal(keys(R.check(s, { kind: "build", id: "market" })), "needs_population");
-act({ kind: "build", id: "town_hall" });
-act({ kind: "build", id: "defences" });
+// Promotion needs a Town Hall, prosperity, population and defence points.
+assert.equal(promoKeys(), "needs_building,promo_prosperity,promo_population,promo_military");
 
-// Town Hall L2 is the promotion step and needs the Town requirements.
-assert.equal(keys(R.check(s, { kind: "upgrade", id: "town_hall", index: 0 })), "promo_prosperity,promo_population");
+// Unique buildings once; houses and watchtowers up to the tier's limit.
+act("town_hall");
+assert.equal(keys(R.check(s, { kind: "build", id: "town_hall" })), "already_built");
+// Houses (owner, 2026-11-17): no limit, each costs 1 more than the last; a house sleeps as many as its design's beds.
+for (let i = 0; i < 4; i++) assert.equal(act("house").cost[0].amount, 3 + i);
+assert.equal(R.check(s, { kind: "build", id: "house" }).cost[0].amount, 7);
+assert.equal(R.housing(s), 8, "no design stored: 2 beds each");
+s.sites = { house: [{ beds: 4 }, null, { beds: 2 }, null] };
+assert.equal(R.housing(s), 4 + 2 + 2 + 2, "a 4-bed design sleeps 4");
+delete s.sites;
 
-// 4 houses (Village limit) = 8 free slots.
-for (let i = 0; i < 4; i++) act({ kind: "build", id: "house" });
-assert.equal(keys(R.check(s, { kind: "build", id: "house" })), "limit");
-assert.equal(R.freeSlots(s), 8);
-for (const id of ["market", "tavern", "shrine", "blacksmith", "fletcher", "alchemist", "warehouse", "farmstead"]) act({ kind: "build", id });
+// Settlers (owner, 2026-11-17): nobody lives there until the next dawn; then every free bed fills.
+assert.equal(R.population(s), 0);
+assert.deepEqual(R.morning(s), { arrived: 8, left: 0 });
+assert.equal(R.population(s), 8);
+assert.equal(R.freeBeds(s), 0);
+assert.deepEqual(R.morning(s), { arrived: 0, left: 0 }, "a full town: nobody new");
+
+// Under construction (level 0) counts for limits but gives nothing yet.
+s.buildings.watchtower = [0];
+assert.equal(R.military(s), 0);
+s.buildings.watchtower = [1, 1];
+assert.equal(R.military(s), 4, "two watchtowers = 4 defence points");
+assert.equal(R.population(s), 8, "garrisons are not population (owner, 2026-11-17)");
+assert.equal(R.garrison(s), 2, "one archer per tower");
+assert.equal(R.freeSlots(s), 8, "...and need no townsfolk");
+assert.deepEqual(R.assignJobs(s), [], "towers take nobody");
+act("watchtower");
+assert.equal(keys(R.check(s, { kind: "build", id: "watchtower" })), "limit");
+
+// Jobs: free settlers take them automatically; the rest of the buildings wait (and give no prosperity yet).
+for (const id of ["market", "tavern", "shrine", "blacksmith", "fletcher", "alchemist", "warehouse", "farmstead", "docks"]) act(id);
+assert.equal(R.npcDemand(s), 9, "nine workshops, nine workers; the archers aren't counted as workers");
+const before = R.prosperity(s);
+assert.equal(R.assignJobs(s).length, 8, "8 settlers, 8 jobs taken");
 assert.equal(R.freeSlots(s), 0);
-assert.equal(keys(R.check(s, { kind: "build", id: "stonemason" })), "needs_population");
-assert.equal(keys(R.check(s, { kind: "upgrade", id: "market", index: 0 })), "tier_cap,needs_population");
+assert.equal(R.waitingForWorkers(s).length, 1, "one workshop still waits");
+assert.ok(R.prosperity(s) > before, "staffed workshops give prosperity");
+assert.equal(R.population(s), 8, "workers are still townsfolk");
 
-// Promote: prosperity >= 22 (owner 2026-11-17, was 30) and population 8 >= 6.
-assert.ok(R.prosperity(s) >= 22, `prosperity ${R.prosperity(s)}`);
-act({ kind: "upgrade", id: "town_hall", index: 0 });
+// Prosperity = Economy + Military + Civic (owner, 2026-11-18).
+assert.equal(R.prosperity(s), R.score(s, "economy") + R.score(s, "military") + R.score(s, "civic"));
+assert.equal(R.score(s, "military"), 6, "three watchtowers");
+assert.equal(R.score(s, "civic"), 5, "Town Hall; the shrine still waits for a worker (no worker, no points)");
+// Town: 26 prosperity, 6 population, 4 military, Town Hall. The button promotes; nothing is rebuilt.
+assert.ok(R.prosperity(s) >= 26, `prosperity ${R.prosperity(s)}`);
+assert.equal(promoKeys(), "");
+assert.equal(R.checkPromotion(s).next, "town");
+R.promote(s);
 assert.equal(R.tier(s), "town");
 
-// Upgrading a house adds 1 slot (+2 -> +3), enough for Market L2's extra worker.
-act({ kind: "upgrade", id: "house", index: 0 });
-assert.equal(R.freeSlots(s), 1);
-act({ kind: "upgrade", id: "market", index: 0 });
-assert.equal(R.freeSlots(s), 0);
 
-// Stonemason L3 gives 20% off defences.
-s.buildings.stonemason = [3];
-assert.equal(R.costFor(s, { id: "defences", emeralds: [16, 32, 64] }, 2)[0].amount, 26);
+// City: 52 prosperity, 14 population, 12 military.
+assert.equal(R.checkPromotion(s).next, "city");
+assert.match(promoKeys(), /promo_population/);
+for (let i = 0; i < 4; i++) act("house");
+R.morning(s);
+R.assignJobs(s);
+assert.equal(R.population(s), 16);
+assert.equal(R.waitingForWorkers(s).length, 0);
+act("barracks");
+act("keep");
+for (const id of ["stables", "stonemason", "woodcarver"]) act(id);
+R.assignJobs(s);
+assert.ok(R.military(s) >= 12, `military ${R.military(s)}`);
+assert.equal(promoKeys(), "");
+R.promote(s);
+assert.equal(R.tier(s), "city");
+assert.equal(R.checkPromotion(s).next, undefined);
+// Barracks: one per Village, two per Town, three per City; 4 workers each.
+assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "ok");
+act("barracks");
+act("barracks");
+assert.equal(keys(R.check(s, { kind: "build", id: "barracks" })), "limit");
+
+// Older saves: no stored tier, the Town Hall level was the tier; level 2+ buildings count once.
+const old = { ...s, tier: undefined, citizens: undefined, buildings: { town_hall: [2], market: [3], house: [2, 1] } };
+assert.equal(R.tier(old), "town");
+assert.equal(R.prosperity({ ...old, citizens: { free: 0, staffed: { market: [1] } } }), 5 + 4);
+assert.equal(R.prosperity(old), 5, "the market has no worker on an old save until the first dawn");
+assert.equal(R.housing(old), 4);
+assert.equal(R.population(old), 0, "nobody lives there until the first dawn after the update");
+// The old "Defences" perimeter purchase no longer counts for anything.
+assert.equal(R.military({ ...old, buildings: { defences: [1] } }), 0);
+
+// Fewer beds than people: the unemployed leave first, then the newest workers.
+const t = { buildings: { house: [1], market: [1], tavern: [1] }, citizens: { free: 1, staffed: { market: [1], tavern: [1] } } };
+assert.deepEqual(R.morning(t), { arrived: 0, left: 1 }, "3 people, 2 beds: the free settler leaves");
+assert.equal(R.workers(t), 2);
+t.citizens.staffed.tavern[0] = 1;
+t.buildings.house = [0]; // the house is being rebuilt: no beds tonight
+assert.deepEqual(R.morning(t), { arrived: 0, left: 2 });
+assert.equal(R.population(t), 0);
+// A workplace that no longer stands: its worker is free again.
+const u = { buildings: { market: [] }, citizens: { free: 0, staffed: { market: [1] } } };
+assert.equal(R.releaseWorkers(u), 1);
+assert.equal(R.freeSettlers(u), 1);
+

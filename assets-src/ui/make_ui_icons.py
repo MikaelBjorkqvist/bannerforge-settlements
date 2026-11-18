@@ -30,6 +30,7 @@ ICONS = {
  'farmstead': ["..y.y.y.", "..l.l.l.", "WWWWWWWW", ".y.y.y.y", ".l.l.l.l", "WWWWWWWW", "..y.y.y.", "WWWWWWWW"],
  'docks': ["...f....", "...ff...", "...fff..", "...w....", "wwwwwwww", ".wWWWWw.", "bbbbbbbb", "BbBbBbBb"],
  'defences': ["s.s..s.s", "sss..sss", "sSs..sSs", "ssssssss", "sSsssSss", "sssWWsss", "sSsWWsSs", "ssssssss"],
+ 'watchtower': ["..s.s.s.", "..sssss.", "..sSsSs.", "..sssss.", "...sss..", "...sSs..", "...sss..", "..sWWss."],
  'barracks': ["f......f", ".f....f.", "..f..f..", "...ff...", "...ff...", "..y..y..", ".W....W.", "W......W"],
  # faction banners (8 x 12)
  'banner_blue': ["wwwwwwww", ".bbbbbb.", ".bbyybb.", ".byyyyb.", ".bbyybb.", ".bbyybb.", ".bbyybb.", ".bbbbbb.", ".bbbbbb.", ".bb..bb.", ".b....b.", "........"],

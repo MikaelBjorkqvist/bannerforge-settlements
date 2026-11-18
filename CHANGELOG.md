@@ -3,6 +3,42 @@
 All notable changes to this add-on. Format: [Keep a Changelog](https://keepachangelog.com/), versions: SemVer.
 
 ## [Unreleased]
+
+### Changed — categories and scores (owner, 2026-11-18)
+- The ledger's sections are **Housing, Economy, Military and Civic**. Economy has Shops, Craftsmen and Food inside.
+- **Prosperity** is now the sum of three scores: Economy (staffed shops, craftsmen, food), Military (defence of towers, barracks and the Keep) and Civic (Town Hall, shrine). The overview shows all three.
+- Growing needs a Town Hall, Prosperity, Population and a minimum Military: Town 26 / 6 / 4, City 52 / 14 / 12.
+- "A Town gets" is worked out from the real numbers: bigger town area (145 × 145 blocks, was 97 × 97), 3 more watchtowers (6 in total), 1 more barracks (2 in total), Captain training (later), worker ranks (later).
+- Garrisons no longer rank up by themselves when the town grows: a Captain will train them (coming later).
+
+### Added — townsfolk, step 1 (numbers)
+- **Settlers** move into every free bed at dawn (from 7:00, never in the evening or at night). A house finished in the evening fills the next morning.
+- **Jobs**: free settlers start work at buildings that need a worker, automatically. A worker keeps their job while the building stands; if it's gone they are free again.
+- A building without its worker gives **no prosperity** until someone starts work there. The ledger shows waiting buildings.
+- When people outnumber beds, the unemployed leave first at dawn, then the newest workers.
+- **Population** for promotion is the townsfolk who actually live there (free settlers and workers), not the number of beds.
+- The ledger's front page is a town overview: prosperity, defence, population, housing, workers, unemployed and garrison, with warnings (room for settlers, buildings waiting for a worker). "Grow into a Town" opens its own page: requirements, what the new tier brings, and "Upgrade now". Houses show "Housing +2". Chat tells you when settlers arrive, leave or start work.
+- Dev menu: "+1 settler" (needs a free bed) and "Dawn now".
+
+### Fixed / changed — play-test 2026-11-17 evening
+- Doors, beds, torches and other blocks that hang on something no longer pop off during construction: they go in when the building is finished.
+- When placing, aim at where the entrance should be: the building goes behind it.
+- The "Upgrade to Town" button shows the tier name.
+- Military lives in its own building: barracks (4), watchtowers (1) and the Keep (2) have a **garrison** that needs no free townsfolk and isn't counted as population. Its rank follows the tier (militia, soldiers, knights; archer, marksman, ranger).
+- Barracks and watchtowers use the placeholder house like every other building.
+- The Building Plan goes straight into your hand; whatever you held moves to a free slot and comes back afterwards. With a full inventory you're asked to free a slot first.
+- Becoming a Town or City is celebrated: a title for everyone around and fireworks in the faction's colour over the bell.
+
+### Added — developer tools
+- Dev menu for play-testing: `/scriptevent bannerforge:dev` (cheats on). Finish construction or skip a phase nearby, +1 day, skip to morning, +64 emeralds, promote now or back to Village; settlers once the citizens exist. Can also show a "Dev tools" button in the steward's ledger.
+
+### Changed — progression (owner, 2026-11-17)
+- Buildings have one level: no more upgrades, and nothing is locked by tier. Every building can be built from the start.
+- Becoming a Town or City is a button in the steward's ledger ("Upgrade to Town"), shown with a checklist: a Town Hall, prosperity, population and **defence points**. Town: 22 prosperity, 6 population, 4 defence. City: 40, 14, 12.
+- Defence points come from the new **Watchtower** (2 each, 3 / 6 / 10 per tier), the Barracks (4; garrison of 4, one per Village, two per Town, three per City) and the Keep (6). The old "Defences" purchase is gone until walls and gates are designed.
+- Buildings that need a worker can be built even when nobody is free; the ledger warns that it will wait for a worker.
+- Houses have no limit, but each costs 1 emerald more than the last. A house sleeps one person per bed in its design (your plains house: 2).
+- Population is what the houses hold, plus the garrisons, who sleep in their barracks and towers and need no house beds.
 ### Added
 - The steward is now a villager-like NPC who lives by the village bell, named "Steward, <name>".
   - Ringing the bell calls the steward to it. It no longer opens a menu.

@@ -5,7 +5,7 @@
 
 import { ItemLockMode, ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
-import { pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
+import { bedsFor, pickVariant, plotSizeFor, topHeightFor, variantsFor } from "./blueprint.js";
 import { drawBorder } from "./border.js";
 import { buildingById, type BuildingDef, type Cost } from "./buildings.js";
 import { refreshActiveSites, startConstruction } from "./construction.js";
@@ -60,6 +60,8 @@ interface Placing {
   age: number;
   scanning: boolean;
   lastScan?: { x: number; z: number };
+  /** The item that was in the player's hand, moved to another slot for the plan; it goes back when done. */
+  stash?: { hand: number; slot: number };
 }
 
 const placing = new Map<string, Placing>();
@@ -69,6 +71,12 @@ export const isPlacing = (player: Player) => placing.has(player.id);
 
 export function startPlacement(player: Player, s: Settlement, def: BuildingDef, mode: PlaceMode): void {
   if (def.plot === "perimeter") return;
+  const given = givePlan(player);
+  if (!given) {
+    player.sendMessage(raw(txt("§c"), t("bannerforge.place.full_inventory")));
+    player.playSound("note.bass");
+    return;
+  }
   const variant = pickVariant(s.faction, def.id);
   placing.set(player.id, {
     sid: s.id,
@@ -83,17 +91,19 @@ export function startPlacement(player: Player, s: Settlement, def: BuildingDef, 
     surveyedAt: -SURVEY_TICKS,
     age: 0,
     scanning: false,
+    ...(given === true ? {} : { stash: given }),
   });
-  givePlan(player);
   player.sendMessage(raw(t("bannerforge.place.start"), txt(" "), buildingName(def.id)));
   player.sendMessage(raw(txt("§7"), t("bannerforge.place.how")));
   loop ??= system.runInterval(tick, TICK);
 }
 
 function stop(player: Player | undefined, id: string, messageKey?: string): void {
+  const stash = placing.get(id)?.stash;
   placing.delete(id);
   if (player) {
     takePlan(player);
+    if (stash) giveBack(player, stash);
     if (messageKey) say(player, messageKey);
   }
   if (!placing.size && loop !== undefined) {
@@ -104,16 +114,43 @@ function stop(player: Player | undefined, id: string, messageKey?: string): void
 
 // ---------- the Building Plan item ----------
 
-function givePlan(player: Player): void {
+/**
+ * Puts the plan in the player's hand (play-test 2026-11-17: it used to land in any slot). The item they held
+ * moves to a free slot and comes back when placement ends. Returns true, the moved item's slots, or false when
+ * the inventory has no free slot at all.
+ */
+function givePlan(player: Player): true | { hand: number; slot: number } | false {
   const inv = player.getComponent("minecraft:inventory")?.container;
-  if (!inv) return;
-  for (let i = 0; i < inv.size; i++) if (inv.getItem(i)?.typeId === PLAN_ITEM) return;
+  if (!inv) return false;
+  const hand = player.selectedSlotIndex;
+  for (let i = 0; i < inv.size; i++) {
+    if (inv.getItem(i)?.typeId !== PLAN_ITEM) continue;
+    if (i === hand) return true;
+    inv.setItem(i, undefined); // a plan left elsewhere: hand it over again below
+  }
   const item = new ItemStack(PLAN_ITEM, 1);
   item.lockMode = ItemLockMode.inventory; // can't be dropped or put in chests
-  // Into the hand if that slot is free, otherwise anywhere.
-  const slot = player.selectedSlotIndex;
-  if (!inv.getItem(slot)) inv.setItem(slot, item);
-  else inv.addItem(item);
+  const held = inv.getItem(hand);
+  if (!held) {
+    inv.setItem(hand, item);
+    return true;
+  }
+  if (inv.emptySlotsCount === 0) return false;
+  let slot = -1;
+  for (let i = 0; i < inv.size && slot < 0; i++) if (i !== hand && !inv.getItem(i)) slot = i;
+  inv.setItem(slot, held);
+  inv.setItem(hand, item);
+  return { hand, slot };
+}
+
+/** Puts the item that was moved for the plan back in the hand slot, if both slots are still as we left them. */
+function giveBack(player: Player, stash: { hand: number; slot: number }): void {
+  const inv = player.getComponent("minecraft:inventory")?.container;
+  if (!inv || inv.getItem(stash.hand)) return;
+  const item = inv.getItem(stash.slot);
+  if (!item) return;
+  inv.setItem(stash.slot, undefined);
+  inv.setItem(stash.hand, item);
 }
 
 function takePlan(player: Player): void {
@@ -204,7 +241,7 @@ function scanNearby(player: Player, s: Settlement, p: Placing): void {
 const AIM_DISTANCE = 48;
 
 /**
- * The plot centred on the block you look at (water surface counts, grass and flowers don't). Looking at the sky or
+ * The plot's entrance on the block you look at, the plot behind it (water surface counts, grass and flowers don't). Looking at the sky or
  * further than AIM_DISTANCE: the plot stays AIM_DISTANCE away in the direction you look (owner, 2026-11-17: it
  * jumped back to the player). So close the plot would cover your own feet: the plot just in front of you.
  */
@@ -466,6 +503,10 @@ function confirm(player: Player, p: Placing): void {
   }
 
   const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, d: f.d, rot: f.rot, built: 0, ...(p.variant ? { variant: p.variant } : {}) };
+  if (def.category === "housing") {
+    const beds = bedsFor(def, s.faction, p.variant);
+    if (beds !== undefined) site.beds = beds;
+  }
   const sites = ((s.sites ??= {})[def.id] ??= []);
   if (p.mode.kind === "new") {
     const levels = (s.buildings[def.id] ??= []);
