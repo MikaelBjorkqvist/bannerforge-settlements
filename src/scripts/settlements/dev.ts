@@ -22,8 +22,9 @@ export const devButtonInLedger = (): boolean => world.getDynamicProperty(DEV_LED
 
 export function registerDevMenu(): void {
   system.afterEvents.scriptEventReceive.subscribe((e) => {
-    if (e.id !== "bannerforge:dev" || e.sourceEntity?.typeId !== "minecraft:player") return;
-    showDevMenu(e.sourceEntity as Player);
+    if (e.sourceEntity?.typeId !== "minecraft:player") return;
+    if (e.id === "bannerforge:dev") showDevMenu(e.sourceEntity as Player);
+    if (e.id === "bannerforge:census") census(e.sourceEntity as Player);
   });
 }
 
@@ -157,17 +158,8 @@ export function showDevMenu(player: Player): void {
     done(t("bannerforge.dev.spawned", LAB_ID));
   });
   form.button(t("bannerforge.dev.lab_report"), () => {
-    const lines: string[] = [];
-    for (const type of [LAB_ID, "minecraft:villager_v2"]) {
-      for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
-        const v = e.getComponent("minecraft:variant")?.value ?? -1;
-        const m = e.getComponent("minecraft:mark_variant")?.value ?? -1;
-        const p = e.location;
-        lines.push(`${type === LAB_ID ? "LAB" : "vanilla"} prof=${v} skin=${m} at ${p.x | 0} ${p.y | 0} ${p.z | 0}`);
-      }
-    }
-    console.warn(`[BannerForge] lab report:\n${lines.join("\n")}`);
-    done(txt(lines.slice(0, 12).join("\n") || "none"));
+    form.close();
+    census(player);
   });
   form.button(t("bannerforge.dev.lab_remove"), () => {
     let n = 0;
@@ -188,4 +180,29 @@ export function showDevMenu(player: Player): void {
 
   refresh();
   form.show().catch((e) => console.warn(`[BannerForge] dev menu: ${e}`));
+}
+
+/**
+ * Citizen lab census (draft only): every villager, lab villager and citizen within 48 blocks, with its name, role,
+ * job (variant) and whether it lies in a bed. Also  /scriptevent bannerforge:census . Plain text: dev only.
+ */
+function census(player: Player): void {
+  const lines: string[] = [];
+  for (const type of [CITIZEN_ID, LAB_ID, "minecraft:villager_v2"]) {
+    for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
+      const p = e.location;
+      let role = "-";
+      try {
+        role = String(e.getProperty("bannerforge_settlements:role") ?? "-");
+      } catch {
+        // vanilla and lab villagers have no role property
+      }
+      const job = e.getComponent("minecraft:variant")?.value ?? -1;
+      const block = e.dimension.getBlock({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) });
+      const inBed = block?.typeId === "minecraft:bed";
+      const kind = type === CITIZEN_ID ? "CIT" : type === LAB_ID ? "LAB" : "VAN";
+      lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
+    }
+  }
+  player.sendMessage(lines.length ? lines.join("\n") : "census: nobody within 48");
 }

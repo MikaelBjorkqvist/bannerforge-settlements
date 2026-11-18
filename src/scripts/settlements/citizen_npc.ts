@@ -3,9 +3,10 @@
 // look the same, illager-like with moving arms). Role, rank, profession and faction look are entity properties, so the
 // art and the conversion plug in without a new entity type.
 //
-// Settlers and workers run the vanilla village routine (minecraft:dweller + a scheduler like villager_v2): they claim
-// beds, gather around midday, go home in the evening and sleep at night. A mob's home is where it appeared, so a
-// worker spawned at its workplace spends working hours there; a guard stays at its post and fights monsters.
+// The citizen is the full vanilla villager_v2 under our identifier (tools/make_citizen.mjs; lab 2026-11-18), so
+// settlers and workers get the whole village routine: they claim a bed, take a free vanilla job block, trade and keep
+// the daily schedule. A guard stays at its post and fights monsters. Citizens are born straight into their role
+// (spawn event): in the lab, citizens spawned that way settled in fastest; changing a role later works but is slower.
 
 import { type Dimension, type Entity, type Vector3 } from "@minecraft/server";
 import { pickName } from "./npc.js";
@@ -18,8 +19,7 @@ const ROLE_TITLE: Record<CitizenRole, string> = { settler: "Settler", worker: "W
 
 /** Spawns a citizen with a role, the faction's look and a name ("Settler, Edric"). */
 export function spawnCitizen(dim: Dimension, at: Vector3, role: CitizenRole, faction: string, seed: string): Entity {
-  const e = dim.spawnEntity(CITIZEN_ID, at);
-  e.triggerEvent(`bannerforge:become_${role}`);
+  const e = dim.spawnEntity(CITIZEN_ID, at, { spawnEvent: `bannerforge:spawn_${role}` });
   try {
     e.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[faction as keyof typeof OUTFIT_INDEX] ?? 0);
   } catch (err) {
