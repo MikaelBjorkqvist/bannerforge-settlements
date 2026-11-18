@@ -163,7 +163,9 @@ function showGrow(player: Player, s: Settlement): void {
   );
   // What the new tier brings, worked out from the real numbers (owner, 2026-11-18: "+6 watchtowers" was misleading).
   const now = tier(s);
-  const gets: RawMessage[] = [t("bannerforge.grow.border", String(BORDER_RADIUS[now]), String(BORDER_RADIUS[next]))];
+  // The border as the area players see: blocks across, the bell's block in the middle (owner, 2026-11-18).
+  const across = (r: number) => String(2 * r + 1);
+  const gets: RawMessage[] = [t("bannerforge.grow.border", across(BORDER_RADIUS[next]), across(BORDER_RADIUS[next]), across(BORDER_RADIUS[now]), across(BORDER_RADIUS[now]))];
   for (const def of BUILDINGS) {
     if (!def.perTier || !Number.isFinite(def.perTier[next])) continue;
     const more = def.perTier[next] - def.perTier[now];
