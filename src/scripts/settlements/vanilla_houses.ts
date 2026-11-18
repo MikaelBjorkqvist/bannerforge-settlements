@@ -10,6 +10,9 @@
 import { BlockPermutation, BlockVolume, type Dimension, system, type Vector3, world } from "@minecraft/server";
 import { gameTime } from "./clock.js";
 import { VANILLA_HOUSES, type VanillaHouse } from "./generated/vanilla_houses.js";
+
+/** Villager job blocks (same list as tools/vanilla_houses.mjs). */
+const JOB_BLOCKS = ["lectern", "composter", "barrel", "blast_furnace", "smoker", "cartography_table", "brewing_stand", "fletching_table", "grindstone", "cauldron", "loom", "smithing_table", "stonecutter_block"];
 import { BORDER_RADIUS } from "./plots.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { tier } from "./rules.js";
@@ -41,6 +44,9 @@ export interface HouseScan {
   loose: Vector3[];
 }
 
+/** Block types a building is keyed on: beds for houses, villager job blocks for workplaces. */
+const KEY_TYPES = ["minecraft:bed", ...JOB_BLOCKS.map((b) => `minecraft:${b}`)];
+
 const turn = (dx: number, dz: number, rot: number): [number, number] =>
   rot === 0 ? [dx, dz] : rot === 1 ? [-dz, dx] : rot === 2 ? [-dx, -dz] : [dz, -dx];
 
@@ -52,8 +58,9 @@ export function scanHouses(dim: Dimension, center: Vector3, radius: number, done
 }
 
 function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseScan) => void): Generator<void, void, void> {
-  // 1. Bed heads inside the border, one 16 x 16 column at a time.
+  // 1. Key blocks inside the border, one 16 x 16 column at a time: bed heads (houses) and job blocks (workplaces).
   const heads: Vector3[] = [];
+  const keys: (Vector3 & { type: string })[] = [];
   let complete = true;
   const y0 = center.y - BELOW;
   const y1 = center.y + ABOVE;
@@ -61,9 +68,15 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
     for (let z = center.z - radius; z <= center.z + radius; z += 16) {
       const to = { x: Math.min(x + 15, center.x + radius), y: y1, z: Math.min(z + 15, center.z + radius) };
       try {
-        const list = dim.getBlocks(new BlockVolume({ x, y: y0, z }, to), { includeTypes: ["minecraft:bed"] }, false);
+        const list = dim.getBlocks(new BlockVolume({ x, y: y0, z }, to), { includeTypes: KEY_TYPES }, false);
         for (const at of list.getBlockLocationIterator()) {
-          if (dim.getBlock(at)?.permutation.getState("head_piece_bit") === true) heads.push(at);
+          const b = dim.getBlock(at);
+          if (!b) continue;
+          if (b.typeId !== "minecraft:bed") keys.push({ ...at, type: b.typeId.replace("minecraft:", "") });
+          else if (b.permutation.getState("head_piece_bit") === true) {
+            heads.push(at);
+            keys.push({ ...at, type: "bed" });
+          }
         }
       } catch {
         complete = false; // not loaded: those beds are left out, the town looks again soon
@@ -81,14 +94,15 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
     }
   };
   const candidates: FoundHouse[] = [];
-  for (const h of heads) {
+  for (const h of keys) {
     let best: FoundHouse | undefined;
     for (const fp of VANILLA_HOUSES) {
+      if (fp.heads[0][3] !== h.type) continue;
       for (let rot = 0; rot < 4; rot++) {
         const s = score(fp, h, rot, typeAt);
         if (s < MIN_SCORE) continue;
         const better = !best || s > best.score + TIE || (s > best.score - TIE && (fp.beds > best.beds || (fp.beds === best.beds && s > best.score)));
-        if (better) best = { id: fp.id, beds: fp.beds, at: h, rot, score: s };
+        if (better) best = { id: fp.id, beds: fp.beds, at: { x: h.x, y: h.y, z: h.z }, rot, score: s };
       }
     }
     if (best) candidates.push(best);
@@ -99,7 +113,7 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
   const houses: FoundHouse[] = [];
   for (const c of candidates) {
     const fp = VANILLA_HOUSES.find((f) => f.id === c.id)!;
-    const own = fp.heads.map(([dx, dy, dz]) => {
+    const own = (fp.heads as [number, number, number][]).map(([dx, dy, dz]) => {
       const [rx, rz] = turn(dx, dz, c.rot);
       return key({ x: c.at.x + rx, y: c.at.y + dy, z: c.at.z + rz });
     });
@@ -112,9 +126,9 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
 
 /** Share of anchors that match; 0 unless every bed of the design is there. Same maths as tools/vanilla_houses.mjs. */
 function score(fp: VanillaHouse, at: Vector3, rot: number, typeAt: (x: number, y: number, z: number) => string | undefined): number {
-  for (const [dx, dy, dz] of fp.heads) {
+  for (const [dx, dy, dz, name] of fp.heads as [number, number, number, string][]) {
     const [rx, rz] = turn(dx, dz, rot);
-    if (typeAt(at.x + rx, at.y + dy, at.z + rz) !== "bed") return 0;
+    if (typeAt(at.x + rx, at.y + dy, at.z + rz) !== name) return 0; // every bed (or job block) of the design is there
   }
   let ok = 0;
   for (const [dx, dy, dz, names] of fp.anchors as [number, number, number, string][]) {
@@ -174,7 +188,8 @@ export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: Retur
     else retryAt.set(s.id, system.currentTick + RETRY_TICKS);
     saveSettlement(now);
     const newBeds = fresh.reduce((n, h) => n + h.beds, 0);
-    if (fresh.length) tell(now, raw(txt("§a"), t("bannerforge.houses.adopted", String(fresh.length), String(newBeds))));
+    const newHouses = fresh.filter((h) => h.beds > 0).length;
+    if (newHouses) tell(now, raw(txt("§a"), t("bannerforge.houses.adopted", String(newHouses), String(newBeds))));
     if (lostBeds) tell(now, raw(txt("§6"), t("bannerforge.houses.lost", String(lostBeds))));
   }));
 }

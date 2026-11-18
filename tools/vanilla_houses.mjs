@@ -10,6 +10,9 @@ import { readNbt } from "./structures/nbt.mjs";
 import { convertTemplate } from "./structures/java_to_bedrock.mjs";
 
 const ANCHORS = 32;
+const MIN_ANCHORS = 12;
+/** Villager job blocks (Bedrock names): the key block of a workplace, which has no beds (owner 2026-11-18: banners there too). */
+export const JOB_BLOCKS = ["lectern", "composter", "barrel", "blast_furnace", "smoker", "cartography_table", "brewing_stand", "fletching_table", "grindstone", "cauldron", "loom", "smithing_table", "stonecutter_block"];
 /** Never anchors: randomised by village processors (mossy cobble), terrain, crops, plants, or the beds themselves. */
 const SKIP = /^(air|cobblestone|mossy_cobblestone|dirt|grass_block|grass_path|dirt_path|farmland|wheat|carrots|potatoes|beetroot|.*_flower.*|poppy|dandelion|tallgrass|short_grass|tall_grass|fern|bed|torch|lantern|flower_pot|hay_block|water|sand|snow_layer)$/;
 
@@ -27,7 +30,8 @@ export function fingerprints(root) {
       }
     }
   }
-  return raw.map((r) => pick(r, raw));
+  // Too few distinctive blocks (fields, pens: mostly crops and fences) can't be told apart: left out.
+  return raw.map((r) => pick(r, raw)).filter((f) => f.anchors.length >= MIN_ANCHORS && !/farm|animal_pen/.test(f.id)); // fields have no walls for a banner
 }
 
 const OUT = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] };
@@ -60,12 +64,16 @@ function cellsOf(id, t) {
     const c = t.palette[p][0];
     cells.push({ x, y, z, name: c.name, head: c.name === "bed" && c.states?.head_piece_bit === true, alt: [...new Set(t.palette[p].map((k) => k.name))].join("|"), ground: y + t.dy <= 0 });
   }
-  const heads = cells.filter((c) => c.head).sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
+  const order = (a, b) => a.y - b.y || a.x - b.x || a.z - b.z;
+  const beds = cells.filter((c) => c.head).sort(order);
+  // Houses are keyed on their beds; a workplace (no beds) on its job blocks.
+  const jobs = beds.length ? [] : cells.filter((c) => JOB_BLOCKS.includes(c.name)).sort(order);
+  const heads = beds.length ? beds : jobs;
   if (!heads.length) return null;
   const a = heads[0];
   for (const c of cells) [c.dx, c.dy, c.dz] = [c.x - a.x, c.y - a.y, c.z - a.z];
   const at = new Map(cells.map((c) => [`${c.dx},${c.dy},${c.dz}`, c.name]));
-  return { id, size: t.size, cells, heads, at };
+  return { id, size: t.size, cells, heads, at, beds: beds.length, key: beds.length ? "bed" : jobs.map((c) => c.name) };
 }
 
 /**
@@ -93,8 +101,8 @@ function pick(r, all) {
   return {
     id: r.id,
     size: r.size,
-    beds: r.heads.length,
-    heads: r.heads.map((c) => [c.dx, c.dy, c.dz]),
+    beds: r.beds,
+    heads: r.heads.map((c) => [c.dx, c.dy, c.dz, c.name]),
     anchors: picked.map((c) => [c.dx, c.dy, c.dz, c.alt]),
     entrance: r.entrance,
   };
@@ -105,9 +113,9 @@ export const turn = (dx, dz, rot) => [[dx, dz], [-dz, dx], [-dx, -dz], [dz, -dx]
 
 /** Share of anchors that match, for a house with its first bed head at `at`, turned by rot. */
 export function score(fp, at, rot, typeAt) {
-  for (const [dx, dy, dz] of fp.heads) {
+  for (const [dx, dy, dz, name] of fp.heads) {
     const [rx, rz] = turn(dx, dz, rot);
-    if (typeAt(at[0] + rx, at[1] + dy, at[2] + rz) !== "bed") return 0; // every bed of the design must be there
+    if (typeAt(at[0] + rx, at[1] + dy, at[2] + rz) !== name) return 0; // every bed (or job block) of the design must be there
   }
   let ok = 0;
   for (const [dx, dy, dz, names] of fp.anchors) {
@@ -138,14 +146,15 @@ function selftest(fps, root) {
         const [x, y, z, p] = t.blocks.slice(i, i + 4);
         const c = t.palette[p][0];
         const [wx, wz] = turn(x, z, rot);
-        if (c.name !== "bed" && rnd() < 0.15) continue; // 15% damage
+        if (c.name !== "bed" && !JOB_BLOCKS.includes(c.name) && rnd() < 0.15) continue; // 15% damage
         world.set(`${wx},${y},${wz}`, c.name);
       }
       const hd = fp.heads[0];
       // first head in template coordinates: find it again
       const cells = [];
       for (let i = 0; i < t.blocks.length; i += 4) cells.push(t.blocks.slice(i, i + 4));
-      const heads = cells.filter(([, , , p]) => t.palette[p][0].name === "bed" && t.palette[p][0].states?.head_piece_bit === true).sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[2] - b[2]);
+      const isKey = ([, , , p]) => (fp.beds ? t.palette[p][0].name === "bed" && t.palette[p][0].states?.head_piece_bit === true : JOB_BLOCKS.includes(t.palette[p][0].name));
+      const heads = cells.filter(isKey).sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[2] - b[2]);
       const [hx, hy, hz] = heads[0];
       const [ax, az] = turn(hx, hz, rot);
       head = [ax, hy, az];
@@ -174,7 +183,7 @@ function selftest(fps, root) {
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
   const root = process.argv[2];
   const fps = fingerprints(root);
-  console.log(`${fps.length} houses with beds:`, fps.map((f) => `${f.id}(${f.beds})`).join(" "));
+  console.log(`${fps.length} buildings (houses and workplaces):`, fps.map((f) => `${f.id}(${f.beds})`).join(" "));
   if (process.argv.includes("--selftest")) selftest(fps, root);
   const o = process.argv.indexOf("--out");
   if (o > 0) fs.writeFileSync(process.argv[o + 1], JSON.stringify(fps));
@@ -188,8 +197,8 @@ if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1])))
 export interface VanillaHouse {
   id: string;
   beds: number;
-  /** Bed heads relative to the first one: [dx, dy, dz]. */
-  heads: number[][];
+  /** Key blocks (bed heads, or job blocks of a workplace) relative to the first one: [dx, dy, dz, type]. */
+  heads: (number | string)[][];
   /** [dx, dy, dz, "type|alternative"] relative to the first bed head, before turning. */
   anchors: (number | string)[][];
   /** Front door (lower half) relative to the first bed head, and the way out of it [x, z], before turning. */
