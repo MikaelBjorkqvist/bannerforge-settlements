@@ -9,6 +9,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Dev: `/scriptevent bannerforge:census` lists soldiers, villagers and citizens nearby with role, job, health and whether they are in bed; `/scriptevent bannerforge:convert` turns vanilla villagers within 8 blocks into citizens (same job, skin, outfit, name).
 - Workers no longer take vanilla job blocks.
 - Soldiers (dev menu: spawn militia / archer): their own fighters, not villagers. Melee and ranged, three ranks each with their own weapons and armour (Militia: leather and stone sword … Knight: full iron; Archer: leather and bow …). They guard the spot they were spawned at, fight monsters and whoever attacks townsfolk, and return to their post. Placeholder look: the steward model.
+- **Garrisons come to life:** a finished watchtower gets its archer and a barracks its four soldiers (the Keep two), standing at the building's door in the faction's colours. Their rank follows the settlement (Village: Militia/Archer, Town: Soldier/Marksman, City: Knight/Ranger). A fallen soldier is replaced the next morning; soldiers of a building that is gone leave. Soldiers can't hurt townsfolk.
+- Dev menu: "Garrisons: refill now".
 
 ## [0.2.0] - 2026-11-18
 
