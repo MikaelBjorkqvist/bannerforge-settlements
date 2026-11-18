@@ -57,6 +57,13 @@ ent.description = {
   },
 };
 
+// --- arriving: a new settler walks in from the border (owner 2026-11-18) -------------------------------------------
+// The vanilla raid goal "move to village" walks a mob to the nearest village; the script removes this group once the
+// settler is in town (bannerforge:arrived). If they die on the way, they die (no fallback).
+groups[`${P}arriving`] = {
+  "minecraft:behavior.move_to_village": { priority: 2, speed_multiplier: 0.8, goal_radius: 6 },
+};
+
 // --- our soldiers never hurt townsfolk (a stray arrow, a wide swing): first damage_sensor trigger wins ------------
 ent.components["minecraft:damage_sensor"].triggers.unshift({
   on_damage: { filters: { test: "is_family", subject: "other", value: "bannerforge_soldier" } },
@@ -142,6 +149,8 @@ const spawnAs = (name, add) => ({
 events["bannerforge:spawn_settler"] = spawnAs("settler", unskilled);
 events["bannerforge:spawn_worker"] = spawnAs("worker", worker);
 events["bannerforge:spawn_guard"] = spawnAs("guard", ["adult", `${P}guard`]);
+events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}arriving`]);
+events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
 
 // --- conversion of a vanilla villager (script: spawn with spawn_converted, then set look and job) ---------------------
 // Owner 2026-11-18: keep profession and looks; the script reads them from the villager and replays them with these

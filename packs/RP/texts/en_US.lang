@@ -279,6 +279,16 @@ bannerforge.dev.ledger_button=Dev button in ledger
 bannerforge.dev.close=Close
 
 ## Townsfolk (settlers, workers)
+bannerforge.people.arrived=%s has arrived in %s.
+bannerforge.people.hired=%s now works at the
+bannerforge.people.fired=%s lost their job at the
+bannerforge.people.left=%s has left %s: not enough beds.
+bannerforge.people.died=%s has died.
+bannerforge.people.killed=%s was killed by
+bannerforge.people.a_player=a player
+bannerforge.people.zombified=%s was turned into a zombie villager.
+bannerforge.people.fell=%s has fallen.
+bannerforge.people.replaced=A new %s stands guard at the
 bannerforge.citizens.workers=Workers
 bannerforge.citizens.unemployed=Unemployed
 bannerforge.citizens.free=Free
@@ -288,11 +298,6 @@ bannerforge.citizens.waiting=Waiting
 bannerforge.citizens.arrive_at_dawn=Room for %s more: settlers arrive at dawn
 bannerforge.citizens.buildings_waiting=%s buildings wait for a worker: build houses
 bannerforge.citizens.this_waits=%s waiting for a worker
-bannerforge.citizens.arrived=%s settlers moved into %s.
-bannerforge.citizens.arrived_one=A settler moved into %s.
-bannerforge.citizens.left=%s settlers left %s: not enough beds.
-bannerforge.citizens.left_one=A settler left %s: not enough beds.
-bannerforge.citizens.hired=A settler of %s starts work at the
 
 ## Growing into the next tier
 bannerforge.grow.button=Grow into a %s

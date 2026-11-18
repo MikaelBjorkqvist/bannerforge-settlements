@@ -113,5 +113,22 @@ export interface Citizens {
   staffed: Record<string, number[]>;
   /** Last in-game day whose morning has been handled. */
   day?: number;
+  /** The same people by name (roster.ts): who is coming, walking in or living in town, and where they work. */
+  people?: Person[];
+  /** Counter for new people's names. */
+  serial?: number;
+}
+
+/**
+ * One townsperson (owner 2026-11-18). "coming": counted but not yet in the world; "walking": spawned on the border,
+ * on their way in; "here": arrived. eid is their entity's id once spawned.
+ */
+export interface Person {
+  seed: string;
+  name: string;
+  state: "coming" | "walking" | "here";
+  /** Worker slot "<building>:<instance>", if employed. */
+  job?: string;
+  eid?: string;
 }
 

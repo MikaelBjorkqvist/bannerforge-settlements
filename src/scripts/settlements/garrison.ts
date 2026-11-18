@@ -10,7 +10,9 @@ import { BORDER_RADIUS, toWorld } from "./plots.js";
 import { gameTime } from "./clock.js";
 import { allSettlements, saveSettlement } from "./registry.js";
 import { garrisonRank, posts, tier, type Post } from "./rules.js";
+import { news } from "./people.js";
 import { SOLDIER_ID, spawnSoldier, soldierTitle } from "./soldier.js";
+import { buildingName, raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
 const INTERVAL = 100;
@@ -56,6 +58,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
       for (let n = soldiers.length; n < post.count; n++) {
         const e = spawnSoldier(dim, door, post.kind, s.faction, `${tag}:${now}:${n}`, rank);
         e.addTag(tag);
+        if (post.site.manned) news(s, raw(txt("§7"), t("bannerforge.people.replaced", soldierTitle(post.kind, rank)), txt(" "), buildingName(post.id)));
       }
       if (!post.site.manned) {
         post.site.manned = true;
