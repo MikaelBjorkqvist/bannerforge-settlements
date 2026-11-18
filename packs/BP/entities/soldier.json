@@ -368,6 +368,7 @@
       "minecraft:type_family": {
         "family": [
           "bannerforge_soldier",
+          "irongolem",
           "mob"
         ]
       },

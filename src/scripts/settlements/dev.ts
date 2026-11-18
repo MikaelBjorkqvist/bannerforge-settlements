@@ -9,6 +9,8 @@ import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
 import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
+import { buildingById } from "./buildings.js";
+import { devPlaceNow } from "./placement.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
@@ -60,6 +62,15 @@ export function registerDevMenu(): void {
     }
     // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
+    // "/scriptevent bannerforge:build barracks": place a building in front of you, free; then "bannerforge:finish".
+    if (e.id === "bannerforge:build") {
+      const p = e.sourceEntity as Player;
+      const s = nearest(p);
+      const def = buildingById(e.message.trim());
+      if (s && def) devPlaceNow(p, s, def);
+      else p.sendMessage(`build: no settlement or no building "${e.message}"`);
+    }
+    if (e.id === "bannerforge:finish") (e.sourceEntity as Player).sendMessage(`finished ${hurryConstruction(e.sourceEntity as Player, "finish")} construction(s)`);
     // "/scriptevent bannerforge:soldier melee patrol": a soldier of the nearest town where you stand (testing duties).
     if (e.id === "bannerforge:soldier") {
       const p = e.sourceEntity as Player;

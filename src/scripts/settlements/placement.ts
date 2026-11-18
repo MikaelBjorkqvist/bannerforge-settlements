@@ -523,3 +523,42 @@ function confirm(player: Player, p: Placing): void {
   player.sendMessage(raw(txt("§a"), buildingName(def.id), txt(": "), t("bannerforge.place.started")));
   player.playSound("random.levelup", { volume: 0.6 });
 }
+
+/**
+ * Developer (remote play-testing, 2026-11-19): puts a building down in front of you without the plan and the cost,
+ * and starts its construction (hurry it with "Finish construction"). Same survey as the real placement.
+ */
+export function devPlaceNow(player: Player, s: Settlement, def: BuildingDef): void {
+  if (def.plot === "perimeter") return;
+  const variant = pickVariant(s.faction, def.id);
+  const { w, d } = plotSizeFor(def, s.faction, variant);
+  const v = player.getViewDirection();
+  const f = footprintInFront(player.location.x, player.location.z, v.x, v.z, w, d, 0);
+  const sv = survey({
+    dim: world.getDimension(s.dimension),
+    f,
+    topHeight: topHeightFor(def, s.faction, variant),
+    bell: s.center,
+    insideBorder: insideBorder(f, s.center.x, s.center.z, BORDER_RADIUS[tier(s)]),
+    others: ownFootprints(s),
+    vanilla: vanillaBoxes(s.id),
+    raise: 0,
+  });
+  if (sv.verdict === "blocked") {
+    player.sendMessage(raw(t(`bannerforge.place.reason.${sv.reason ?? "unloaded"}`)));
+    return;
+  }
+  const site: Site = { x: f.x, y: sv.groundY, z: f.z, w: f.w, d: f.d, rot: f.rot, built: 0, ...(variant ? { variant } : {}) };
+  if (def.category === "housing") {
+    const beds = bedsFor(def, s.faction, variant);
+    if (beds !== undefined) site.beds = beds;
+  }
+  const levels = (s.buildings[def.id] ??= []);
+  const index = levels.length;
+  levels.push(0);
+  ((s.sites ??= {})[def.id] ??= [])[index] = site;
+  saveSettlement(s);
+  startConstruction(s, def.id, index, 1);
+  refreshActiveSites();
+  player.sendMessage(raw(txt("§a"), buildingName(def.id), txt(": "), t("bannerforge.place.started")));
+}

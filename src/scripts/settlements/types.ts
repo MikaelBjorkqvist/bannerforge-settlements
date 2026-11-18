@@ -118,6 +118,8 @@ export interface StewardRecord {
   entityId?: string;
   /** gameTime() (clock.ts) when the steward died; cleared when they return. */
   diedAt?: number;
+  /** "hall": the steward lives at the Town Hall door (owner 2026-11-19); missing: by the bell. */
+  home?: "hall";
 }
 
 /**

@@ -6,6 +6,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ### Changed
 - **Soldiers have duties instead of crowding the door:** the watchtower archer stands on top of the tower; a barracks keeps one soldier at its door, one patrolling through the town (like an iron golem) and the others on watch at the border on the four sides; the Keep has one at its door and one at the bell. A fallen soldier's replacement takes the same duty.
+- Monsters fight soldiers too (like they fight iron golems).
+- **The steward lives at the Town Hall** once it stands; ringing the bell still calls them over.
 - Creepers: archers shoot them and step back when one comes close; melee soldiers keep their distance.
 - The ledger is titled after its town ("Nightvale Ledger"), from the steward and from the book.
 
@@ -35,6 +37,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - **Town Ledger book:** a Town or City can buy its ledger as a book from the steward (3 emeralds). It opens that town's ledger anywhere inside its border, and only there; each town has its own book ("<Town> Ledger").
 - **Founding adopts every house at once:** the whole border is loaded for a moment (temporary ticking areas) before the town looks for vanilla houses and villagers, so houses at the edge are no longer missed. (Test: Nightvale, 7 houses and 7 beds adopted at founding, no loose beds.)
 - **Banners on vanilla workplaces too:** blacksmiths, libraries, temples and other vanilla workplaces in the town are recognised (by their job block) and get a faction banner by the door. They add no beds and stay vanilla workplaces.
+- Dev: `bannerforge:build <building>` places a building in front of you for free, `bannerforge:finish` finishes constructions nearby; `bannerforge:soldier melee|ranged [patrol]`.
 - Dev (remote testing): `bannerforge:use` talks to the steward or newcomer in view, or rings a bell in view or within 4 blocks; `bannerforge:gotobell` stands you next to the nearest bell.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
