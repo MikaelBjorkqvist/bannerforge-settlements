@@ -130,6 +130,25 @@ function tickPeople(s: Settlement): void {
     }
   }
 
+  // Someone given a job while already in town (a hired villager): their entity becomes a worker.
+  for (const p of people) {
+    if (!p.job || p.state !== "here" || !p.eid) continue;
+    const e = world.getEntity(p.eid);
+    if (!e || e.getProperty("bannerforge_settlements:role") === "worker") continue;
+    e.triggerEvent("bannerforge:become_worker");
+    news(s, raw(txt("§7"), t("bannerforge.people.hired", p.name), txt(" "), buildingName(jobBuilding(p.job))));
+  }
+  // Villagers take and lose vanilla jobs by themselves: keep their job current (Economy bonus, hiring, Recruit).
+  for (const v of villagersOf(s)) {
+    const e = v.eid ? world.getEntity(v.eid) : undefined;
+    if (!e) continue;
+    const j = jobOf(e);
+    if (j !== v.vjob) {
+      v.vjob = j;
+      changed = true;
+    }
+  }
+
   // One newcomer per pass sets off from the border, by day.
   const tod = gameTime() % 24000;
   const next = people.find((p) => p.state === "coming");

@@ -3,7 +3,7 @@
 // Each screen is a DDUI CustomForm (stable in @minecraft/server-ui 2.3.0). The Building screen updates in place
 // after a purchase, and the result is shown right above its button, with a sound.
 
-import { type Player, type RawMessage, system } from "@minecraft/server";
+import { type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, SCORES, type BuildingDef, type Category } from "./buildings.js";
 import { BORDER_RADIUS } from "./plots.js";
@@ -15,7 +15,8 @@ import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
 import { villagersOf } from "./roster.js";
-import { built, check, checkPromotion, freeBeds, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
+import { news } from "./people.js";
+import { built, check, checkPromotion, economyParts, freeBeds, hireVillager, recruitable, vanillaTraders, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -215,6 +216,24 @@ export function showSection(player: Player, s: Settlement, category: Category): 
   s = latest(s);
   const form = new CustomForm(player, t(`bannerforge.category.${category}`));
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
+  // Economy: where its score comes from (owner 2026-11-18), above the buildings.
+  if (category === "economy") {
+    const p = economyParts(s);
+    const g = (key: string, v: number, sep = true): RawMessage[] => [t(key), txt(` ${CAT_COLOUR.economy}${v}§7${sep ? " · " : ""}`)];
+    form.label(
+      raw(
+        txt(CAT_COLOUR.economy),
+        t("bannerforge.category.economy"),
+        txt(` §f${score(s, "economy")}\n§7`),
+        ...g("bannerforge.group.shops", p.shops),
+        ...g("bannerforge.group.craftsmen", p.craftsmen),
+        ...g("bannerforge.group.food", p.food, false),
+        txt("\n"),
+        t("bannerforge.economy.vanilla", `${CAT_COLOUR.economy}+${p.vanilla}§7`, String(vanillaTraders(s))),
+      ),
+    );
+    form.divider();
+  }
   form.label(raw(txt("§7"), t("bannerforge.ledger.legend_1"), txt("\n"), t("bannerforge.ledger.legend_2")));
   form.divider();
 
@@ -227,6 +246,46 @@ export function showSection(player: Player, s: Settlement, category: Category): 
     form.header(t(`bannerforge.group.${g}`));
     defs.filter((d) => d.group === g).forEach(addRow);
   }
+  show(form);
+}
+
+// ---------- Recruit ----------
+
+/** Villagers with a vanilla job; picking one opens the confirmation. */
+function showRecruit(player: Player, s: Settlement, def: BuildingDef): void {
+  s = latest(s);
+  const form = new CustomForm(player, t("bannerforge.recruit.title"));
+  form.button(t("bannerforge.ledger.back"), () => go(form, () => showBuilding(player, s, def)));
+  const list = recruitable(s);
+  form.label(raw(txt("§7"), t(list.length ? "bannerforge.recruit.intro" : "bannerforge.recruit.none")));
+  for (const v of list) {
+    form.button(raw(txt(`${v.name} · `), t(`bannerforge.job.${v.vjob}`)), () => go(form, () => confirmRecruit(player, s, def, v.seed)));
+  }
+  show(form);
+}
+
+function confirmRecruit(player: Player, s: Settlement, def: BuildingDef, seed: string): void {
+  s = latest(s);
+  const v = recruitable(s).find((p) => p.seed === seed);
+  if (!v) return showRecruit(player, s, def);
+  const form = new CustomForm(player, t("bannerforge.recruit.title"));
+  form.button(t("bannerforge.ledger.back"), () => go(form, () => showRecruit(player, s, def)));
+  form.label(raw(t("bannerforge.recruit.confirm", v.name), txt(" "), t(`bannerforge.job.${v.vjob}`), txt(" "), t("bannerforge.recruit.confirm_2"), txt(" "), buildingName(def.id), txt(".\n\n§6⚠ "), t("bannerforge.recruit.warning")));
+  form.button(raw(t("bannerforge.recruit.do"), txt(` ${v.name}`)), () => {
+    s = latest(s);
+    const now = recruitable(s).find((p) => p.seed === seed);
+    const slot = waitingForWorkers(s).find((w) => w.id === def.id);
+    if (now && slot) {
+      hireVillager(s, now, slot.id, slot.index);
+      saveSettlement(s);
+      const e = now.eid ? world.getEntity(now.eid) : undefined;
+      if (e) {
+        e.triggerEvent("bannerforge:become_worker");
+        news(s, raw(txt("§7"), t("bannerforge.people.hired", now.name), txt(" "), buildingName(def.id)));
+      }
+    }
+    go(form, () => showBuilding(player, s, def));
+  });
   show(form);
 }
 
@@ -249,6 +308,10 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
   form.label(feedback, { visible: feedbackVisible });
   form.spacer();
   form.button(label, onBuy, { disabled, imageDetails: icon(def.id) });
+  // A building waiting for its worker can take a villager with a vanilla job (owner 2026-11-18: free, with a warning).
+  if (waitingForWorkers(s).some((w) => w.id === def.id)) {
+    form.button(t("bannerforge.recruit.button"), () => go(form, () => showRecruit(player, s, def)));
+  }
 
   function refresh(): void {
     const c: Check = check(s, { kind: "build", id: def.id });

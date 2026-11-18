@@ -16,6 +16,9 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - **Vanilla villagers join the town:** every villager inside the border becomes a citizen with a name, keeping their profession, skin and biome outfit (their trade level starts over). Villagers born, cured or wandering in later join too. The ledger counts them as "Villagers"; chat says who joined and when one dies.
 - **Vanilla village houses join too:** the small, medium and big houses of a converted village are recognised (all 51 vanilla designs in five biomes) and adopted as house sites. Their beds count as Housing, the villagers living there count as Population, and each house gets a faction banner by its front door. Loose beds that aren't part of a house never count. Checked once a day: a house that is torn down stops counting.
 - Dev: `/scriptevent bannerforge:houses` lists the recognised vanilla houses and loose beds, and looks again for adoption.
+- **Economy breakdown:** the Economy page starts with where the score comes from: Shops, Craftsmen, Food and **Vanilla trades** (+1 for every 3 villagers who keep a vanilla job, no cap).
+- **Hiring:** a building waiting for its worker hires a jobless villager first, then a free settler. Nitwits never work.
+- **Recruit a villager** (building page, when it waits for a worker): pick a villager with a vanilla job; they stop vanilla trading and work here. Free; a warning says their trades are lost.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

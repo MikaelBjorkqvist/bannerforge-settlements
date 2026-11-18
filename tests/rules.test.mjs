@@ -147,3 +147,27 @@ assert.equal(R.freeSettlers(u), 1);
   assert.deepEqual(R.morning(s), { arrived: 0, left: 2 });
   assert.equal(R.population(s), 1);
 }
+
+// Hiring order (owner 2026-11-18): jobless villagers first, then free settlers; nitwits never; vanilla-job bonus.
+{
+  const v = (name, vjob) => ({ seed: name, name, state: "here", vjob });
+  const s = {
+    id: "h", name: "H", buildings: { market: [1], tavern: [1] },
+    citizens: { free: 1, staffed: {}, villagers: [v("Nit", 14), v("Lib", 5), v("Joe", 0), v("Smith", 9), v("Arm", 8)] },
+  };
+  assert.deepEqual(R.assignJobs(s), ["market", "tavern"]);
+  assert.equal(s.citizens.free, 0);
+  assert.equal(s.citizens.people[0].name, "Joe");
+  assert.equal(s.citizens.people[0].job, "market:0");
+  assert.equal(s.citizens.people[0].vjob, undefined);
+  assert.deepEqual(s.citizens.villagers.map((p) => p.name), ["Nit", "Lib", "Smith", "Arm"]);
+  assert.equal(R.vanillaTraders(s), 3);
+  assert.equal(R.vanillaBonus(s), 1);
+  assert.deepEqual(R.recruitable(s).map((p) => p.name), ["Lib", "Smith", "Arm"]);
+  const before = R.score(s, "economy");
+  assert.equal(R.economyParts(s).vanilla, 1);
+  R.hireVillager(s, s.citizens.villagers[1], "market", 0);
+  assert.equal(R.vanillaBonus(s), 0);
+  assert.equal(R.score(s, "economy"), before - 1);
+  assert.equal(s.citizens.staffed.market[0], 2);
+}

@@ -3,7 +3,7 @@
 // points are met). Pure functions (no game imports) so they can be unit-tested.
 
 import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost, type ScoreCategory } from "./buildings.js";
-import type { BuildingLevel, Citizens, Settlement, Site, Tier } from "./types.js";
+import type { BuildingLevel, Citizens, Person, Settlement, Site, Tier } from "./types.js";
 
 /** Why an action isn't possible. `key` is a lang key suffix (bannerforge.rule.<key>); args fill its %s slots. */
 export interface Reason {
@@ -65,19 +65,69 @@ export function waitingForWorkers(s: Settlement): { id: string; index: number; m
   return out;
 }
 
-/** Free settlers take open jobs, oldest buildings first. Returns the building ids that got a worker. */
+/** Vanilla job variants (convert.ts): 0 none, 1-13 a profession, 14 nitwit. */
+export const NITWIT = 14;
+const hasVanillaJob = (p: Person) => (p.vjob ?? 0) >= 1 && (p.vjob ?? 0) < NITWIT;
+
+/**
+ * A converted villager becomes the worker of a building instance (automatic hiring of the jobless, or the Recruit
+ * button for one with a vanilla job). They move from the villagers list to the roster with the job; the numbers
+ * follow (staffed + 1). Their entity is turned into a worker by people.ts.
+ */
+export function hireVillager(s: Settlement, v: Person, id: string, index: number): void {
+  const c = citizensOf(s);
+  const list = c.villagers ?? [];
+  const i = list.indexOf(v);
+  if (i < 0) return;
+  list.splice(i, 1);
+  delete v.vjob;
+  v.job = `${id}:${index}`;
+  (c.people ??= []).push(v);
+  const staffed = (c.staffed[id] ??= []);
+  staffed[index] = (staffed[index] ?? 0) + 1;
+}
+
+/**
+ * Open jobs are filled, oldest buildings first (owner 2026-11-18): jobless converted villagers first, then free
+ * settlers. Nitwits never work (Mojang's joke stays: the player decides what to do with them). Returns the building
+ * ids that got a worker.
+ */
 export function assignJobs(s: Settlement): string[] {
   const c = citizensOf(s);
   const hired: string[] = [];
   for (const w of waitingForWorkers(s)) {
-    const n = Math.min(c.free, w.missing);
-    if (n <= 0) break;
+    let missing = w.missing;
+    for (const v of (c.villagers ?? []).filter((p) => (p.vjob ?? 0) === 0)) {
+      if (missing <= 0) break;
+      hireVillager(s, v, w.id, w.index);
+      missing--;
+      hired.push(w.id);
+    }
+    const n = Math.min(c.free, missing);
+    if (n <= 0) continue;
     const list = (c.staffed[w.id] ??= []);
     list[w.index] = (list[w.index] ?? 0) + n;
     c.free -= n;
     hired.push(w.id);
   }
   return hired;
+}
+
+/** Villagers who kept a vanilla job (not nitwits). */
+export const vanillaTraders = (s: Settlement): number => (s.citizens?.villagers ?? []).filter(hasVanillaJob).length;
+/** Economy bonus from vanilla jobs (owner 2026-11-18): +1 per 3 villagers with a vanilla job, no cap. */
+export const vanillaBonus = (s: Settlement): number => Math.floor(vanillaTraders(s) / 3);
+/** Villagers with a vanilla job, for the Recruit button. */
+export const recruitable = (s: Settlement): Person[] => (s.citizens?.villagers ?? []).filter(hasVanillaJob);
+
+/** The Economy score in parts (ledger breakdown): staffed buildings per group, and the vanilla bonus. */
+export function economyParts(s: Settlement): { shops: number; craftsmen: number; food: number; vanilla: number } {
+  const out = { shops: 0, craftsmen: 0, food: 0, vanilla: vanillaBonus(s) };
+  for (const def of BUILDINGS) {
+    if (def.category !== "economy" || !def.group) continue;
+    instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (out[def.group!] += def.prosperity));
+  }
+  return out;
 }
 
 /**
@@ -143,7 +193,7 @@ export function score(s: Settlement, category: ScoreCategory): number {
     const points = category === "military" ? def.defence ?? 0 : def.prosperity;
     instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (total += points));
   }
-  return total;
+  return category === "economy" ? total + vanillaBonus(s) : total;
 }
 
 /** Prosperity, the town's overall score: Economy + Military + Civic. */
