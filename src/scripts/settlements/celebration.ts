@@ -1,7 +1,7 @@
 // Promotion to Town or City is a milestone (owner, 2026-11-17: "fireworks or something"): a big title for everyone
 // in and around the town, and a few seconds of fireworks over the bell in the faction's colour and gold.
 
-import { MolangVariableMap, type RGB, system, world } from "@minecraft/server";
+import { MolangVariableMap, type Player, type RGB, system, world } from "@minecraft/server";
 import { BORDER } from "./plots.js";
 import { tier } from "./rules.js";
 import { raw, t, txt } from "./text.js";
@@ -24,7 +24,7 @@ export function celebrate(s: Settlement): void {
   const message = raw(t("bannerforge.tier.promoted", s.name), txt(" "), tierName, txt("!"));
   world.sendMessage(message);
 
-  let players;
+  let players: Player[];
   try {
     players = dim.getPlayers({ location: bell, maxDistance: BORDER * 2 });
   } catch {
