@@ -12,6 +12,8 @@ import { hurryConstruction } from "./construction.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
+import { BORDER_RADIUS } from "./plots.js";
+import { scanHouses } from "./vanilla_houses.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
 import { raw, t, txt } from "./text.js";
@@ -28,6 +30,7 @@ export function registerDevMenu(): void {
     if (e.sourceEntity?.typeId !== "minecraft:player") return;
     if (e.id === "bannerforge:dev") showDevMenu(e.sourceEntity as Player);
     if (e.id === "bannerforge:census") census(e.sourceEntity as Player);
+    if (e.id === "bannerforge:houses") houses(e.sourceEntity as Player);
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
     if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
     if (e.id === "bannerforge:dawn") {
@@ -263,6 +266,20 @@ const nearest = (player: Player): Settlement | undefined =>
   allSettlements()
     .filter((x) => x.dimension === player.dimension.id)
     .sort((a, b) => dist(a, player) - dist(b, player))[0];
+
+/** Research spike: which vanilla houses the nearest settlement has, by fingerprint (vanilla_houses.ts). */
+function houses(player: Player): void {
+  const s = nearest(player);
+  if (!s) return;
+  const started = system.currentTick;
+  player.sendMessage(`${s.name}: looking for vanilla houses...`);
+  scanHouses(player.dimension, s.center, BORDER_RADIUS[tier(s)], (r) => {
+    const beds = r.houses.reduce((n, h) => n + h.beds, 0);
+    const lines = r.houses.map((h) => `${h.id} x${h.beds} @${h.at.x} ${h.at.y} ${h.at.z} r${h.rot} ${(h.score * 100).toFixed(0)}%`);
+    const loose = r.loose.map((v) => `${v.x} ${v.y} ${v.z}`).join(", ");
+    player.sendMessage(`${r.houses.length} houses, ${beds} beds (${system.currentTick - started} ticks)\n${lines.join("\n")}\nloose beds: ${r.loose.length}${loose ? " " + loose : ""}`);
+  });
+}
 
 function roster(player: Player): void {
   const s = nearest(player);
