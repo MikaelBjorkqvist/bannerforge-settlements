@@ -12,7 +12,7 @@ import { hurryConstruction } from "./construction.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
-import { showOverview, showSection } from "./ledger.js";
+import { BOOK_ID, showOverview, showSection, useBook } from "./ledger.js";
 import { onBellRung, onTalk, STEWARD_ID } from "./steward.js";
 import { talk } from "./growth.js";
 import { BORDER_RADIUS } from "./plots.js";
@@ -61,8 +61,18 @@ export function registerDevMenu(): void {
     }
     // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
+    if (e.id === "bannerforge:promote") {
+      const s = nearest(e.sourceEntity as Player);
+      if (s) {
+        promote(s);
+        saveSettlement(s);
+      }
+    }
     if (e.id === "bannerforge:use") {
       const p = e.sourceEntity as Player;
+      // Holding the ledger book: use it (right-click with the book).
+      const held = p.getComponent("minecraft:inventory")?.container?.getItem(p.selectedSlotIndex);
+      if (held?.typeId === BOOK_ID) return useBook(p, held);
       // The NPC in view, else the nearest steward or newcomer within 8 blocks (NPCs walk while commands are typed).
       const talkable = (x: { typeId: string; getProperty(k: string): unknown }) =>
         x.typeId === STEWARD_ID || (x.typeId === CITIZEN_ID && x.getProperty("bannerforge_settlements:role") === "applicant");

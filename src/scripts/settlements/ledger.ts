@@ -111,15 +111,17 @@ export function bookTown(item: ItemStack | undefined): Settlement | undefined {
 /** Using the book: the town's ledger, inside its border only. */
 export function registerLedgerBook(): void {
   world.afterEvents.itemUse.subscribe((ev) => {
-    if (ev.itemStack.typeId !== BOOK_ID) return;
-    const player = ev.source;
-    const s = bookTown(ev.itemStack);
-    if (!s) return say(player, "bannerforge.book.no_town");
-    const r = BORDER_RADIUS[tier(s)];
-    const inside = player.dimension.id === s.dimension && Math.max(Math.abs(player.location.x - s.center.x), Math.abs(player.location.z - s.center.z)) <= r;
-    if (!inside) return say(player, "bannerforge.book.outside", s.name);
-    openLedger(player, s, true);
+    if (ev.itemStack.typeId === BOOK_ID) useBook(ev.source, ev.itemStack);
   });
+}
+
+export function useBook(player: Player, item: ItemStack): void {
+  const s = bookTown(item);
+  if (!s) return say(player, "bannerforge.book.no_town");
+  const r = BORDER_RADIUS[tier(s)];
+  const inside = player.dimension.id === s.dimension && Math.max(Math.abs(player.location.x - s.center.x), Math.abs(player.location.z - s.center.z)) <= r;
+  if (!inside) return say(player, "bannerforge.book.outside", s.name);
+  openLedger(player, s, true);
 }
 
 function buyBook(player: Player, s: Settlement): void {
