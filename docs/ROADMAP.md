@@ -53,11 +53,19 @@ Milestones are small and each ends with something playable. Scope after M2 will 
 - [x] Tiers reworked without building levels: promotion button by prosperity, population and defence points; no building locks (PR #24)
 
 ## M2.5 — Citizens
-- [ ] Faction citizen prototype: our own NPC that sleeps, works and meets at the bell like villagers, wearing our skin
-- [x] Step 1 (numbers, 2026-11-17): settlers arrive at dawn into free beds, free settlers take jobs automatically, professions locked, unemployed leave first, unstaffed buildings give no prosperity and show in the ledger
-- [ ] Step 2: visible settlers and workers in town (needs the citizen prototype)
-- [ ] Recruiting vanilla villagers through the steward (optional)
-- [ ] NPC ranks: tier cap + quests (quests once the citizen systems exist)
+- [x] Citizen = full vanilla villager under our id (sleep, vanilla jobs, trading); workers never take vanilla jobs (2026-11-18)
+- [x] Step 1 (numbers, 2026-11-17): beds, jobs, professions locked, unemployed leave first, unstaffed buildings give no prosperity
+- [x] Step 2 (2026-11-18): named townsfolk in the world, walk-ins, town messages, steward walks to the bell
+- [x] Conversion of vanilla villagers inside the border; vanilla houses adopted (beds count), banners on houses and workplaces
+- [x] Garrisons: soldier entity (melee/ranged, three ranks), at the building's door, replaced at dawn
+- [x] Growth: births per staffed food building; newcomers at the Town Hall (Welcome / Not now)
+- [x] Ledger: People page, Recruit, Economy breakdown (Tradesfolk bonus), Town Ledger book
+- [ ] Military AI: patrols instead of standing at the door; tests against more mob families and raids (next)
+- [ ] Steward prefers the Town Hall once built
+- [ ] Trades for our workers
+- [ ] Captain: trains the garrison after town upgrades
+- [ ] Own looks: illager-like townsfolk and soldier models; ledger icons and pictures
+- [ ] Other biomes play-tested (desert, savanna, snowy, taiga)
 
 ## M3 — Walls and gates
 ## M4 — Civic buildings: houses, tavern, stores (+ shopkeepers)

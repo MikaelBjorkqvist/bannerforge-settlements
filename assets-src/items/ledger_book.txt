@@ -1,0 +1,17 @@
+# 16x16 pixel map of the Town Ledger book icon (b binding, L leather, g gold corners, y gold emblem, w pages, r ribbon)
+................
+...bbbbbbbbbb...
+..bLLLLLLLLLLb..
+..bLggLLLLggLbw.
+..bLgLLLLLLgLbw.
+..bLLLLLLLLLLbw.
+..bLLLyyyyLLLbw.
+..bLLLyLLyLLLbw.
+..bLLLyyyyLLLbw.
+..bLLLLLLLLLLbw.
+..bLgLLLLLLgLbw.
+..bLggLLLLggLbw.
+..bLLLLLLLLLLbw.
+...bbbrbbbbbbww.
+......r.........
+................

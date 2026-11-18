@@ -1,11 +1,12 @@
 import { gameTime } from "./clock.js";
 import { type Block, type Dimension, type Entity, type Player, system, world } from "@minecraft/server";
 import { showClaimForm } from "./founding.js";
-import { showOverview } from "./ledger.js";
+import { openLedger } from "./ledger.js";
 import { NPC_NAMES, pickIndex, pickName, respawnTicksLeft, ticksToMinutes } from "./npc.js";
 import { allSettlements, saveSettlement, settlementById, settlementNear } from "./registry.js";
 import { raw, say, t } from "./text.js";
 import { BORDER } from "./plots.js";
+import { safeWalkInSpot } from "./people.js";
 import { OUTFIT_INDEX, type Settlement, type Vec3 } from "./types.js";
 
 /**
@@ -15,6 +16,9 @@ import { OUTFIT_INDEX, type Settlement, type Vec3 } from "./types.js";
  * - Claimed bell: the settlement's steward comes back to the bell; talking to them opens the ledger.
  * - A steward can die. The ledger is closed until they return one in-game day later;
  *   ringing the bell meanwhile says how long that will take.
+ * - Stewards walk in (owner, 2026-11-18): a new or returning steward appears at a safe spot a short walk away and
+ *   walks to the bell (home = the bell, BP "bannerforge:arriving" group). If they die on the way, they die.
+ *   Only if no spot is safe do they appear at the bell; a steward stuck for STUCK_TICKS comes when the bell rings.
  */
 
 export const STEWARD_ID = "bannerforge_settlements:steward";
@@ -34,12 +38,19 @@ const SEARCH_RADIUS = 96;
 const COOLDOWN_TICKS = 20;
 /** How often to check whether a dead steward may return near a player. */
 const RESPAWN_CHECK_TICKS = 200;
+/** Walk-in distance from the bell (blocks): far enough to be seen walking, close enough to stay in loaded chunks. */
+const WALK_FAR = 32;
+const WALK_NEAR = 12;
+/** A walking steward this long on the way is taken to be stuck: the next bell ring brings them over. */
+const STUCK_TICKS = 1200;
+const WALKING_TAG = "bannerforge:walking";
 
 // Entity dynamic properties
 const P_SETTLEMENT = "bannerforge:settlement"; // settlement id, once founded
 const P_BELL = "bannerforge:bell"; // JSON position of the bell the steward belongs to
 const P_NAME = "bannerforge:name"; // personal name
 const P_SKIN = "bannerforge:skin"; // skin variant, kept for the layered art (not shown yet)
+const P_SINCE = "bannerforge:since"; // game time the walk-in started
 
 export const nameTagFor = (name: string) => `${TITLE}, ${name}`;
 
@@ -67,12 +78,17 @@ export function registerSteward(): void {
 
   world.afterEvents.entityDie.subscribe((event) => onStewardDied(event.deadEntity), { entityTypes: [STEWARD_ID] });
 
+  world.afterEvents.dataDrivenEntityTrigger.subscribe((event) => onArrived(event.entity), {
+    entityTypes: [STEWARD_ID],
+    eventTypes: ["bannerforge:arrived"],
+  });
+
   system.runInterval(returnStewardsNearPlayers, RESPAWN_CHECK_TICKS);
 }
 
 // ---- bell ----------------------------------------------------------------
 
-function onBellRung(player: Player, block: Block): void {
+export function onBellRung(player: Player, block: Block): void {
   const { x, y, z } = block.location;
   const bell = { x, y, z };
   const s = settlementNear(block.dimension.id, bell, SETTLEMENT_RADIUS);
@@ -86,12 +102,12 @@ function callSettlementSteward(player: Player, dim: Dimension, s: Settlement): v
   const st = (s.steward ??= { name: pickName(s.id), skin: pickIndex(s.id + ":skin", 4) });
   const found = findSteward(dim, s.center, (e) => e.getDynamicProperty(P_SETTLEMENT) === s.id, st.entityId);
   if (found) {
-    comeToBell(found, dim, s.center);
+    const walking = comeToBell(found, dim, s.center);
     if (st.entityId !== found.id) {
       st.entityId = found.id;
       saveSettlement(s);
     }
-    say(player, "bannerforge.bell.steward_coming", nameTagFor(st.name));
+    say(player, walking ? "bannerforge.bell.steward_on_way" : "bannerforge.bell.steward_coming", nameTagFor(st.name));
     return;
   }
   const left = respawnTicksLeft(st.diedAt, gameTime());
@@ -108,8 +124,8 @@ function callNeutralSteward(player: Player, dim: Dimension, bell: Vec3): void {
   const key = JSON.stringify(bell);
   const found = findSteward(dim, bell, (e) => e.getDynamicProperty(P_SETTLEMENT) === undefined && e.getDynamicProperty(P_BELL) === key);
   if (found) {
-    comeToBell(found, dim, bell);
-    say(player, "bannerforge.bell.neutral_waiting", found.nameTag);
+    const walking = comeToBell(found, dim, bell);
+    say(player, walking ? "bannerforge.bell.steward_on_way" : "bannerforge.bell.neutral_waiting", found.nameTag);
     return;
   }
   const name = NPC_NAMES[Math.floor(Math.random() * NPC_NAMES.length)];
@@ -119,13 +135,13 @@ function callNeutralSteward(player: Player, dim: Dimension, bell: Vec3): void {
 
 // ---- talking -------------------------------------------------------------
 
-function onTalk(player: Player, steward: Entity): void {
+export function onTalk(player: Player, steward: Entity): void {
   if (!steward.isValid) return;
   const sid = steward.getDynamicProperty(P_SETTLEMENT);
   if (typeof sid === "string") {
     const s = settlementById(sid);
     if (s) {
-      showOverview(player, s);
+      openLedger(player, s, false);
       return;
     }
     // The settlement's data is gone (e.g. removed by an admin): the steward is neutral again.
@@ -146,6 +162,15 @@ function onTalk(player: Player, steward: Entity): void {
     s.steward = { name: typeof name === "string" ? name : pickName(s.id), skin: typeof skin === "number" ? skin : 0, entityId: steward.id };
     setOutfit(steward, OUTFIT_INDEX[s.faction]);
   });
+}
+
+// ---- walking in ----------------------------------------------------------
+
+/** The steward reached the bell (their home): tell the players around. */
+function onArrived(e: Entity): void {
+  if (!e.isValid || !e.hasTag(WALKING_TAG)) return;
+  e.removeTag(WALKING_TAG);
+  for (const p of e.dimension.getPlayers({ location: e.location, maxDistance: 64 })) say(p, "bannerforge.steward.at_bell", e.nameTag);
 }
 
 // ---- death and return ----------------------------------------------------
@@ -196,8 +221,18 @@ function findSteward(dim: Dimension, bell: Vec3, match: (e: Entity) => boolean, 
   return dim.getEntities({ type: STEWARD_ID, location: bell, maxDistance: SEARCH_RADIUS }).find(match);
 }
 
+/** Spawns the steward at the bell, so the bell becomes their home, then sends them a short walk away to walk in. */
 function spawnSteward(dim: Dimension, bell: Vec3, name: string, skin: number, outfit: number, settlementId?: string): Entity {
-  const e = dim.spawnEntity(STEWARD_ID, standingSpotNear(dim, bell));
+  const e = dim.spawnEntity(STEWARD_ID, standingSpotNear(dim, bell), { spawnEvent: "bannerforge:spawn_arriving" });
+  const start = safeWalkInSpot(dim.id, bell, WALK_FAR, WALK_NEAR);
+  if (start) {
+    e.addTag(WALKING_TAG);
+    e.setDynamicProperty(P_SINCE, gameTime());
+    // Same tick (play-test 2026-11-18: a one-tick delay showed the steward at the bell for a moment).
+    e.teleport(start);
+  } else {
+    e.triggerEvent("bannerforge:arrived"); // nowhere safe to walk from: they are already by the bell
+  }
   // Tag the steward first: if anything later fails, the next bell ring still finds them (no duplicates).
   e.setDynamicProperty(P_BELL, JSON.stringify(bell));
   e.setDynamicProperty(P_NAME, name);
@@ -217,9 +252,17 @@ function setOutfit(e: Entity, outfit: number): void {
   }
 }
 
-function comeToBell(e: Entity, dim: Dimension, bell: Vec3): void {
+/** Brings the steward to the bell. Returns true if they are still walking in (and left to walk). */
+function comeToBell(e: Entity, dim: Dimension, bell: Vec3): boolean {
+  if (e.hasTag(WALKING_TAG)) {
+    const since = e.getDynamicProperty(P_SINCE);
+    if (gameTime() - (typeof since === "number" ? since : 0) < STUCK_TICKS) return true;
+    e.triggerEvent("bannerforge:arrived");
+    e.removeTag(WALKING_TAG);
+  }
   const d = (e.location.x - bell.x) ** 2 + (e.location.z - bell.z) ** 2;
   if (d > 36) e.teleport(standingSpotNear(dim, bell));
+  return false;
 }
 
 const OFFSETS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1], [2, 0], [-2, 0], [0, 2], [0, -2]];

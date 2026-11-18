@@ -17,6 +17,26 @@
         }
       }
     },
+    "component_groups": {
+      "bannerforge:arriving": {
+        "minecraft:behavior.go_home": {
+          "priority": 2,
+          "speed_multiplier": 0.75,
+          "interval": 1,
+          "goal_radius": 2.5,
+          "on_home": [
+            {
+              "event": "bannerforge:arrived",
+              "target": "self"
+            }
+          ]
+        },
+        "minecraft:follow_range": {
+          "value": 64,
+          "max": 64
+        }
+      }
+    },
     "components": {
       "minecraft:type_family": {
         "family": [
@@ -55,7 +75,8 @@
         "can_open_doors": true
       },
       "minecraft:home": {
-        "restriction_radius": 12
+        "restriction_radius": 12,
+        "restriction_type": "random_movement"
       },
       "minecraft:interact": {
         "interactions": [
@@ -90,7 +111,21 @@
       "minecraft:conditional_bandwidth_optimization": {}
     },
     "events": {
-      "bannerforge:talked": {}
+      "bannerforge:talked": {},
+      "bannerforge:spawn_arriving": {
+        "add": {
+          "component_groups": [
+            "bannerforge:arriving"
+          ]
+        }
+      },
+      "bannerforge:arrived": {
+        "remove": {
+          "component_groups": [
+            "bannerforge:arriving"
+          ]
+        }
+      }
     }
   }
 }

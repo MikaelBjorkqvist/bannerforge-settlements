@@ -3,7 +3,7 @@
 // points are met). Pure functions (no game imports) so they can be unit-tested.
 
 import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost, type ScoreCategory } from "./buildings.js";
-import type { BuildingLevel, Citizens, Settlement, Tier } from "./types.js";
+import type { BuildingLevel, Citizens, Person, Settlement, Site, Tier } from "./types.js";
 
 /** Why an action isn't possible. `key` is a lang key suffix (bannerforge.rule.<key>); args fill its %s slots. */
 export interface Reason {
@@ -65,19 +65,89 @@ export function waitingForWorkers(s: Settlement): { id: string; index: number; m
   return out;
 }
 
-/** Free settlers take open jobs, oldest buildings first. Returns the building ids that got a worker. */
+/** Vanilla job variants (convert.ts): 0 none, 1-13 a profession, 14 nitwit. */
+export const NITWIT = 14;
+const hasVanillaJob = (p: Person) => (p.vjob ?? 0) >= 1 && (p.vjob ?? 0) < NITWIT;
+
+/**
+ * Someone living in town becomes the worker of a building instance (automatic hiring of the jobless, or the Recruit
+ * button for one with a vanilla job). Owner 2026-11-18: no difference between converted villagers and settlers here.
+ * A converted villager moves to the roster; a settler leaves the free count. Their entity is made a worker by people.ts.
+ */
+export function hirePerson(s: Settlement, p: Person, id: string, index: number): void {
+  const c = citizensOf(s);
+  const list = c.villagers ?? [];
+  if (list.includes(p)) {
+    list.splice(list.indexOf(p), 1);
+    (c.people ??= []).push(p);
+  } else if ((c.people ?? []).includes(p) && !p.job && c.free > 0) {
+    c.free -= 1;
+  } else {
+    return;
+  }
+  delete p.vjob;
+  p.job = `${id}:${index}`;
+  const staffed = (c.staffed[id] ??= []);
+  staffed[index] = (staffed[index] ?? 0) + 1;
+}
+/** Kept for older callers: same as hirePerson. */
+export const hireVillager = hirePerson;
+
+/** Settlers (no worker job) who hold a vanilla job or are nitwits: automatic hiring leaves them alone. */
+const settlersBusy = (c: Citizens) => (c.people ?? []).filter((p) => !p.job && (p.vjob ?? 0) !== 0).length;
+
+/**
+ * Open jobs are filled, oldest buildings first (owner 2026-11-18): jobless converted villagers first, then free
+ * settlers. Nitwits never work (Mojang's joke stays: the player decides what to do with them). Returns the building
+ * ids that got a worker.
+ */
 export function assignJobs(s: Settlement): string[] {
   const c = citizensOf(s);
   const hired: string[] = [];
   for (const w of waitingForWorkers(s)) {
-    const n = Math.min(c.free, w.missing);
-    if (n <= 0) break;
+    let missing = w.missing;
+    for (const v of (c.villagers ?? []).filter((p) => (p.vjob ?? 0) === 0)) {
+      if (missing <= 0) break;
+      hireVillager(s, v, w.id, w.index);
+      missing--;
+      hired.push(w.id);
+    }
+    const n = Math.min(c.free - settlersBusy(c), missing);
+    if (n <= 0) continue;
     const list = (c.staffed[w.id] ??= []);
     list[w.index] = (list[w.index] ?? 0) + n;
     c.free -= n;
     hired.push(w.id);
   }
   return hired;
+}
+
+/** Everyone outside our buildings: converted villagers and settlers without a worker job. */
+const townsfolkOutside = (s: Settlement): Person[] => [...(s.citizens?.villagers ?? []), ...(s.citizens?.people ?? []).filter((p) => !p.job)];
+/** Townsfolk with a vanilla job (not nitwits), converted or not. */
+export const vanillaTraders = (s: Settlement): number => townsfolkOutside(s).filter(hasVanillaJob).length;
+/** The town's people by what they do (ledger): workers, vanilla jobs, jobless, nitwits, children. */
+export function jobStates(s: Settlement): { workers: number; vanilla: number; jobless: number; nitwits: number; children: number } {
+  const outside = townsfolkOutside(s);
+  const vanilla = outside.filter(hasVanillaJob).length;
+  const nitwits = outside.filter((p) => p.vjob === NITWIT).length;
+  // Settlers without a person yet (old saves, still walking in) count as jobless.
+  const jobless = population(s) - workers(s) - children(s) - vanilla - nitwits;
+  return { workers: workers(s), vanilla, nitwits, jobless: Math.max(0, jobless), children: children(s) };
+}
+/** Economy bonus from vanilla jobs (owner 2026-11-18): +1 per 3 villagers with a vanilla job, no cap. */
+export const vanillaBonus = (s: Settlement): number => Math.floor(vanillaTraders(s) / 3);
+/** Townsfolk with a vanilla job, for the Recruit button. */
+export const recruitable = (s: Settlement): Person[] => townsfolkOutside(s).filter(hasVanillaJob);
+
+/** The Economy score in parts (ledger breakdown): staffed buildings per group, and the vanilla bonus. */
+export function economyParts(s: Settlement): { shops: number; craftsmen: number; food: number; vanilla: number } {
+  const out = { shops: 0, craftsmen: 0, food: 0, vanilla: vanillaBonus(s) };
+  for (const def of BUILDINGS) {
+    if (def.category !== "economy" || !def.group) continue;
+    instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (out[def.group!] += def.prosperity));
+  }
+  return out;
 }
 
 /**
@@ -99,21 +169,44 @@ export function releaseWorkers(s: Settlement): number {
   return released;
 }
 
+/** Food buildings with their worker: each lets one child be born a day (owner 2026-11-18). */
+export const FOOD = ["farmstead", "docks"];
+export function staffedFood(s: Settlement): number {
+  let n = 0;
+  for (const id of FOOD) {
+    const def = buildingById(id);
+    if (def) instances(s, id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && n++);
+  }
+  return n;
+}
+
 /**
- * Dawn: settlers move into every free bed; if people outnumber beds, the unemployed leave first, then the newest
- * workers (their building waits for a new one). Returns how many arrived and left.
+ * Dawn (owner 2026-11-18: towns grow by births and by newcomers the player lets stay; nobody just moves in):
+ * as many children are born as there are staffed food buildings, up to the free beds; the caller names them
+ * (roster.addChild). If people outnumber beds, the unemployed leave first, then the newest workers.
  */
-export function morning(s: Settlement): { arrived: number; left: number } {
+export function morning(s: Settlement): { births: number; left: number } {
+  const births = Math.min(staffedFood(s), freeBeds(s));
+  return { births, left: evict(s) };
+}
+
+/** Developer and tests: every free bed gets a settler now (the pre-2026-11-18 dawn), then too many people leave. */
+export function settleAll(s: Settlement): { arrived: number; left: number } {
+  const c = citizensOf(s);
+  const arrived = freeBeds(s);
+  c.free += arrived;
+  return { arrived, left: evict(s) };
+}
+
+/** People who don't fit in the beds leave: the unemployed first, then the newest workers. Returns how many left. */
+function evict(s: Settlement): number {
   const c = citizensOf(s);
   releaseWorkers(s);
   const beds = housing(s);
-  let people = c.free + workers(s);
-  let arrived = 0;
+  // Converted villagers and children take beds too, but never leave by this rule (it is their home).
+  let people = population(s);
   let left = 0;
-  if (people < beds) {
-    arrived = beds - people;
-    c.free += arrived;
-  } else if (people > beds) {
+  if (people > beds) {
     const leaveFree = Math.min(c.free, people - beds);
     c.free -= leaveFree;
     left += leaveFree;
@@ -128,7 +221,7 @@ export function morning(s: Settlement): { arrived: number; left: number } {
       left += n;
     }
   }
-  return { arrived, left };
+  return left;
 }
 
 /**
@@ -142,14 +235,15 @@ export function score(s: Settlement, category: ScoreCategory): number {
     const points = category === "military" ? def.defence ?? 0 : def.prosperity;
     instances(s, def.id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && (total += points));
   }
-  return total;
+  return category === "economy" ? total + vanillaBonus(s) : total;
 }
 
 /** Prosperity, the town's overall score: Economy + Military + Civic. */
 export const prosperity = (s: Settlement): number => score(s, "economy") + score(s, "military") + score(s, "civic");
-/** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). */
+/** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). Adopted
+ *  vanilla houses count their own beds. */
 export function housing(s: Settlement): number {
-  let total = 0;
+  let total = (s.adopted ?? []).reduce((n, h) => n + h.beds, 0);
   for (const def of BUILDINGS) {
     if (!def.housing) continue;
     instances(s, def.id).forEach((level, i) => {
@@ -158,11 +252,42 @@ export function housing(s: Settlement): number {
   }
   return total;
 }
-/** Population: the townsfolk who live there (free settlers and workers). Garrisons are not population. */
-export const population = (s: Settlement): number => freeSettlers(s) + workers(s);
+/** Converted vanilla villagers (owner 2026-11-18): they live in the adopted vanilla houses. */
+export const villagers = (s: Settlement): number => s.citizens?.villagers?.length ?? 0;
+/** Children born in town (roster.addChild): they take a bed and count; they work once grown. */
+export const children = (s: Settlement): number => s.citizens?.children?.length ?? 0;
+/** Population: the townsfolk who live there (free settlers, workers and converted villagers). Garrisons are not population. */
+export const population = (s: Settlement): number => freeSettlers(s) + workers(s) + villagers(s) + children(s);
 /** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */
+/** One building's garrison: where it stands, how many soldiers of which kind (owner 2026-11-18). */
+export interface Post {
+  id: string;
+  index: number;
+  kind: "melee" | "ranged";
+  count: number;
+  site: Site;
+}
+
+/** Every finished, placed military building with a garrison. Soldiers come with the building, not the population. */
+export function posts(s: Settlement): Post[] {
+  const out: Post[] = [];
+  for (const def of BUILDINGS) {
+    if (!def.garrison) continue;
+    instances(s, def.id).forEach((level, index) => {
+      const site = s.sites?.[def.id]?.[index];
+      if (level > 0 && site && site.built > 0) {
+        out.push({ id: def.id, index, kind: def.garrisonKind ?? "melee", count: def.garrison!, site });
+      }
+    });
+  }
+  return out;
+}
+
+/** Garrison rank follows the tier for now (1 Militia/Archer, 2 Soldier/Marksman, 3 Knight/Ranger). */
+export const garrisonRank = (s: Settlement): 1 | 2 | 3 => (TIER_ORDER.indexOf(tier(s)) + 1) as 1 | 2 | 3;
+
 export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
 /** Military score: defence points of towers, barracks and the Keep (Captain training adds more later). */
 export const military = (s: Settlement): number => score(s, "military");

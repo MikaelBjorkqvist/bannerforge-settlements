@@ -4,6 +4,9 @@
   "texture_data": {
     "bannerforge_settlements_building_plan": {
       "textures": "textures/bannerforge/settlements/items/building_plan"
+    },
+    "bannerforge_settlements_ledger_book": {
+      "textures": "textures/bannerforge/settlements/items/ledger_book"
     }
   }
 }

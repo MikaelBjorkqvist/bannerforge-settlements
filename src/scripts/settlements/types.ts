@@ -49,6 +49,27 @@ export interface Settlement {
    * buildings[id][i]. null = not placed yet (bought before M2a, or a perimeter building like Defences).
    */
   sites?: Record<string, (Site | null)[]>;
+  /** Day (gameTime / 24000) the garrisons were last refilled at dawn. */
+  garrisonDay?: number;
+  /** Vanilla village houses taken over as house sites (owner 2026-11-18: adopt). Missing = none yet. */
+  adopted?: AdoptedHouse[];
+  /** Day the vanilla houses were last looked for (vanilla_houses.ts runs once a day). */
+  housesDay?: number;
+}
+
+/** A recognised vanilla house (generated/vanilla_houses.ts): its beds count as housing. */
+export interface AdoptedHouse {
+  /** Vanilla design id, e.g. plains_small_house_3. */
+  design: string;
+  /** World position of the design's first bed head. */
+  x: number;
+  y: number;
+  z: number;
+  /** Quarter turns of the design (tools/vanilla_houses.mjs turn()). */
+  rot: number;
+  beds: number;
+  /** The faction banner by its door has been put up (once; a player may take it down). */
+  banner?: boolean;
 }
 
 /** A building's plot in the world and its construction state. */
@@ -71,6 +92,9 @@ export interface Site {
   built: BuildingLevel;
   /** Construction in progress. */
   build?: Construction;
+  /** Military: its garrison has been sent once (owner 2026-11-18: soldiers arrive with the finished building; after
+   *  that, fallen soldiers are replaced at dawn). */
+  manned?: boolean;
 }
 
 export interface Construction {
@@ -108,5 +132,39 @@ export interface Citizens {
   staffed: Record<string, number[]>;
   /** Last in-game day whose morning has been handled. */
   day?: number;
+  /** The same people by name (roster.ts): who is coming, walking in or living in town, and where they work. */
+  people?: Person[];
+  /** Counter for new people's names. */
+  serial?: number;
+  /**
+   * Vanilla villagers taken into town (owner 2026-11-18): they keep their vanilla job and life and are not part of
+   * free/staffed (their beds are vanilla beds, not our housing, until adopted houses count them).
+   */
+  villagers?: Person[];
+  /** Children born in town (owner 2026-11-18): one per staffed food building a day, into free beds. Grown after a day. */
+  children?: Person[];
+  /** Newcomers waiting at the Town Hall for the player's word (owner 2026-11-18). Not population. */
+  applicants?: Person[];
+  /** Day the last newcomer set off (one a day). */
+  applicantDay?: number;
+}
+
+/**
+ * One townsperson (owner 2026-11-18). "coming": counted but not yet in the world; "walking": spawned on the border,
+ * on their way in; "here": arrived. eid is their entity's id once spawned.
+ */
+export interface Person {
+  seed: string;
+  name: string;
+  state: "coming" | "walking" | "here";
+  /** Worker slot "<building>:<instance>", if employed. */
+  job?: string;
+  eid?: string;
+  /** Converted villagers: the vanilla job variant they had (0 none, 14 nitwit). */
+  vjob?: number;
+  /** Children: the day they were born. */
+  bornDay?: number;
+  /** gameTime they set off from the border (newcomers: or reached the Town Hall). */
+  since?: number;
 }
 

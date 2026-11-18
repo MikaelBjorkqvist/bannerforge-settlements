@@ -4,6 +4,35 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Added — townsfolk, garrisons and growth (M2.5)
+- Dev menu: spawn a settler, worker or guard NPC where you stand, to try their daily life. Citizens are now full villagers underneath: settlers and workers claim a free bed, take a free vanilla job block (lectern, composter…), trade and follow the villager day; a guard stays at its post and fights monsters. For now they wear the vanilla villager look.
+- Dev: `/scriptevent bannerforge:census` lists soldiers, villagers and citizens nearby with role, job, health and whether they are in bed; `/scriptevent bannerforge:convert` turns vanilla villagers within 8 blocks into citizens (same job, skin, outfit, name).
+- Workers no longer take vanilla job blocks.
+- Soldiers (dev menu: spawn militia / archer): their own fighters, not villagers. Melee and ranged, three ranks each with their own weapons and armour (Militia: leather and stone sword … Knight: full iron; Archer: leather and bow …). They guard the spot they were spawned at, fight monsters and whoever attacks townsfolk, and return to their post. Placeholder look: the steward model.
+- **Garrisons come to life:** a finished watchtower gets its archer and a barracks its four soldiers (the Keep two), standing at the building's door in the faction's colours. Their rank follows the settlement (Village: Militia/Archer, Town: Soldier/Marksman, City: Knight/Ranger). A fallen soldier is replaced the next morning; soldiers of a building that is gone leave. Soldiers can't hurt townsfolk.
+- Dev menu: "Garrisons: refill now".
+- **Townsfolk are real people now:** every settler and worker in the numbers is a citizen in the world with their own name. Newcomers walk in from a safe spot near the border (by day, on dry ground, with no monsters near); hired newcomers arrive as workers and never take vanilla jobs. Chat tells the people in town when someone arrives, starts work, loses their job, leaves, dies or is killed (and by what).
+- **The steward walks to the bell** too, a new one and one returning after death: they appear a short walk away and come over. Ringing the bell meanwhile says they are on the way.
+- **Vanilla villagers join the town:** every villager inside the border becomes a citizen with a name, keeping their profession, skin and biome outfit (their trade level starts over). Villagers born, cured or wandering in later join too. The ledger counts them as "Villagers"; chat says who joined and when one dies.
+- **Vanilla village houses join too:** the small, medium and big houses of a converted village are recognised (all 51 vanilla designs in five biomes) and adopted as house sites. Their beds count as Housing, the villagers living there count as Population, and each house gets a faction banner by its front door. Loose beds that aren't part of a house never count. Checked once a day: a house that is torn down stops counting.
+- Dev: `/scriptevent bannerforge:houses` lists the recognised vanilla houses and loose beds, and looks again for adoption.
+- **Economy breakdown:** the Economy page starts with where the score comes from: Shops, Craftsmen, Food and **Vanilla trades** (+1 for every 3 villagers who keep a vanilla job, no cap).
+- **Hiring:** a building waiting for its worker hires a jobless villager first, then a free settler. Nitwits never work.
+- **Recruit a villager** (building page, when it waits for a worker): pick a villager with a vanilla job; they stop vanilla trading and work here. Free; a warning says their trades are lost.
+- **How towns grow (changed):** settlers no longer move into free beds by themselves.
+  - **Births:** each dawn, one child per staffed Farmstead or Docks is born into a free bed. Children count at once and grow up into settlers after a day.
+  - **Newcomers:** once a Town Hall stands, one newcomer a day walks to its door and waits (yellow name). Talk to them: **Welcome** (needs a free bed) or **Not now**. Unanswered, they move on after two days.
+  - The ledger shows free beds and newcomers waiting.
+- **One people:** converted villagers and settlers are treated the same. Anyone with a vanilla job keeps it: automatic hiring only takes the jobless, and the Recruit list shows everyone with a vanilla job. The overview shows three kinds of people: **Workers**, **Villagers / Townsfolk / Citizens** (the word follows the tier) and the **Garrison**; the Housing page shows what the villagers do (employed, unemployed, nitwits, children).
+- **Workers' name tags** show their title: "Fisher, Maren", "Merchant, Bram"…
+- Fixes from the 2026-11-18 play-test: vanilla houses near the border that weren't loaded at founding are looked for again after a minute (not the next day); newcomers set off in the morning only; a turned-away newcomer walks away from you instead of in circles; the steward and newcomers no longer flash at the bell/door before walking in.
+- **Ledger, shorter front page:** Population · Housing, Townsfolk · Garrison (the word follows the tier: Villagers, Townsfolk, Citizens) and one-line alerts. A new **People** page shows Workers, Tradesfolk (their own trade at a workstation), Unemployed, Nitwits and Children, free beds and births, newcomers, and every building waiting for a worker with a **Recruit** button.
+- **Town Ledger book:** a Town or City can buy its ledger as a book from the steward (3 emeralds). It opens that town's ledger anywhere inside its border, and only there; each town has its own book ("<Town> Ledger").
+- **Founding adopts every house at once:** the whole border is loaded for a moment (temporary ticking areas) before the town looks for vanilla houses and villagers, so houses at the edge are no longer missed. (Test: Nightvale, 7 houses and 7 beds adopted at founding, no loose beds.)
+- **Banners on vanilla workplaces too:** blacksmiths, libraries, temples and other vanilla workplaces in the town are recognised (by their job block) and get a faction banner by the door. They add no beds and stay vanilla workplaces.
+- Dev (remote testing): `bannerforge:use` talks to the steward or newcomer in view, or rings a bell in view or within 4 blocks; `bannerforge:gotobell` stands you next to the nearest bell.
+- Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
+
 ## [0.2.0] - 2026-11-18
 
 ### Changed — categories and scores (owner, 2026-11-18)
