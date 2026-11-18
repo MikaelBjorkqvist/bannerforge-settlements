@@ -125,15 +125,24 @@ function towerTop(dim: Dimension, site: Site): Vector3 | undefined {
   return undefined;
 }
 
-/** Standing spot on the ground at x, z (undefined while not loaded or in water). */
+/**
+ * Standing spot on dry ground at or near x, z: looks in rings up to 12 blocks out, so a watch post by a river or
+ * lake still gets a soldier (play-test 2026-11-19: a post in water sent him back to the barracks door).
+ * Undefined while not loaded or when all of it is water.
+ */
 function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
-  try {
-    const top = dim.getTopmostBlock({ x, z });
-    if (!top || top.isLiquid) return undefined;
-    return { x: x + 0.5, y: top.location.y + 1, z: z + 0.5 };
-  } catch {
-    return undefined;
+  for (let r = 0; r <= 12; r += 3) {
+    for (const [dx, dz] of r === 0 ? [[0, 0]] : [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, -r], [r, -r], [-r, r]]) {
+      try {
+        const top = dim.getTopmostBlock({ x: x + dx, z: z + dz });
+        if (!top || top.isLiquid || top.typeId.includes("leaves")) continue;
+        return { x: x + dx + 0.5, y: top.location.y + 1, z: z + dz + 0.5 };
+      } catch {
+        return undefined; // not loaded
+      }
+    }
   }
+  return undefined;
 }
 
 /** Rank and title follow the tier (the Captain's training takes over later). */

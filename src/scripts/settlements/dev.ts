@@ -290,12 +290,12 @@ export function showDevMenu(player: Player): void {
  */
 function census(player: Player): void {
   const lines: string[] = [];
-  for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 48 })) {
+  for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 96 })) {
     const p = e.location;
     const hp = e.getComponent("minecraft:health");
     lines.push(
       `SOL ${e.nameTag || "?"} ${String(e.getProperty("bannerforge_settlements:kind"))} r${String(e.getProperty("bannerforge_settlements:rank"))}` +
-        ` hp=${hp ? Math.round(hp.currentValue) : "?"} @${p.x | 0},${p.z | 0}`,
+        ` hp=${hp ? Math.round(hp.currentValue) : "?"} duty=${String(e.getDynamicProperty("bannerforge:duty") ?? "-")} @${p.x | 0},${p.z | 0}`,
     );
   }
   for (const type of [CITIZEN_ID, VILLAGER_ID]) {
