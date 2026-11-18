@@ -23,7 +23,7 @@ const icon = uiIcon;
 
 /** One colour per score, used everywhere in the ledger (owner, 2026-11-18). */
 const CAT_COLOUR: Record<Category | "prosperity", string> = { prosperity: "§6", economy: "§a", military: "§c", civic: "§9", housing: "§e" };
-/** Longest bar in the overview, in blocks: leaves room for "Economy 14" on the same line (play-test 2026-11-18). */
+/** The Prosperity bar (100%) in blocks: a score's bar plus "Economy 14" still fits one line (play-test 2026-11-18). */
 const BAR_MAX = 10;
 
 const SECTION_ICON: Record<Category, string> = {
@@ -92,16 +92,23 @@ export function showOverview(player: Player, s: Settlement): void {
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
   // Prosperity and a bar per score it is made of (owner, 2026-11-18: "a graph"), then people in grey. The bars
-  // start at the left edge, so they line up whatever the font; the biggest score gets BAR_MAX blocks.
+  // start at the left edge, so they line up whatever the font.
   form.divider();
   const waiting = waitingForWorkers(s).length;
+  // Prosperity is the full bar (100%), stacked from the three colours; each score's bar is its share of the total
+  // (owner, 2026-11-18). Largest-remainder rounding so the shares add up to exactly BAR_MAX blocks.
   const scores = SCORES.map((c) => ({ c, v: score(s, c) }));
-  const top = Math.max(1, ...scores.map((x) => x.v));
+  const total = scores.reduce((n, x) => n + x.v, 0);
+  const exact = scores.map((x) => (total ? (x.v / total) * BAR_MAX : 0));
+  const blocks = exact.map(Math.floor);
+  const order = exact.map((e, i) => ({ i, r: e - Math.floor(e) })).sort((a, b) => b.r - a.r);
+  for (let k = 0; total && blocks.reduce((n, b) => n + b, 0) < BAR_MAX; k++) blocks[order[k].i]++;
+  const bar = (i: number) => `${CAT_COLOUR[scores[i].c]}${"█".repeat(blocks[i])}`;
   const info: RawMessage[] = [txt(CAT_COLOUR.prosperity), t("bannerforge.steward.prosperity"), txt(` §f${prosperity(s)}`)];
-  for (const { c, v } of scores) {
-    const blocks = v > 0 ? Math.max(1, Math.round((v / top) * BAR_MAX)) : 0;
-    info.push(txt(`\n${CAT_COLOUR[c]}${"█".repeat(blocks)}${blocks ? " " : ""}§7`), t(`bannerforge.category.${c}`), txt(` §f${v}`));
-  }
+  if (total) info.push(txt(`\n${scores.map((_, i) => bar(i)).join("")}`));
+  scores.forEach(({ c, v }, i) => {
+    info.push(txt(`\n${bar(i)}${blocks[i] ? " " : ""}§7`), t(`bannerforge.category.${c}`), txt(` §f${v}`));
+  });
   const grey = (key: string, value: number, sep = true): RawMessage[] => [t(key), txt(` ${value}${sep ? " · " : ""}`)];
   info.push(
     txt("\n\n§7"),
