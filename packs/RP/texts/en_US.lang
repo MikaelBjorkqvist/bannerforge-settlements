@@ -334,9 +334,9 @@ bannerforge.citizens.free=Free
 bannerforge.citizens.free_beds=Free beds
 bannerforge.citizens.beds=Beds
 bannerforge.citizens.waiting=Waiting
-bannerforge.citizens.free_beds=%s free beds: a child is born each dawn per staffed Farmstead or Docks.
-bannerforge.citizens.births_need_food=None staffed yet.
-bannerforge.citizens.newcomers_waiting=%s newcomer(s) waiting at the Town Hall: go and talk to them.
+bannerforge.citizens.free_beds=Free beds: %s
+bannerforge.citizens.births=Births each dawn: up to %s (one per staffed Farmstead or Docks)
+bannerforge.citizens.newcomers_waiting=Newcomers at the Town Hall: %s
 bannerforge.citizens.buildings_waiting=%s buildings wait for a worker: build houses
 bannerforge.citizens.this_waits=%s waiting for a worker
 

@@ -140,6 +140,12 @@ groups[`${P}applicant`] = {
   "minecraft:follow_range": { value: 64, max: 64 },
 };
 const applicant = ["adult", "behavior_peasant", "basic_schedule", `${P}applicant`];
+// Turned away (play-test 2026-11-18: vanishing on the spot looked odd): they walk off, no job, no bed; the script
+// removes them once no player is near or after half a minute.
+groups[`${P}leaving`] = {
+  "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_leaving", "mob"] },
+  "minecraft:behavior.random_stroll": { priority: 3, speed_multiplier: 0.8, interval: 1, xz_dist: 24, y_dist: 4 },
+};
 
 // --- role events (scripts trigger these right after spawning) --------------------------------------------------------
 const role = (name, remove, add) => ({
@@ -165,6 +171,7 @@ events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}ar
 events["bannerforge:spawn_arriving_worker"] = spawnAs("worker", [...worker, `${P}arriving`]);
 events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
 events["bannerforge:spawn_applicant"] = spawnAs("applicant", applicant);
+events["bannerforge:leave"] = role("villager", CLEAR, ["adult", `${P}leaving`]);
 // A child born in town (owner 2026-11-18): a vanilla baby that grows up as a settler.
 events["bannerforge:spawn_child"] = spawnAs("settler", ["baby", "child_schedule"]);
 

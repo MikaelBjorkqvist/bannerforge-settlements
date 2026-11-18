@@ -26,6 +26,19 @@ const WAIT_TICKS = 2 * 24000;
 /** Within this distance of the Town Hall door a newcomer counts as waiting there. */
 const AT_DOOR = 4;
 const COOLDOWN_TICKS = 20;
+/** A turned-away newcomer walks off for at most this long before they are gone. */
+const LEAVE_TICKS = 600;
+const LEAVING = "bannerforge:leaving";
+const P_LEFT = "bannerforge:left";
+
+/** Out of the town's lists: they walk off with their own name, no longer a newcomer (no talk, no yellow). */
+function sendAway(e: Entity, p: Person): void {
+  e.triggerEvent("bannerforge:leave");
+  e.nameTag = p.name;
+  for (const tag of e.getTags()) if (tag.startsWith("bannerforge:of:")) e.removeTag(tag);
+  e.addTag(LEAVING);
+  e.setDynamicProperty(P_LEFT, gameTime());
+}
 
 /** Newcomers' name tags are yellow (name tags can't be translated; the colour marks them). */
 const applicantTag = (p: Person) => `§e${p.name}`;
@@ -81,7 +94,7 @@ function tick(s: Settlement): boolean {
   for (const p of [...applicantsOf(s)]) {
     const e = p.eid ? world.getEntity(p.eid) : undefined;
     if (gameTime() - (p.since ?? 0) >= WAIT_TICKS) {
-      e?.remove();
+      if (e) sendAway(e, p);
       dropApplicant(s, p);
       changed = true;
       news(s, raw(txt("§7"), t("bannerforge.newcomer.moved_on", p.name)));
@@ -95,6 +108,13 @@ function tick(s: Settlement): boolean {
         news(s, raw(txt("§e"), t("bannerforge.newcomer.waiting", p.name)));
       }
     }
+  }
+
+  // Turned-away newcomers walk off; they go for good out of sight or after LEAVE_TICKS.
+  for (const e of dim.getEntities({ type: CITIZEN_ID, tags: [LEAVING], location: s.center, maxDistance: 256 })) {
+    const since = e.getDynamicProperty(P_LEFT);
+    const near = dim.getPlayers({ location: e.location, maxDistance: 20 }).length > 0;
+    if (!near || gameTime() - (typeof since === "number" ? since : 0) >= LEAVE_TICKS) e.remove();
   }
 
   // One newcomer a day, by day, once the Town Hall stands.
@@ -186,7 +206,7 @@ function decide(sid: string, seed: string, welcome: boolean): void {
     news(s, raw(txt("§a"), t("bannerforge.newcomer.settled", p.name, s.name)));
   } else {
     dropApplicant(s, p);
-    e?.remove();
+    if (e) sendAway(e, p);
     news(s, raw(txt("§7"), t("bannerforge.newcomer.moved_on", p.name)));
   }
   saveSettlement(s);

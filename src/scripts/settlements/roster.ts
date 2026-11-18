@@ -31,6 +31,7 @@ export const GROW_DAYS = 1;
 function newPerson(s: Settlement): Person {
   const c = citizensOf(s);
   const taken = new Set([...rosterOf(s), ...villagersOf(s), ...childrenOf(s), ...applicantsOf(s)].map((p) => p.name));
+  if (s.steward?.name) taken.add(s.steward.name);
   let seed = "";
   let name = "";
   for (let tries = 0; tries < 12; tries++) {

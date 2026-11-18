@@ -2418,6 +2418,24 @@
           "value": 64,
           "max": 64
         }
+      },
+      "bannerforge_settlements:leaving": {
+        "minecraft:type_family": {
+          "family": [
+            "villager",
+            "peasant",
+            "nitwit",
+            "bannerforge_leaving",
+            "mob"
+          ]
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 3,
+          "speed_multiplier": 0.8,
+          "interval": 1,
+          "xz_dist": 24,
+          "y_dist": 4
+        }
       }
     },
     "events": {
@@ -5771,6 +5789,51 @@
             }
           }
         ]
+      },
+      "bannerforge:leave": {
+        "remove": {
+          "component_groups": [
+            "armorer",
+            "butcher",
+            "cartographer",
+            "cleric",
+            "farmer",
+            "fisherman",
+            "fletcher",
+            "leatherworker",
+            "librarian",
+            "mason",
+            "shepherd",
+            "toolsmith",
+            "weaponsmith",
+            "nitwit",
+            "unskilled",
+            "basic_schedule",
+            "work_schedule",
+            "jobless_schedule",
+            "farmer_schedule",
+            "librarian_schedule",
+            "fisher_schedule",
+            "child_schedule",
+            "behavior_peasant",
+            "behavior_non_peasant",
+            "baby",
+            "job_specific_goals",
+            "trade_components",
+            "bannerforge_settlements:worker",
+            "bannerforge_settlements:applicant",
+            "bannerforge_settlements:guard"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "adult",
+            "bannerforge_settlements:leaving"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "villager"
+        }
       },
       "bannerforge:spawn_child": {
         "sequence": [

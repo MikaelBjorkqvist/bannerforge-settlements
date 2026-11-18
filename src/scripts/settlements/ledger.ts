@@ -124,11 +124,7 @@ export function showOverview(player: Player, s: Settlement): void {
   );
   // Vanilla villagers that joined keep their vanilla jobs and beds; not population until adopted houses count them.
   if (villagersOf(s).length) info.push(...grey("bannerforge.citizens.villagers", villagersOf(s).length, false));
-  // Growth (owner 2026-11-18): births need a staffed food building, newcomers a Town Hall and the player's word.
-  if (freeBeds(s) > 0) {
-    info.push(txt("\n§7"), t("bannerforge.citizens.free_beds", String(freeBeds(s))));
-    if (!staffedFood(s)) info.push(txt(" "), t("bannerforge.citizens.births_need_food"));
-  }
+  // Keep the overview short (owner 2026-11-18): growth details live on the Housing page.
   const waitingNew = applicantsOf(s).length;
   if (waitingNew) info.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
@@ -222,6 +218,11 @@ export function showSection(player: Player, s: Settlement, category: Category): 
   s = latest(s);
   const form = new CustomForm(player, t(`bannerforge.category.${category}`));
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
+  // Housing: how the town grows (owner 2026-11-18: births per staffed food building, newcomers at the Town Hall).
+  if (category === "housing") {
+    form.label(raw(txt("§7"), t("bannerforge.citizens.free_beds", String(freeBeds(s))), txt("\n"), t("bannerforge.citizens.births", String(staffedFood(s)))));
+    form.divider();
+  }
   // Economy: where its score comes from (owner 2026-11-18), above the buildings.
   if (category === "economy") {
     const p = economyParts(s);
