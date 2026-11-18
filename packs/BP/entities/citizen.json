@@ -2358,6 +2358,19 @@
           "interval": 1,
           "goal_radius": 3
         }
+      },
+      "bannerforge_settlements:worker": {
+        "minecraft:type_family": {
+          "family": [
+            "villager",
+            "peasant",
+            "bannerforge_worker",
+            "mob"
+          ]
+        },
+        "minecraft:variant": {
+          "value": 14
+        }
       }
     },
     "events": {
@@ -4447,6 +4460,7 @@
             "baby",
             "job_specific_goals",
             "trade_components",
+            "bannerforge_settlements:worker",
             "bannerforge_settlements:guard"
           ]
         },
@@ -4480,6 +4494,7 @@
             "toolsmith",
             "weaponsmith",
             "nitwit",
+            "unskilled",
             "work_schedule",
             "jobless_schedule",
             "farmer_schedule",
@@ -4496,10 +4511,9 @@
         "add": {
           "component_groups": [
             "adult",
-            "make_and_receive_love",
-            "unskilled",
             "behavior_peasant",
-            "basic_schedule"
+            "basic_schedule",
+            "bannerforge_settlements:worker"
           ]
         },
         "set_property": {
@@ -4536,6 +4550,7 @@
             "baby",
             "job_specific_goals",
             "trade_components",
+            "bannerforge_settlements:worker",
             "bed_schedule_villager",
             "work_schedule_farmer",
             "gather_schedule_villager",
@@ -4812,10 +4827,9 @@
             "add": {
               "component_groups": [
                 "adult",
-                "make_and_receive_love",
-                "unskilled",
                 "behavior_peasant",
-                "basic_schedule"
+                "basic_schedule",
+                "bannerforge_settlements:worker"
               ]
             },
             "set_property": {
@@ -5127,6 +5141,263 @@
             }
           }
         ]
+      },
+      "bannerforge:skin_2": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_0",
+            "villager_skin_1",
+            "villager_skin_3",
+            "villager_skin_4",
+            "villager_skin_5"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_2"
+          ]
+        }
+      },
+      "bannerforge:skin_0": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_2",
+            "villager_skin_1",
+            "villager_skin_3",
+            "villager_skin_4",
+            "villager_skin_5"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_0"
+          ]
+        }
+      },
+      "bannerforge:skin_1": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_2",
+            "villager_skin_0",
+            "villager_skin_3",
+            "villager_skin_4",
+            "villager_skin_5"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_1"
+          ]
+        }
+      },
+      "bannerforge:skin_3": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_2",
+            "villager_skin_0",
+            "villager_skin_1",
+            "villager_skin_4",
+            "villager_skin_5"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_3"
+          ]
+        }
+      },
+      "bannerforge:skin_4": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_2",
+            "villager_skin_0",
+            "villager_skin_1",
+            "villager_skin_3",
+            "villager_skin_5"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_4"
+          ]
+        }
+      },
+      "bannerforge:skin_5": {
+        "remove": {
+          "component_groups": [
+            "villager_skin_2",
+            "villager_skin_0",
+            "villager_skin_1",
+            "villager_skin_3",
+            "villager_skin_4"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "villager_skin_5"
+          ]
+        }
+      },
+      "bannerforge:look_desert": {
+        "remove": {
+          "component_groups": [
+            "jungle_villager",
+            "savanna_villager",
+            "snow_villager",
+            "swamp_villager",
+            "taiga_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "desert_villager"
+          ]
+        }
+      },
+      "bannerforge:look_jungle": {
+        "remove": {
+          "component_groups": [
+            "desert_villager",
+            "savanna_villager",
+            "snow_villager",
+            "swamp_villager",
+            "taiga_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "jungle_villager"
+          ]
+        }
+      },
+      "bannerforge:look_savanna": {
+        "remove": {
+          "component_groups": [
+            "desert_villager",
+            "jungle_villager",
+            "snow_villager",
+            "swamp_villager",
+            "taiga_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "savanna_villager"
+          ]
+        }
+      },
+      "bannerforge:look_snow": {
+        "remove": {
+          "component_groups": [
+            "desert_villager",
+            "jungle_villager",
+            "savanna_villager",
+            "swamp_villager",
+            "taiga_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "snow_villager"
+          ]
+        }
+      },
+      "bannerforge:look_swamp": {
+        "remove": {
+          "component_groups": [
+            "desert_villager",
+            "jungle_villager",
+            "savanna_villager",
+            "snow_villager",
+            "taiga_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "swamp_villager"
+          ]
+        }
+      },
+      "bannerforge:look_taiga": {
+        "remove": {
+          "component_groups": [
+            "desert_villager",
+            "jungle_villager",
+            "savanna_villager",
+            "snow_villager",
+            "swamp_villager"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "taiga_villager"
+          ]
+        }
+      },
+      "bannerforge:become_nitwit": {
+        "remove": {
+          "component_groups": [
+            "armorer",
+            "butcher",
+            "cartographer",
+            "cleric",
+            "farmer",
+            "fisherman",
+            "fletcher",
+            "leatherworker",
+            "librarian",
+            "mason",
+            "shepherd",
+            "toolsmith",
+            "weaponsmith",
+            "unskilled",
+            "basic_schedule",
+            "work_schedule",
+            "farmer_schedule",
+            "librarian_schedule",
+            "fisher_schedule",
+            "child_schedule",
+            "behavior_non_peasant",
+            "baby",
+            "job_specific_goals",
+            "trade_components",
+            "bannerforge_settlements:worker",
+            "bannerforge_settlements:guard"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "adult",
+            "make_and_receive_love",
+            "nitwit",
+            "behavior_peasant",
+            "jobless_schedule"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "villager"
+        }
+      },
+      "bannerforge:spawn_converted": {
+        "add": {
+          "component_groups": [
+            "adult"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "villager"
+        }
+      },
+      "bannerforge:spawn_converted_baby": {
+        "add": {
+          "component_groups": [
+            "baby",
+            "child_schedule"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "villager"
+        }
       }
     }
   }

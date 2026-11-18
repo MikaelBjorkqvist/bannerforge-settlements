@@ -67,10 +67,10 @@ const PROFESSIONS = ["armorer", "butcher", "cartographer", "cleric", "farmer", "
 const PLANS = ["basic_schedule", "work_schedule", "jobless_schedule", "farmer_schedule", "librarian_schedule",
   "fisher_schedule", "child_schedule"];
 const CLEAR = [...PROFESSIONS, ...PLANS, "behavior_peasant", "behavior_non_peasant", "baby", "job_specific_goals",
-  "trade_components"];
+  "trade_components", "bannerforge_settlements:worker"];
 /** Daily state groups the scheduler adds; only a guard (who leaves the village routine) drops them. */
 const DAILY = Object.keys(groups).filter((g) => /_schedule_villager$|^work_schedule_/.test(g));
-for (const g of [...CLEAR, ...DAILY]) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
+for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
 
 const unskilled = events["minecraft:become_unskilled"].add.component_groups; // adult, love, unskilled, peasant, schedule
 
@@ -105,14 +105,24 @@ groups[`${P}guard`] = {
   "minecraft:behavior.go_home": { priority: 5, speed_multiplier: 0.6, interval: 1, goal_radius: 3 },
 };
 
+// --- worker: staff of one of our buildings, never a vanilla job ---------------------------------------------------
+// Owner 2026-11-18: a worker is a worker and nothing else until the building is lost or they die. Vanilla decides who
+// looks for a job block by the job variant (0 = jobless looks, 14 = nitwit never does), so a worker carries variant 14
+// and its own family (no "unskilled"). The vanilla look shows the nitwit robe until our model (role property) exists.
+groups[`${P}worker`] = {
+  "minecraft:type_family": { family: ["villager", "peasant", "bannerforge_worker", "mob"] },
+  "minecraft:variant": { value: 14 },
+};
+const worker = ["adult", "behavior_peasant", "basic_schedule", `${P}worker`];
+
 // --- role events (scripts trigger these right after spawning) --------------------------------------------------------
 const role = (name, remove, add) => ({
-  remove: { component_groups: [...remove, `${P}guard`].filter((g) => !add.includes(g)) },
+  remove: { component_groups: [...new Set([...remove, `${P}guard`, `${P}worker`])].filter((g) => !add.includes(g)) },
   add: { component_groups: add },
   set_property: { [`${P}role`]: name },
 });
 events["bannerforge:become_settler"] = role("settler", CLEAR, unskilled);
-events["bannerforge:become_worker"] = role("worker", CLEAR, unskilled);
+events["bannerforge:become_worker"] = role("worker", CLEAR, worker);
 events["bannerforge:become_guard"] = role("guard", [...CLEAR, ...DAILY, "make_and_receive_love"], ["adult", `${P}guard`]);
 
 // Spawn events: born straight into a role, the way vanilla's own entity_spawned sets a villager up (skin, then age and
@@ -123,8 +133,33 @@ const spawnAs = (name, add) => ({
   sequence: [skinStep, { add: { component_groups: add }, set_property: { [`${P}role`]: name } }, ...biomeSteps],
 });
 events["bannerforge:spawn_settler"] = spawnAs("settler", unskilled);
-events["bannerforge:spawn_worker"] = spawnAs("worker", unskilled);
+events["bannerforge:spawn_worker"] = spawnAs("worker", worker);
 events["bannerforge:spawn_guard"] = spawnAs("guard", ["adult", `${P}guard`]);
+
+// --- conversion of a vanilla villager (script: spawn with spawn_converted, then set look and job) ---------------------
+// Owner 2026-11-18: keep profession and looks; the script reads them from the villager and replays them with these
+// events and vanilla's own minecraft:become_<job> events.
+const BIOMES = ["desert", "jungle", "savanna", "snow", "swamp", "taiga"].map((b) => `${b}_villager`);
+const SKINS = Object.keys(groups).filter((g) => g.startsWith("villager_skin_"));
+SKINS.forEach((g) => {
+  events[`bannerforge:skin_${g.slice("villager_skin_".length)}`] = {
+    remove: { component_groups: SKINS.filter((o) => o !== g) },
+    add: { component_groups: [g] },
+  };
+});
+BIOMES.forEach((g) => {
+  events[`bannerforge:look_${g.replace("_villager", "")}`] = {
+    remove: { component_groups: BIOMES.filter((o) => o !== g) },
+    add: { component_groups: [g] },
+  };
+});
+events["bannerforge:become_nitwit"] = role("villager", CLEAR, ["adult", "make_and_receive_love", "nitwit",
+  "behavior_peasant", "jobless_schedule"]);
+events["bannerforge:spawn_converted"] = { add: { component_groups: ["adult"] }, set_property: { [`${P}role`]: "villager" } };
+events["bannerforge:spawn_converted_baby"] = {
+  add: { component_groups: ["baby", "child_schedule"] },
+  set_property: { [`${P}role`]: "villager" },
+};
 
 fs.writeFileSync(path.join(ROOT, "packs/BP/entities/citizen.json"), JSON.stringify(doc, null, 2) + "\n");
 

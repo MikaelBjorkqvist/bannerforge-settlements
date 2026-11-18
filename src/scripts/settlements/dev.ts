@@ -9,6 +9,7 @@ import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
 import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
+import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
 import { raw, t, txt } from "./text.js";
@@ -25,6 +26,7 @@ export function registerDevMenu(): void {
     if (e.sourceEntity?.typeId !== "minecraft:player") return;
     if (e.id === "bannerforge:dev") showDevMenu(e.sourceEntity as Player);
     if (e.id === "bannerforge:census") census(e.sourceEntity as Player);
+    if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
   });
 }
 
@@ -188,7 +190,7 @@ export function showDevMenu(player: Player): void {
  */
 function census(player: Player): void {
   const lines: string[] = [];
-  for (const type of [CITIZEN_ID, LAB_ID, "minecraft:villager_v2"]) {
+  for (const type of [CITIZEN_ID, LAB_ID, VILLAGER_ID]) {
     for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
       const p = e.location;
       let role = "-";
@@ -198,11 +200,22 @@ function census(player: Player): void {
         // vanilla and lab villagers have no role property
       }
       const job = e.getComponent("minecraft:variant")?.value ?? -1;
+      const skin = e.getComponent("minecraft:skin_id")?.value ?? -1;
+      const look = e.getComponent("minecraft:mark_variant")?.value ?? -1;
       const block = e.dimension.getBlock({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) });
       const inBed = block?.typeId === "minecraft:bed";
       const kind = type === CITIZEN_ID ? "CIT" : type === LAB_ID ? "LAB" : "VAN";
-      lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
+      lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} skin=${skin}/${look} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
     }
   }
   player.sendMessage(lines.length ? lines.join("\n") : "census: nobody within 48");
+}
+
+/** Conversion test (draft only): every vanilla villager within 8 blocks becomes a citizen.  /scriptevent bannerforge:convert */
+function convertNearby(player: Player): void {
+  let n = 0;
+  for (const v of player.dimension.getEntities({ type: VILLAGER_ID, location: player.location, maxDistance: 8 })) {
+    if (convertVillager(v)) n++;
+  }
+  player.sendMessage(`converted ${n} villager(s)`);
 }
