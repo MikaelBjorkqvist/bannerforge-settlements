@@ -4,6 +4,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-18
+
 ### Changed — categories and scores (owner, 2026-11-18)
 - The ledger's sections are **Housing, Economy, Military and Civic**. Economy has Shops, Craftsmen and Food inside.
 - **Prosperity** is now the sum of three scores: Economy (staffed shops, craftsmen, food), Military (defence of towers, barracks and the Keep) and Civic (Town Hall, shrine). The overview shows all three.
