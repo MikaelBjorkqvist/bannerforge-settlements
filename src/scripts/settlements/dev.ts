@@ -269,6 +269,10 @@ function roster(player: Player): void {
   if (!s) return;
   const c = s.citizens;
   const lines = (c?.people ?? []).map((p) => `${p.name} ${p.state}${p.job ? " @" + p.job : ""} ${p.eid ? (world.getEntity(p.eid) ? "seen" : "away") : "-"}`);
+  const st = s.steward?.entityId ? world.getEntity(s.steward.entityId) : undefined;
+  const at = (v: { x: number; y: number; z: number }) => `${Math.floor(v.x)} ${Math.floor(v.y)} ${Math.floor(v.z)}`;
+  const steward = st ? `steward at ${at(st.location)}${st.hasTag("bannerforge:walking") ? " walking" : ""}` : "steward -";
+  player.sendMessage(`${s.name}: bell ${at(s.center)}, ${steward}`);
   player.sendMessage(`${s.name}: day=${c?.day} now=${world.getDay()} free=${c?.free ?? 0} staffed=${JSON.stringify(c?.staffed ?? {})}\n${lines.join("\n")}`);
 }
 const dist = (s: Settlement, p: Player) => Math.hypot(s.center.x - p.location.x, s.center.z - p.location.z);

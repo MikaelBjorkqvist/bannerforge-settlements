@@ -24,10 +24,16 @@
           "speed_multiplier": 0.75,
           "interval": 1,
           "goal_radius": 2.5,
-          "on_home": {
-            "event": "bannerforge:arrived",
-            "target": "self"
-          }
+          "on_home": [
+            {
+              "event": "bannerforge:arrived",
+              "target": "self"
+            }
+          ]
+        },
+        "minecraft:follow_range": {
+          "value": 64,
+          "max": 64
         }
       }
     },
@@ -69,7 +75,8 @@
         "can_open_doors": true
       },
       "minecraft:home": {
-        "restriction_radius": 12
+        "restriction_radius": 12,
+        "restriction_type": "random_movement"
       },
       "minecraft:interact": {
         "interactions": [
