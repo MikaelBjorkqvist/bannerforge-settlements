@@ -68,6 +68,7 @@ shops and missions.
 | 2026-11-18 | **Categories = ledger sections = scores:** Housing (room for people), **Economy** (all stores incl. tavern, craftsmen, food), **Military** (defence buildings and garrisons), **Civic** (Town Hall, shrine; later plazas, parks, statues, decorations: utility without trade). **Prosperity = Economy + Military + Civic.** Promotion: Town Hall + Prosperity + Population + a minimum Military (Town 26/6/4, City 52/14/12). No happiness system (Civic covers the positive side). |
 | 2026-11-18 | **Ranks are earned, not given:** a promotion unlocks the next rank; workers rank up through quests, garrisons through **training by a Captain** (in the Keep or the first barracks), paid with resources; each step adds points. Garrisons start at the lowest rank. |
 | 2026-11-18 | Custom font glyphs skipped (shared glyph pages can clash with vanilla and other add-ons). |
+| 2026-11-18 | **Visible townsfolk (step 2):** one NPC type (`citizen`) for settlers, workers, garrisons and, later, vanilla villagers converted by script (found and replaced, no vanilla file touched). Villagers and settlers will look the same: humanoid, illager-like with moving arms (reference: "Vanilla Humanoid Villagers"); placeholder look until the art. A dead townsperson frees the bed; a new settler comes at the next dawn. Garrisons first guard and fight near their building (no patrols yet). Villager gameplay in established towns not designed yet. |
 
 ## Factions
 Each faction's buildings, NPCs and banners follow its theme and visuals.

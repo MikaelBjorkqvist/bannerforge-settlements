@@ -16,6 +16,7 @@ bannerforge.tier.promoted=§6%s has grown into a
 
 ## Bell / founding
 entity.bannerforge_settlements:steward.name=Steward
+entity.bannerforge_settlements:citizen.name=Citizen
 bannerforge.bell.steward_arrives=§7The bell's peal carries across the village... %s hurries over. Talk to them to found a settlement.
 bannerforge.bell.neutral_waiting=§7%s is waiting by the bell. Talk to them to found a settlement.
 bannerforge.bell.steward_coming=§7%s hurries to the bell.
@@ -254,6 +255,13 @@ bannerforge.dev.settler_done=A settler arrived
 bannerforge.dev.no_bed=No free bed: build a house
 bannerforge.dev.dawn=Dawn now (settlers arrive / leave)
 bannerforge.dev.dawn_done=Dawn done
+bannerforge.dev.npcs=Citizen prototype
+bannerforge.dev.spawn_settler=Spawn settler here
+bannerforge.dev.spawn_worker=Spawn worker here (works here)
+bannerforge.dev.spawn_guard=Spawn guard here (guards here)
+bannerforge.dev.spawned=Spawned: %s
+bannerforge.dev.remove_citizens=Remove prototype citizens nearby
+bannerforge.dev.removed=%s removed
 bannerforge.dev.options=Options
 bannerforge.dev.ledger_button=Dev button in ledger
 bannerforge.dev.close=Close

@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bannerforge_settlements:citizen",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "outfit_neutral": "textures/bannerforge/settlements/entity/npc/steward_neutral",
+        "outfit_green": "textures/bannerforge/settlements/entity/npc/steward_green",
+        "outfit_blue": "textures/bannerforge/settlements/entity/npc/steward_blue",
+        "outfit_red": "textures/bannerforge/settlements/entity/npc/steward_red"
+      },
+      "geometry": {
+        "default": "geometry.bannerforge_settlements.npc"
+      },
+      "animations": {
+        "walk": "animation.bannerforge_settlements.npc_walk",
+        "look": "animation.bannerforge_settlements.npc_look"
+      },
+      "scripts": {
+        "animate": [
+          "walk",
+          "look"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.bannerforge_settlements.npc"
+      ]
+    }
+  }
+}

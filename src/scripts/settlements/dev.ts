@@ -7,6 +7,7 @@ import { ItemStack, type Player, type RawMessage, system, world } from "@minecra
 import { CustomForm, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
+import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
@@ -129,6 +130,23 @@ export function showDevMenu(player: Player): void {
     if (!s) return;
     update(s, true);
     done(t("bannerforge.dev.dawn_done"));
+  });
+
+  // Citizen prototype (M2.5 step 2): spawn one where you stand and watch it through a day with the time buttons.
+  form.header(t("bannerforge.dev.npcs"));
+  for (const role of ["settler", "worker", "guard"] as CitizenRole[]) {
+    form.button(t(`bannerforge.dev.spawn_${role}`), () => {
+      const e = spawnCitizen(player.dimension, player.location, role, s?.faction ?? "blue", `${Date.now()}`);
+      done(t("bannerforge.dev.spawned", e.nameTag));
+    });
+  }
+  form.button(t("bannerforge.dev.remove_citizens"), () => {
+    let n = 0;
+    for (const e of player.dimension.getEntities({ type: CITIZEN_ID, location: player.location, maxDistance: 64 })) {
+      e.remove();
+      n++;
+    }
+    done(t("bannerforge.dev.removed", String(n)));
   });
 
   form.header(t("bannerforge.dev.options"));

@@ -1,0 +1,582 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "bannerforge_settlements:citizen",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "properties": {
+        "bannerforge_settlements:outfit": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "bannerforge_settlements:role": {
+          "type": "enum",
+          "values": [
+            "settler",
+            "worker",
+            "guard",
+            "villager"
+          ],
+          "default": "settler",
+          "client_sync": true
+        },
+        "bannerforge_settlements:rank": {
+          "type": "int",
+          "range": [
+            1,
+            3
+          ],
+          "default": 1,
+          "client_sync": true
+        },
+        "bannerforge_settlements:profession": {
+          "type": "int",
+          "range": [
+            0,
+            63
+          ],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "role_settler": {
+        "minecraft:dweller": {
+          "dwelling_type": "village",
+          "dweller_role": "inhabitant",
+          "can_find_poi": true,
+          "can_migrate": false,
+          "update_interval_base": 60,
+          "update_interval_variant": 40
+        },
+        "minecraft:scheduler": {
+          "min_delay_secs": 0,
+          "max_delay_secs": 10,
+          "scheduled_events": [
+            {
+              "event": "bannerforge:schedule_day",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 0
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 8000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_gather",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 8000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 10000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_day",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 10000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 11000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_home",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 11000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 12000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_bed",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 12000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 24000
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "role_worker": {
+        "minecraft:dweller": {
+          "dwelling_type": "village",
+          "dweller_role": "inhabitant",
+          "can_find_poi": true,
+          "can_migrate": false,
+          "update_interval_base": 60,
+          "update_interval_variant": 40
+        },
+        "minecraft:scheduler": {
+          "min_delay_secs": 0,
+          "max_delay_secs": 10,
+          "scheduled_events": [
+            {
+              "event": "bannerforge:schedule_day",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 0
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 8000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_gather",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 8000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 10000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_day",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 10000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 11000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_home",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 11000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 12000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:schedule_bed",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 12000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 24000
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "role_guard": {
+        "minecraft:home": {
+          "restriction_radius": 10
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": true,
+          "reselect_targets": true,
+          "within_radius": 16,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "monster"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "not",
+                    "value": "creeper"
+                  }
+                ]
+              },
+              "max_dist": 16
+            }
+          ]
+        },
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1
+        },
+        "minecraft:behavior.melee_attack": {
+          "priority": 3,
+          "speed_multiplier": 0.9,
+          "track_target": true
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 4,
+          "speed_multiplier": 0.6,
+          "interval": 1,
+          "goal_radius": 3
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 6,
+          "speed_multiplier": 0.5,
+          "interval": 200,
+          "xz_dist": 4
+        }
+      },
+      "sched_wander": {
+        "minecraft:behavior.random_stroll": {
+          "priority": 9,
+          "speed_multiplier": 0.55,
+          "interval": 120
+        }
+      },
+      "sched_work": {
+        "minecraft:home": {
+          "restriction_radius": 8
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 5,
+          "speed_multiplier": 0.6,
+          "interval": 1,
+          "goal_radius": 3
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 9,
+          "speed_multiplier": 0.5,
+          "interval": 160,
+          "xz_dist": 4
+        }
+      },
+      "sched_gather": {
+        "minecraft:behavior.mingle": {
+          "priority": 7,
+          "speed_multiplier": 0.5,
+          "duration": 30,
+          "cooldown_time": 10,
+          "mingle_distance": 2,
+          "mingle_partner_type": "bannerforge_settlements:citizen"
+        }
+      },
+      "sched_home": {},
+      "sched_bed": {
+        "minecraft:behavior.sleep": {
+          "priority": 3,
+          "speed_multiplier": 0.6,
+          "sleep_collider_height": 0.3,
+          "sleep_collider_width": 1,
+          "sleep_y_offset": 0.6,
+          "timeout_cooldown": 10
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "bannerforge_npc",
+          "citizen",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:health": {
+        "value": 20,
+        "max": 20
+      },
+      "minecraft:attack": {
+        "damage": 4
+      },
+      "minecraft:persistent": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:nameable": {
+        "always_show": false,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:movement": {
+        "value": 0.5
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_water": true,
+        "avoid_damage_blocks": true,
+        "can_open_doors": true,
+        "can_pass_doors": true
+      },
+      "minecraft:annotation.open_door": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.panic": {
+        "priority": 1,
+        "speed_multiplier": 1.1
+      },
+      "minecraft:behavior.move_indoors": {
+        "priority": 6,
+        "speed_multiplier": 0.8,
+        "timeout_cooldown": 8
+      },
+      "minecraft:behavior.move_towards_dwelling_restriction": {
+        "priority": 11,
+        "speed_multiplier": 0.6
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 8,
+        "look_distance": 6,
+        "probability": 0.02
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 10
+      },
+      "minecraft:conditional_bandwidth_optimization": {}
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "role_settler",
+            "sched_wander"
+          ]
+        }
+      },
+      "bannerforge:become_settler": {
+        "remove": {
+          "component_groups": [
+            "role_worker",
+            "role_guard",
+            "sched_wander",
+            "sched_work",
+            "sched_gather",
+            "sched_home",
+            "sched_bed"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "role_settler",
+            "sched_wander"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "settler"
+        }
+      },
+      "bannerforge:become_worker": {
+        "remove": {
+          "component_groups": [
+            "role_settler",
+            "role_guard",
+            "sched_wander",
+            "sched_work",
+            "sched_gather",
+            "sched_home",
+            "sched_bed"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "role_worker",
+            "sched_work"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "worker"
+        }
+      },
+      "bannerforge:become_guard": {
+        "remove": {
+          "component_groups": [
+            "role_settler",
+            "role_worker",
+            "sched_wander",
+            "sched_work",
+            "sched_gather",
+            "sched_home",
+            "sched_bed"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "role_guard"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:role": "guard"
+        }
+      },
+      "bannerforge:schedule_day": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:role",
+              "value": "worker"
+            },
+            "remove": {
+              "component_groups": [
+                "sched_wander",
+                "sched_gather",
+                "sched_home",
+                "sched_bed"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "sched_work"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:role",
+              "value": "settler"
+            },
+            "remove": {
+              "component_groups": [
+                "sched_work",
+                "sched_gather",
+                "sched_home",
+                "sched_bed"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "sched_wander"
+              ]
+            }
+          }
+        ]
+      },
+      "bannerforge:schedule_gather": {
+        "remove": {
+          "component_groups": [
+            "sched_wander",
+            "sched_work",
+            "sched_home",
+            "sched_bed"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "sched_gather"
+          ]
+        }
+      },
+      "bannerforge:schedule_home": {
+        "remove": {
+          "component_groups": [
+            "sched_wander",
+            "sched_work",
+            "sched_gather",
+            "sched_bed"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "sched_home"
+          ]
+        }
+      },
+      "bannerforge:schedule_bed": {
+        "remove": {
+          "component_groups": [
+            "sched_wander",
+            "sched_work",
+            "sched_gather",
+            "sched_home"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "sched_bed"
+          ]
+        }
+      }
+    }
+  }
+}

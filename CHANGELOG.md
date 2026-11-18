@@ -4,6 +4,9 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Added — citizen prototype (dev only)
+- Dev menu: spawn a settler, worker or guard NPC where you stand, to try their daily life: settlers and workers claim beds, gather around midday and sleep at night like villagers; a worker stays around the spot it was spawned (its workplace); a guard stays at its post and fights monsters.
+
 ## [0.2.0] - 2026-11-18
 
 ### Changed — categories and scores (owner, 2026-11-18)
