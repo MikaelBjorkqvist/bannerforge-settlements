@@ -118,18 +118,14 @@ export function showOverview(player: Player, s: Settlement): void {
     ...grey("bannerforge.steward.housing", housing(s), false),
     txt("\n"),
   );
-  // Everyone by what they do (owner 2026-11-18: converted villagers and settlers are one people).
+  // Three kinds of people (owner 2026-11-18): Workers, the villagers (word by tier) and the Garrison. What the
+  // villagers do (job, unemployed, nitwit, child) is on the Housing page.
   const js = jobStates(s);
-  const parts: [string, number][] = [
-    ["bannerforge.citizens.workers", js.workers],
-    ["bannerforge.citizens.vanilla_jobs", js.vanilla],
-    ["bannerforge.citizens.jobless", js.jobless],
-    ["bannerforge.citizens.nitwits", js.nitwits],
-    ["bannerforge.citizens.children", js.children],
-  ];
-  const shown = parts.filter(([, n], i) => n > 0 || i < 3);
-  shown.forEach(([key, n], i) => info.push(...grey(key, n, i < shown.length - 1)));
-  info.push(txt("\n"), ...grey("bannerforge.steward.garrison", garrison(s), false));
+  info.push(
+    ...grey("bannerforge.citizens.workers", js.workers),
+    ...grey(`bannerforge.folk.${tier(s)}`, population(s) - js.workers),
+    ...grey("bannerforge.steward.garrison", garrison(s), false),
+  );
   // Keep the overview short (owner 2026-11-18): growth details live on the Housing page.
   const waitingNew = applicantsOf(s).length;
   if (waitingNew) info.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
@@ -226,7 +222,28 @@ export function showSection(player: Player, s: Settlement, category: Category): 
   form.button(t("bannerforge.ledger.back"), () => go(form, () => showOverview(player, s)));
   // Housing: how the town grows (owner 2026-11-18: births per staffed food building, newcomers at the Town Hall).
   if (category === "housing") {
-    form.label(raw(txt("§7"), t("bannerforge.citizens.free_beds", String(freeBeds(s))), txt("\n"), t("bannerforge.citizens.births", String(staffedFood(s)))));
+    const js = jobStates(s);
+    const kinds: RawMessage[] = [];
+    (
+      [
+        ["bannerforge.citizens.employed", js.vanilla],
+        ["bannerforge.citizens.unemployed", js.jobless],
+        ["bannerforge.citizens.nitwits", js.nitwits],
+        ["bannerforge.citizens.children", js.children],
+      ] as [string, number][]
+    ).forEach(([key, n], i) => kinds.push(txt(i ? " · " : ""), t(key), txt(` ${n}`)));
+    form.label(
+      raw(
+        txt("§7"),
+        t(`bannerforge.folk.${tier(s)}`),
+        txt(`: ${population(s) - js.workers}\n`),
+        ...kinds,
+        txt("\n\n"),
+        t("bannerforge.citizens.free_beds", String(freeBeds(s))),
+        txt("\n"),
+        t("bannerforge.citizens.births", String(staffedFood(s))),
+      ),
+    );
     form.divider();
   }
   // Economy: where its score comes from (owner 2026-11-18), above the buildings.
@@ -243,6 +260,10 @@ export function showSection(player: Player, s: Settlement, category: Category): 
         ...g("bannerforge.group.food", p.food, false),
         txt("\n"),
         t("bannerforge.economy.vanilla", `${CAT_COLOUR.economy}+${p.vanilla}§7`, String(vanillaTraders(s))),
+        txt(" "),
+        t(`bannerforge.folk.${tier(s)}`),
+        txt(" "),
+        t("bannerforge.economy.vanilla_2"),
       ),
     );
     form.divider();
