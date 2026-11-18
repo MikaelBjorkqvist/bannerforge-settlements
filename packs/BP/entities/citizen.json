@@ -2429,8 +2429,23 @@
             "mob"
           ]
         },
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 2,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 32,
+              "walk_speed_multiplier": 0.8,
+              "sprint_speed_multiplier": 0.9
+            }
+          ]
+        },
         "minecraft:behavior.random_stroll": {
-          "priority": 3,
+          "priority": 4,
           "speed_multiplier": 0.8,
           "interval": 1,
           "xz_dist": 24,

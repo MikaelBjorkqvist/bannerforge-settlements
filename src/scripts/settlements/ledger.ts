@@ -14,9 +14,9 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { applicantsOf, villagersOf } from "./roster.js";
+import { applicantsOf } from "./roster.js";
 import { news } from "./people.js";
-import { built, check, checkPromotion, economyParts, staffedFood, freeBeds, hireVillager, recruitable, vanillaTraders, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
+import { built, check, checkPromotion, economyParts, staffedFood, freeBeds, hirePerson, jobStates, recruitable, vanillaTraders, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -117,13 +117,19 @@ export function showOverview(player: Player, s: Settlement): void {
     ...grey("bannerforge.steward.population", population(s)),
     ...grey("bannerforge.steward.housing", housing(s), false),
     txt("\n"),
-    ...grey("bannerforge.citizens.workers", workers(s)),
-    ...grey("bannerforge.citizens.unemployed", freeSettlers(s), false),
-    txt("\n"),
-    ...grey("bannerforge.steward.garrison", garrison(s), villagersOf(s).length > 0),
   );
-  // Vanilla villagers that joined keep their vanilla jobs and beds; not population until adopted houses count them.
-  if (villagersOf(s).length) info.push(...grey("bannerforge.citizens.villagers", villagersOf(s).length, false));
+  // Everyone by what they do (owner 2026-11-18: converted villagers and settlers are one people).
+  const js = jobStates(s);
+  const parts: [string, number][] = [
+    ["bannerforge.citizens.workers", js.workers],
+    ["bannerforge.citizens.vanilla_jobs", js.vanilla],
+    ["bannerforge.citizens.jobless", js.jobless],
+    ["bannerforge.citizens.nitwits", js.nitwits],
+    ["bannerforge.citizens.children", js.children],
+  ];
+  const shown = parts.filter(([, n], i) => n > 0 || i < 3);
+  shown.forEach(([key, n], i) => info.push(...grey(key, n, i < shown.length - 1)));
+  info.push(txt("\n"), ...grey("bannerforge.steward.garrison", garrison(s), false));
   // Keep the overview short (owner 2026-11-18): growth details live on the Housing page.
   const waitingNew = applicantsOf(s).length;
   if (waitingNew) info.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
@@ -283,7 +289,7 @@ function confirmRecruit(player: Player, s: Settlement, def: BuildingDef, seed: s
     const now = recruitable(s).find((p) => p.seed === seed);
     const slot = waitingForWorkers(s).find((w) => w.id === def.id);
     if (now && slot) {
-      hireVillager(s, now, slot.id, slot.index);
+      hirePerson(s, now, slot.id, slot.index);
       saveSettlement(s);
       const e = now.eid ? world.getEntity(now.eid) : undefined;
       if (e) {

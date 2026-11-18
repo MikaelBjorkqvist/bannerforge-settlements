@@ -16,6 +16,7 @@ import { convertVillager, jobOf, VILLAGER_ID } from "./convert.js";
 import { adoptHousesDaily } from "./vanilla_houses.js";
 import { tier } from "./rules.js";
 import { SOLDIER_ID } from "./soldier.js";
+import { townsTag } from "./npc.js";
 import { buildingName, raw, t, txt } from "./text.js";
 import { OUTFIT_INDEX, type Person, type Settlement } from "./types.js";
 
@@ -130,15 +131,26 @@ function tickPeople(s: Settlement): void {
     }
   }
 
-  // Someone given a job while already in town (a hired villager): their entity becomes a worker.
+  // Townsfolk in town: a worker's entity is a worker with their title; the others keep their vanilla job current.
   for (const p of people) {
-    if (!p.job || p.state !== "here" || !p.eid) continue;
+    if (p.state !== "here" || !p.eid) continue;
     const e = world.getEntity(p.eid);
-    if (!e || e.getProperty("bannerforge_settlements:role") === "worker") continue;
+    if (!e) continue;
+    const tag = townsTag(p.name, p.job ? jobBuilding(p.job) : undefined);
+    if (e.nameTag !== tag) e.nameTag = tag;
+    if (!p.job) {
+      const j = jobOf(e);
+      if (j !== (p.vjob ?? 0)) {
+        p.vjob = j;
+        changed = true;
+      }
+      continue;
+    }
+    if (e.getProperty("bannerforge_settlements:role") === "worker") continue;
     e.triggerEvent("bannerforge:become_worker");
     news(s, raw(txt("§7"), t("bannerforge.people.hired", p.name), txt(" "), buildingName(jobBuilding(p.job))));
   }
-  // Villagers take and lose vanilla jobs by themselves: keep their job current (Economy bonus, hiring, Recruit).
+  // Converted villagers take and lose vanilla jobs by themselves: keep their job current (Economy bonus, hiring, Recruit).
   for (const v of villagersOf(s)) {
     const e = v.eid ? world.getEntity(v.eid) : undefined;
     if (!e) continue;

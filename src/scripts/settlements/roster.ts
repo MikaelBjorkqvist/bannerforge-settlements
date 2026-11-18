@@ -69,8 +69,9 @@ export function reconcile(s: Settlement): Change[] {
   for (const [job, n] of want) {
     for (let have = held.get(job)?.length ?? 0; have < n; have++) {
       const pool = unemployed();
-      // People already in town first, so a shop gets its worker as soon as possible.
-      const p = pool.find((q) => q.state === "here") ?? pool.find((q) => q.state === "walking") ?? pool[0];
+      // People already in town first, and never someone holding a vanilla job or a nitwit (Recruit only).
+      const open = pool.filter((q) => (q.vjob ?? 0) === 0);
+      const p = open.find((q) => q.state === "here") ?? open.find((q) => q.state === "walking") ?? open[0];
       if (p) {
         p.job = job;
         out.push({ kind: "hired", person: p, job });

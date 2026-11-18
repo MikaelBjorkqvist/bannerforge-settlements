@@ -23,6 +23,9 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
   - **Births:** each dawn, one child per staffed Farmstead or Docks is born into a free bed. Children count at once and grow up into settlers after a day.
   - **Newcomers:** once a Town Hall stands, one newcomer a day walks to its door and waits (yellow name). Talk to them: **Welcome** (needs a free bed) or **Not now**. Unanswered, they move on after two days.
   - The ledger shows free beds and newcomers waiting.
+- **One people:** converted villagers and settlers are treated the same. Anyone with a vanilla job keeps it: automatic hiring only takes the jobless, and the Recruit list shows everyone with a vanilla job. The ledger shows Workers · Trades · Jobless (and Nitwits, Children when there are any).
+- **Workers' name tags** show their title: "Fisher, Maren", "Merchant, Bram"…
+- Fixes from the 2026-11-18 play-test: vanilla houses near the border that weren't loaded at founding are looked for again after a minute (not the next day); newcomers set off in the morning only; a turned-away newcomer walks away from you instead of in circles; the steward and newcomers no longer flash at the bell/door before walking in.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

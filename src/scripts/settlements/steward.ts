@@ -221,19 +221,15 @@ function findSteward(dim: Dimension, bell: Vec3, match: (e: Entity) => boolean, 
   return dim.getEntities({ type: STEWARD_ID, location: bell, maxDistance: SEARCH_RADIUS }).find(match);
 }
 
-/**
- * Spawns the steward at the bell, so the bell becomes their home, then sends them a short walk away to walk in.
- * The move waits one tick so the home position is surely set first.
- */
+/** Spawns the steward at the bell, so the bell becomes their home, then sends them a short walk away to walk in. */
 function spawnSteward(dim: Dimension, bell: Vec3, name: string, skin: number, outfit: number, settlementId?: string): Entity {
   const e = dim.spawnEntity(STEWARD_ID, standingSpotNear(dim, bell), { spawnEvent: "bannerforge:spawn_arriving" });
   const start = safeWalkInSpot(dim.id, bell, WALK_FAR, WALK_NEAR);
   if (start) {
     e.addTag(WALKING_TAG);
     e.setDynamicProperty(P_SINCE, gameTime());
-    system.runTimeout(() => {
-      if (e.isValid) e.teleport(start);
-    }, 1);
+    // Same tick (play-test 2026-11-18: a one-tick delay showed the steward at the bell for a moment).
+    e.teleport(start);
   } else {
     e.triggerEvent("bannerforge:arrived"); // nowhere safe to walk from: they are already by the bell
   }

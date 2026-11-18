@@ -34,6 +34,8 @@ export interface FoundHouse {
 }
 
 export interface HouseScan {
+  /** False if part of the area couldn't be read (chunks not loaded): look again soon. */
+  complete: boolean;
   houses: FoundHouse[];
   /** Bed heads that belong to no recognised house. */
   loose: Vector3[];
@@ -52,6 +54,7 @@ export function scanHouses(dim: Dimension, center: Vector3, radius: number, done
 function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseScan) => void): Generator<void, void, void> {
   // 1. Bed heads inside the border, one 16 x 16 column at a time.
   const heads: Vector3[] = [];
+  let complete = true;
   const y0 = center.y - BELOW;
   const y1 = center.y + ABOVE;
   for (let x = center.x - radius; x <= center.x + radius; x += 16) {
@@ -63,7 +66,7 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
           if (dim.getBlock(at)?.permutation.getState("head_piece_bit") === true) heads.push(at);
         }
       } catch {
-        // not loaded: those beds are left out (the scan can run again later)
+        complete = false; // not loaded: those beds are left out, the town looks again soon
       }
       yield;
     }
@@ -104,7 +107,7 @@ function* scan(dim: Dimension, center: Vector3, radius: number, done: (r: HouseS
     own.forEach((k) => used.add(k));
     houses.push(c);
   }
-  done({ houses, loose: heads.filter((h) => !used.has(key(h))) });
+  done({ complete, houses, loose: heads.filter((h) => !used.has(key(h))) });
 }
 
 /** Share of anchors that match; 0 unless every bed of the design is there. Same maths as tools/vanilla_houses.mjs. */
@@ -125,6 +128,10 @@ function score(fp: VanillaHouse, at: Vector3, rot: number, typeAt: (x: number, y
 // ---- adoption ----------------------------------------------------------------------------------------------------
 
 const scanning = new Set<string>();
+/** Play-test 2026-11-18: houses near the border were missed at founding (chunks not loaded) and only adopted the next
+ *  day. An incomplete look is repeated after this many ticks. */
+const RETRY_TICKS = 1200;
+const retryAt = new Map<string, number>();
 const keyOf = (h: { x: number; y: number; z: number }) => `${h.x},${h.y},${h.z}`;
 const DIR_NAME: Record<string, string> = { "0,-1": "north", "0,1": "south", "1,0": "east", "-1,0": "west" };
 
@@ -134,7 +141,9 @@ const DIR_NAME: Record<string, string> = { "0,-1": "north", "0,1": "south", "1,0
  */
 export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: ReturnType<typeof raw>) => void): void {
   const day = Math.floor(gameTime() / 24000);
-  if (s.housesDay === day || scanning.has(s.id)) return;
+  if (scanning.has(s.id)) return;
+  const again = retryAt.get(s.id);
+  if (s.housesDay === day && (again === undefined || system.currentTick < again)) return;
   const dim = world.getDimension(s.dimension);
   if (!dim.getPlayers({ location: s.center, maxDistance: BORDER_RADIUS[tier(s)] + 32 }).length) return; // nobody near: chunks not loaded
   scanning.add(s.id);
@@ -157,6 +166,8 @@ export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: Retur
     for (const h of fresh) h.banner = putUpBanner(dim, h, now.faction);
     now.adopted = [...kept, ...fresh];
     now.housesDay = day;
+    if (r.complete) retryAt.delete(s.id);
+    else retryAt.set(s.id, system.currentTick + RETRY_TICKS);
     saveSettlement(now);
     const newBeds = fresh.reduce((n, h) => n + h.beds, 0);
     if (fresh.length) tell(now, raw(txt("§a"), t("bannerforge.houses.adopted", String(fresh.length), String(newBeds))));

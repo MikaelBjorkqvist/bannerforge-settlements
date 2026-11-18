@@ -70,22 +70,31 @@ export const NITWIT = 14;
 const hasVanillaJob = (p: Person) => (p.vjob ?? 0) >= 1 && (p.vjob ?? 0) < NITWIT;
 
 /**
- * A converted villager becomes the worker of a building instance (automatic hiring of the jobless, or the Recruit
- * button for one with a vanilla job). They move from the villagers list to the roster with the job; the numbers
- * follow (staffed + 1). Their entity is turned into a worker by people.ts.
+ * Someone living in town becomes the worker of a building instance (automatic hiring of the jobless, or the Recruit
+ * button for one with a vanilla job). Owner 2026-11-18: no difference between converted villagers and settlers here.
+ * A converted villager moves to the roster; a settler leaves the free count. Their entity is made a worker by people.ts.
  */
-export function hireVillager(s: Settlement, v: Person, id: string, index: number): void {
+export function hirePerson(s: Settlement, p: Person, id: string, index: number): void {
   const c = citizensOf(s);
   const list = c.villagers ?? [];
-  const i = list.indexOf(v);
-  if (i < 0) return;
-  list.splice(i, 1);
-  delete v.vjob;
-  v.job = `${id}:${index}`;
-  (c.people ??= []).push(v);
+  if (list.includes(p)) {
+    list.splice(list.indexOf(p), 1);
+    (c.people ??= []).push(p);
+  } else if ((c.people ?? []).includes(p) && !p.job && c.free > 0) {
+    c.free -= 1;
+  } else {
+    return;
+  }
+  delete p.vjob;
+  p.job = `${id}:${index}`;
   const staffed = (c.staffed[id] ??= []);
   staffed[index] = (staffed[index] ?? 0) + 1;
 }
+/** Kept for older callers: same as hirePerson. */
+export const hireVillager = hirePerson;
+
+/** Settlers (no worker job) who hold a vanilla job or are nitwits: automatic hiring leaves them alone. */
+const settlersBusy = (c: Citizens) => (c.people ?? []).filter((p) => !p.job && (p.vjob ?? 0) !== 0).length;
 
 /**
  * Open jobs are filled, oldest buildings first (owner 2026-11-18): jobless converted villagers first, then free
@@ -103,7 +112,7 @@ export function assignJobs(s: Settlement): string[] {
       missing--;
       hired.push(w.id);
     }
-    const n = Math.min(c.free, missing);
+    const n = Math.min(c.free - settlersBusy(c), missing);
     if (n <= 0) continue;
     const list = (c.staffed[w.id] ??= []);
     list[w.index] = (list[w.index] ?? 0) + n;
@@ -113,12 +122,23 @@ export function assignJobs(s: Settlement): string[] {
   return hired;
 }
 
-/** Villagers who kept a vanilla job (not nitwits). */
-export const vanillaTraders = (s: Settlement): number => (s.citizens?.villagers ?? []).filter(hasVanillaJob).length;
+/** Everyone outside our buildings: converted villagers and settlers without a worker job. */
+const townsfolkOutside = (s: Settlement): Person[] => [...(s.citizens?.villagers ?? []), ...(s.citizens?.people ?? []).filter((p) => !p.job)];
+/** Townsfolk with a vanilla job (not nitwits), converted or not. */
+export const vanillaTraders = (s: Settlement): number => townsfolkOutside(s).filter(hasVanillaJob).length;
+/** The town's people by what they do (ledger): workers, vanilla jobs, jobless, nitwits, children. */
+export function jobStates(s: Settlement): { workers: number; vanilla: number; jobless: number; nitwits: number; children: number } {
+  const outside = townsfolkOutside(s);
+  const vanilla = outside.filter(hasVanillaJob).length;
+  const nitwits = outside.filter((p) => p.vjob === NITWIT).length;
+  // Settlers without a person yet (old saves, still walking in) count as jobless.
+  const jobless = population(s) - workers(s) - children(s) - vanilla - nitwits;
+  return { workers: workers(s), vanilla, nitwits, jobless: Math.max(0, jobless), children: children(s) };
+}
 /** Economy bonus from vanilla jobs (owner 2026-11-18): +1 per 3 villagers with a vanilla job, no cap. */
 export const vanillaBonus = (s: Settlement): number => Math.floor(vanillaTraders(s) / 3);
-/** Villagers with a vanilla job, for the Recruit button. */
-export const recruitable = (s: Settlement): Person[] => (s.citizens?.villagers ?? []).filter(hasVanillaJob);
+/** Townsfolk with a vanilla job, for the Recruit button. */
+export const recruitable = (s: Settlement): Person[] => townsfolkOutside(s).filter(hasVanillaJob);
 
 /** The Economy score in parts (ledger breakdown): staffed buildings per group, and the vanilla bonus. */
 export function economyParts(s: Settlement): { shops: number; craftsmen: number; food: number; vanilla: number } {

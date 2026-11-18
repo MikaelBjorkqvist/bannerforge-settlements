@@ -20,7 +20,8 @@ import { OUTFIT_INDEX, type Person, type Settlement, type Site } from "./types.j
 
 const INTERVAL = 100;
 const DAWN = 1000;
-const DUSK = 12000;
+/** Newcomers set off in the morning only (play-test 2026-11-18: one came right after a midday Town Hall). */
+const MORNING_END = 4000;
 /** A newcomer waits this long for an answer. */
 const WAIT_TICKS = 2 * 24000;
 /** Within this distance of the Town Hall door a newcomer counts as waiting there. */
@@ -121,7 +122,7 @@ function tick(s: Settlement): boolean {
   const c = s.citizens;
   const day = Math.floor(gameTime() / 24000);
   const tod = gameTime() % 24000;
-  if (hall && c && c.applicantDay !== day && tod >= DAWN && tod < DUSK) {
+  if (hall && c && c.applicantDay !== day && tod >= DAWN && tod < MORNING_END) {
     const door = doorOfSite(dim, hall);
     const start = door && safeBorderSpot(s);
     if (door && start) {
@@ -135,8 +136,8 @@ function tick(s: Settlement): boolean {
       p.since = gameTime();
       c.applicantDay = day;
       changed = true;
-      // Spawned at the door so the door is their home; one tick later they start out from the border spot.
-      system.runTimeout(() => e.isValid && e.teleport(start), 1);
+      // Spawned at the door so the door is their home, and moved out in the same tick (no flash at the door).
+      e.teleport(start);
       news(s, raw(txt("§e"), t("bannerforge.newcomer.coming", p.name)));
     }
   }

@@ -144,7 +144,12 @@ const applicant = ["adult", "behavior_peasant", "basic_schedule", `${P}applicant
 // removes them once no player is near or after half a minute.
 groups[`${P}leaving`] = {
   "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_leaving", "mob"] },
-  "minecraft:behavior.random_stroll": { priority: 3, speed_multiplier: 0.8, interval: 1, xz_dist: 24, y_dist: 4 },
+  // Away from the player who turned them down (play-test 2026-11-18: strolling went in circles).
+  "minecraft:behavior.avoid_mob_type": {
+    priority: 2,
+    entity_types: [{ filters: { test: "is_family", subject: "other", value: "player" }, max_dist: 32, walk_speed_multiplier: 0.8, sprint_speed_multiplier: 0.9 }],
+  },
+  "minecraft:behavior.random_stroll": { priority: 4, speed_multiplier: 0.8, interval: 1, xz_dist: 24, y_dist: 4 },
 };
 
 // --- role events (scripts trigger these right after spawning) --------------------------------------------------------

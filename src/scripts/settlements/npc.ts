@@ -28,6 +28,27 @@ export const NPC_NAMES = [
   "Pim", "Reed", "Shay", "Teague", "Wyla",
 ];
 
+/**
+ * Workers' titles by building (owner 2026-11-18: a worker's name tag is "<Title>, <Name>"). Name tags are plain
+ * strings and can't be translated: same documented exception as the steward's title.
+ */
+export const WORKER_TITLES: Record<string, string> = {
+  market: "Merchant",
+  tavern: "Innkeeper",
+  stables: "Stablehand",
+  warehouse: "Storekeeper",
+  blacksmith: "Smith",
+  fletcher: "Fletcher",
+  alchemist: "Alchemist",
+  stonemason: "Mason",
+  woodcarver: "Woodcarver",
+  farmstead: "Farmer",
+  docks: "Fisher",
+  shrine: "Priest",
+};
+/** A townsperson's name tag: with their title while they work at one of our buildings. */
+export const townsTag = (name: string, building?: string) => (building && WORKER_TITLES[building] ? `${WORKER_TITLES[building]}, ${name}` : name);
+
 /** Stable pick from a seed string (so a migrated settlement gets the same name every load). */
 export function pickIndex(seed: string, count: number): number {
   let h = 2166136261;

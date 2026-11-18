@@ -183,3 +183,16 @@ assert.equal(R.freeSettlers(u), 1);
   assert.equal(R.freeBeds(s), 0);
   assert.deepEqual(R.morning(s), { births: 0, left: 0 }, "no free bed, no birth");
 }
+
+// One people (owner 2026-11-18): settlers with a vanilla job are left alone by hiring, count as trades, can be recruited.
+{
+  const s = { id: "u", name: "U", buildings: { market: [1], house: [1, 1] }, citizens: { free: 2, staffed: {}, people: [{ seed: "a", name: "Lib", state: "here", vjob: 5 }, { seed: "b", name: "Joe", state: "here", vjob: 0 }] } };
+  R.assignJobs(s);
+  assert.equal(s.citizens.free, 1, "only the jobless one was hired");
+  assert.equal(R.vanillaTraders(s), 1);
+  assert.deepEqual(R.recruitable(s).map((p) => p.name), ["Lib"]);
+  assert.deepEqual(R.jobStates(s), { workers: 1, vanilla: 1, jobless: 0, nitwits: 0, children: 0 });
+  R.hirePerson(s, s.citizens.people[0], "market", 0);
+  assert.equal(s.citizens.free, 0);
+  assert.equal(s.citizens.staffed.market[0], 2);
+}
