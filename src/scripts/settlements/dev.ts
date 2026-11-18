@@ -12,6 +12,7 @@ import { hurryConstruction } from "./construction.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
+import { showOverview, showSection } from "./ledger.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { scanHouses } from "./vanilla_houses.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
@@ -31,6 +32,22 @@ export function registerDevMenu(): void {
     if (e.id === "bannerforge:dev") showDevMenu(e.sourceEntity as Player);
     if (e.id === "bannerforge:census") census(e.sourceEntity as Player);
     if (e.id === "bannerforge:houses") houses(e.sourceEntity as Player);
+    // Sets the free settlers (testing hiring and Recruit): "/scriptevent bannerforge:setfree 0". Extras leave.
+    if (e.id === "bannerforge:setfree") {
+      const s = nearest(e.sourceEntity as Player);
+      if (s?.citizens) {
+        s.citizens.free = Math.max(0, Number(e.message) || 0);
+        saveSettlement(s);
+        update(s);
+      }
+    }
+    // Opens the nearest settlement's ledger without the steward (testing): "/scriptevent bannerforge:ledger [economy]".
+    if (e.id === "bannerforge:ledger") {
+      const p = e.sourceEntity as Player;
+      const s = nearest(p);
+      if (s && e.message === "economy") showSection(p, s, "economy");
+      else if (s) showOverview(p, s);
+    }
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
     if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
     if (e.id === "bannerforge:dawn") {
