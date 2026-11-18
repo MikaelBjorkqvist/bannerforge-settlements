@@ -5,7 +5,7 @@
 
 import { type Player, type RawMessage, system } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
-import { BUILDINGS, CATEGORIES, PROMOTION, type BuildingDef, type Category } from "./buildings.js";
+import { BUILDINGS, CATEGORIES, PROMOTION, SCORES, type BuildingDef, type Category } from "./buildings.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { bedsFor } from "./blueprint.js";
 import { canAfford, countItem } from "./economy.js";
@@ -20,6 +20,11 @@ import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from 
 import type { Settlement } from "./types.js";
 
 const icon = uiIcon;
+
+/** One colour per score, used everywhere in the ledger (owner, 2026-11-18). */
+const CAT_COLOUR: Record<Category | "prosperity", string> = { prosperity: "§6", economy: "§a", military: "§c", civic: "§9", housing: "§e" };
+/** Longest bar in the overview, in blocks. */
+const BAR_MAX = 16;
 
 const SECTION_ICON: Record<Category, string> = {
   housing: "section_population",
@@ -86,28 +91,28 @@ export function showOverview(player: Player, s: Settlement): void {
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
-  // Prosperity and the three scores it is made of, then people (owner, 2026-11-18). No symbols in front of the
-  // lines: their widths differ in the game font and made the left edge uneven.
+  // Prosperity and a bar per score it is made of (owner, 2026-11-18: "a graph"), then people in grey. The bars
+  // start at the left edge, so they line up whatever the font; one block per point, scaled down for big towns.
   form.divider();
   const waiting = waitingForWorkers(s).length;
-  const part = (key: string, value: number, sep = true): RawMessage[] => [t(key), txt(` ${value}${sep ? " · " : ""}`)];
-  const info: RawMessage[] = [
-    txt("§6"),
-    t("bannerforge.steward.prosperity"),
-    txt(` §f${prosperity(s)}\n§7`),
-    ...part("bannerforge.category.economy", score(s, "economy")),
-    ...part("bannerforge.category.military", score(s, "military")),
-    ...part("bannerforge.category.civic", score(s, "civic"), false),
-    txt("\n§a"),
-    t("bannerforge.steward.population"),
-    txt(` §f${population(s)}§7 · `),
-    ...part("bannerforge.steward.housing", housing(s), false),
-    txt("\n§b"),
-    t("bannerforge.citizens.workers"),
-    txt(` §f${workers(s)}§7 · `),
-    ...part("bannerforge.citizens.unemployed", freeSettlers(s)),
-    ...part("bannerforge.steward.garrison", garrison(s), false),
-  ];
+  const scores = SCORES.map((c) => ({ c, v: score(s, c) }));
+  const perBlock = Math.max(1, Math.ceil(Math.max(...scores.map((x) => x.v)) / BAR_MAX));
+  const info: RawMessage[] = [txt(CAT_COLOUR.prosperity), t("bannerforge.steward.prosperity"), txt(` §f${prosperity(s)}`)];
+  for (const { c, v } of scores) {
+    const blocks = Math.round(v / perBlock);
+    info.push(txt(`\n${CAT_COLOUR[c]}${"█".repeat(blocks)}${blocks ? " " : ""}§7`), t(`bannerforge.category.${c}`), txt(` §f${v}`));
+  }
+  const grey = (key: string, value: number, sep = true): RawMessage[] => [t(key), txt(` ${value}${sep ? " · " : ""}`)];
+  info.push(
+    txt("\n\n§7"),
+    ...grey("bannerforge.steward.population", population(s)),
+    ...grey("bannerforge.steward.housing", housing(s), false),
+    txt("\n"),
+    ...grey("bannerforge.citizens.workers", workers(s)),
+    ...grey("bannerforge.citizens.unemployed", freeSettlers(s), false),
+    txt("\n"),
+    ...grey("bannerforge.steward.garrison", garrison(s), false),
+  );
   if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
   form.label(raw(...info));
@@ -165,12 +170,12 @@ function showGrow(player: Player, s: Settlement): void {
   const now = tier(s);
   // The border as the area players see: blocks across, the bell's block in the middle (owner, 2026-11-18).
   const across = (r: number) => String(2 * r + 1);
-  const gets: RawMessage[] = [t("bannerforge.grow.border", across(BORDER_RADIUS[next]), across(BORDER_RADIUS[next]), across(BORDER_RADIUS[now]), across(BORDER_RADIUS[now]))];
+  // Short lines that fit the form without wrapping (owner, 2026-11-18).
+  const gets: RawMessage[] = [t("bannerforge.grow.border", across(BORDER_RADIUS[next]), across(BORDER_RADIUS[next]))];
   for (const def of BUILDINGS) {
     if (!def.perTier || !Number.isFinite(def.perTier[next])) continue;
-    const more = def.perTier[next] - def.perTier[now];
-    if (more > 0) {
-      const with_ = { rawtext: [{ text: String(more) }, { translate: `bannerforge.plural.${def.id}` }, { text: String(def.perTier[next]) }] };
+    if (def.perTier[next] > def.perTier[now]) {
+      const with_ = { rawtext: [{ translate: `bannerforge.plural.${def.id}` }, { text: String(def.perTier[now]) }, { text: String(def.perTier[next]) }] };
       gets.push({ translate: "bannerforge.grow.more", with: with_ });
     }
   }
@@ -239,27 +244,25 @@ export function showBuilding(player: Player, s: Settlement, def: BuildingDef): v
     const c: Check = check(s, { kind: "build", id: def.id });
     const count = instances(s, def.id).length;
 
-    // What it is and gives (white line, grey details).
-    let nowMsg: RawMessage = raw(t(`bannerforge.desc.${def.id}.1`));
-    const details: RawMessage[] = [txt("\n§7")];
-    // Points go to the building's own category (Economy, Civic); Military shows its defence below.
-    if (def.prosperity) details.push(t(`bannerforge.category.${def.category}`), txt(` +${def.prosperity}  `));
+    // What it is (white), then one stat per line: grey label, value in the category's colour (owner, 2026-11-18).
+    const lines: RawMessage[] = [t(`bannerforge.desc.${def.id}.1`), txt("\n")];
+    const stat = (key: string, value: RawMessage | string) => lines.push(txt("\n§7"), t(key), txt(" "), typeof value === "string" ? txt(value) : value);
+    if (def.prosperity) stat(`bannerforge.category.${def.category}`, `${CAT_COLOUR[def.category]}+${def.prosperity}`);
+    if (def.defence) stat("bannerforge.category.military", `${CAT_COLOUR.military}+${def.defence}`);
     const sleeps = def.category === "housing" ? bedsFor(def, s.faction, undefined) ?? def.housing : def.housing;
-    if (sleeps) details.push(txt("  "), t("bannerforge.steward.housing"), txt(` +${sleeps}`));
-    if (def.defence) details.push(txt("  "), t("bannerforge.category.military"), txt(` +${def.defence}`));
-    if (def.npcs) details.push(txt("  "), t("bannerforge.ledger.workers", String(def.npcs)));
-    const short = waitingForWorkers(s).filter((w) => w.id === def.id).length;
-    if (short) details.push(txt("\n§6⚠ "), t("bannerforge.citizens.this_waits", String(short)));
+    if (sleeps) stat("bannerforge.steward.housing", `${CAT_COLOUR.housing}+${sleeps}`);
+    if (def.npcs) stat("bannerforge.citizens.workers", `§f${def.npcs}`);
     // Garrisons start at the lowest rank; the tier only unlocks training by the Captain (owner, 2026-11-18).
-    if (def.garrison) details.push(txt("\n§7"), t("bannerforge.steward.garrison"), txt(": "), t(`bannerforge.garrison.${def.id}.village`));
-    nowMsg = raw(nowMsg, ...details);
+    if (def.garrison) stat("bannerforge.steward.garrison", raw(txt("§f"), t(`bannerforge.garrison.${def.id}.village`)));
     if (def.perTier) {
       const limit = def.perTier[tier(s)];
-      nowMsg = raw(nowMsg, txt("\n§f"), t("bannerforge.ledger.built_count"), txt(Number.isFinite(limit) ? ` ${count} / ${limit}` : ` ${count}`));
-      if (def.housing) nowMsg = raw(nowMsg, txt("§7  "), t("bannerforge.steward.housing"), txt(` ${housing(s)}`));
+      stat("bannerforge.ledger.built", `§f${count}${Number.isFinite(limit) ? ` / ${limit}` : ""}`);
     } else {
-      nowMsg = raw(nowMsg, txt("\n§f"), count ? t("bannerforge.ledger.is_built") : t("bannerforge.ledger.not_built"));
+      stat("bannerforge.ledger.built", raw(txt("§f"), t(count ? "bannerforge.ledger.yes" : "bannerforge.ledger.no")));
     }
+    const short = waitingForWorkers(s).filter((w) => w.id === def.id).length;
+    if (short) lines.push(txt("\n§6⚠ "), t("bannerforge.citizens.this_waits", String(short)));
+    let nowMsg: RawMessage = raw(...lines);
     const left = minutesLeft(s, def);
     if (left !== undefined) nowMsg = raw(nowMsg, txt("\n§e⚒ "), t("bannerforge.ledger.construction_line", String(left)));
     now.setData(nowMsg);
