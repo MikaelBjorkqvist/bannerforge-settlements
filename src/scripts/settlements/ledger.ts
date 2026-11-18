@@ -23,8 +23,8 @@ const icon = uiIcon;
 
 /** One colour per score, used everywhere in the ledger (owner, 2026-11-18). */
 const CAT_COLOUR: Record<Category | "prosperity", string> = { prosperity: "§6", economy: "§a", military: "§c", civic: "§9", housing: "§e" };
-/** Longest bar in the overview, in blocks. */
-const BAR_MAX = 16;
+/** Longest bar in the overview, in blocks: leaves room for "Economy 14" on the same line (play-test 2026-11-18). */
+const BAR_MAX = 10;
 
 const SECTION_ICON: Record<Category, string> = {
   housing: "section_population",
@@ -92,14 +92,14 @@ export function showOverview(player: Player, s: Settlement): void {
 
   // Town overview (owner, 2026-11-17): the numbers, then warnings. Population = people living there, Housing = room.
   // Prosperity and a bar per score it is made of (owner, 2026-11-18: "a graph"), then people in grey. The bars
-  // start at the left edge, so they line up whatever the font; one block per point, scaled down for big towns.
+  // start at the left edge, so they line up whatever the font; the biggest score gets BAR_MAX blocks.
   form.divider();
   const waiting = waitingForWorkers(s).length;
   const scores = SCORES.map((c) => ({ c, v: score(s, c) }));
-  const perBlock = Math.max(1, Math.ceil(Math.max(...scores.map((x) => x.v)) / BAR_MAX));
+  const top = Math.max(1, ...scores.map((x) => x.v));
   const info: RawMessage[] = [txt(CAT_COLOUR.prosperity), t("bannerforge.steward.prosperity"), txt(` §f${prosperity(s)}`)];
   for (const { c, v } of scores) {
-    const blocks = Math.round(v / perBlock);
+    const blocks = v > 0 ? Math.max(1, Math.round((v / top) * BAR_MAX)) : 0;
     info.push(txt(`\n${CAT_COLOUR[c]}${"█".repeat(blocks)}${blocks ? " " : ""}§7`), t(`bannerforge.category.${c}`), txt(` §f${v}`));
   }
   const grey = (key: string, value: number, sep = true): RawMessage[] => [t(key), txt(` ${value}${sep ? " · " : ""}`)];
