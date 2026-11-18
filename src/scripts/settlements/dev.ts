@@ -15,6 +15,7 @@ import { raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
 const DEV_LEDGER = "bannerforge:dev_ledger";
+const LAB_ID = "bannerforge_settlements:lab_villager";
 
 /** Is the "Dev tools" button shown in the ledger? Toggled from the dev menu, saved with the world. */
 export const devButtonInLedger = (): boolean => world.getDynamicProperty(DEV_LEDGER) === true;
@@ -143,6 +144,34 @@ export function showDevMenu(player: Player): void {
   form.button(t("bannerforge.dev.remove_citizens"), () => {
     let n = 0;
     for (const e of player.dimension.getEntities({ type: CITIZEN_ID, location: player.location, maxDistance: 64 })) {
+      e.remove();
+      n++;
+    }
+    done(t("bannerforge.dev.removed", String(n)));
+  });
+
+  // Citizen research lab (draft only): an exact villager_v2 copy under our identifier, next to vanilla villagers.
+  form.header(t("bannerforge.dev.lab"));
+  form.button(t("bannerforge.dev.lab_spawn"), () => {
+    player.dimension.spawnEntity(LAB_ID, player.location);
+    done(t("bannerforge.dev.spawned", LAB_ID));
+  });
+  form.button(t("bannerforge.dev.lab_report"), () => {
+    const lines: string[] = [];
+    for (const type of [LAB_ID, "minecraft:villager_v2"]) {
+      for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
+        const v = e.getComponent("minecraft:variant")?.value ?? -1;
+        const m = e.getComponent("minecraft:mark_variant")?.value ?? -1;
+        const p = e.location;
+        lines.push(`${type === LAB_ID ? "LAB" : "vanilla"} prof=${v} skin=${m} at ${p.x | 0} ${p.y | 0} ${p.z | 0}`);
+      }
+    }
+    console.warn(`[BannerForge] lab report:\n${lines.join("\n")}`);
+    done(txt(lines.slice(0, 12).join("\n") || "none"));
+  });
+  form.button(t("bannerforge.dev.lab_remove"), () => {
+    let n = 0;
+    for (const e of player.dimension.getEntities({ type: LAB_ID, location: player.location, maxDistance: 64 })) {
       e.remove();
       n++;
     }
