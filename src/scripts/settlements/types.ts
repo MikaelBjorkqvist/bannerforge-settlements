@@ -141,6 +141,12 @@ export interface Citizens {
    * free/staffed (their beds are vanilla beds, not our housing, until adopted houses count them).
    */
   villagers?: Person[];
+  /** Children born in town (owner 2026-11-18): one per staffed food building a day, into free beds. Grown after a day. */
+  children?: Person[];
+  /** Newcomers waiting at the Town Hall for the player's word (owner 2026-11-18). Not population. */
+  applicants?: Person[];
+  /** Day the last newcomer set off (one a day). */
+  applicantDay?: number;
 }
 
 /**
@@ -156,7 +162,9 @@ export interface Person {
   eid?: string;
   /** Converted villagers: the vanilla job variant they had (0 none, 14 nitwit). */
   vjob?: number;
-  /** gameTime they set off from the border. */
+  /** Children: the day they were born. */
+  bornDay?: number;
+  /** gameTime they set off from the border (newcomers: or reached the Town Hall). */
   since?: number;
 }
 

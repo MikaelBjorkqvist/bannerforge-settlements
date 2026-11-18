@@ -70,3 +70,19 @@ assert.equal(s.citizens.free, 0);
   Ro.removeVillager(v, a);
   assert.deepEqual(Ro.villagersOf(v), [b]);
 }
+
+// Children grow up into free settlers; newcomers need a free bed to stay (owner 2026-11-18).
+{
+  const g = { id: "g", name: "G", buildings: {}, citizens: { free: 0, staffed: {} } };
+  const kid = Ro.addChild(g, 5);
+  assert.equal(Ro.growUp(g, 5).length, 0);
+  assert.deepEqual(Ro.growUp(g, 6), [kid]);
+  assert.equal(g.citizens.free, 1);
+  assert.equal(Ro.reconcile(g).length, 0, "the grown child is the free settler");
+  const a = Ro.addApplicant(g);
+  assert.notEqual(a.name, kid.name);
+  assert.equal(Ro.acceptApplicant(g, a, 0), false);
+  assert.equal(Ro.acceptApplicant(g, a, 1), true);
+  assert.equal(g.citizens.free, 2);
+  assert.equal(Ro.reconcile(g).length, 0);
+}

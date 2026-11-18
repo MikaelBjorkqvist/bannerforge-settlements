@@ -52,7 +52,7 @@ ent.description = {
   is_summonable: true,
   properties: {
     [`${P}outfit`]: { type: "int", range: [0, 3], default: 0, client_sync: true },
-    [`${P}role`]: { type: "enum", values: ["villager", "settler", "worker", "guard"], default: "villager", client_sync: true },
+    [`${P}role`]: { type: "enum", values: ["villager", "settler", "worker", "guard", "applicant"], default: "villager", client_sync: true },
     [`${P}rank`]: { type: "int", range: [1, 3], default: 1, client_sync: true },
   },
 };
@@ -80,7 +80,7 @@ const PROFESSIONS = ["armorer", "butcher", "cartographer", "cleric", "farmer", "
 const PLANS = ["basic_schedule", "work_schedule", "jobless_schedule", "farmer_schedule", "librarian_schedule",
   "fisher_schedule", "child_schedule"];
 const CLEAR = [...PROFESSIONS, ...PLANS, "behavior_peasant", "behavior_non_peasant", "baby", "job_specific_goals",
-  "trade_components", "bannerforge_settlements:worker"];
+  "trade_components", "bannerforge_settlements:worker", "bannerforge_settlements:applicant"];
 /** Daily state groups the scheduler adds; only a guard (who leaves the village routine) drops them. */
 const DAILY = Object.keys(groups).filter((g) => /_schedule_villager$|^work_schedule_/.test(g));
 for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
@@ -129,9 +129,21 @@ groups[`${P}worker`] = {
 };
 const worker = ["adult", "behavior_peasant", "basic_schedule", `${P}worker`];
 
+// --- applicant: a newcomer waiting at the Town Hall for the player's word (owner 2026-11-18) ------------------------
+// Like the steward's walk-in: the script spawns them at the Town Hall door (their home), moves them out to a safe spot
+// and they walk back with go_home. The nitwit family keeps them out of vanilla jobs while they wait.
+groups[`${P}applicant`] = {
+  "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_applicant", "mob"] },
+  "minecraft:variant": { value: 0 },
+  "minecraft:home": { restriction_radius: 6, restriction_type: "random_movement" },
+  "minecraft:behavior.go_home": { priority: 2, speed_multiplier: 0.7, interval: 1, goal_radius: 2.5 },
+  "minecraft:follow_range": { value: 64, max: 64 },
+};
+const applicant = ["adult", "behavior_peasant", "basic_schedule", `${P}applicant`];
+
 // --- role events (scripts trigger these right after spawning) --------------------------------------------------------
 const role = (name, remove, add) => ({
-  remove: { component_groups: [...new Set([...remove, `${P}guard`, `${P}worker`])].filter((g) => !add.includes(g)) },
+  remove: { component_groups: [...new Set([...remove, `${P}guard`, `${P}worker`, `${P}applicant`])].filter((g) => !add.includes(g)) },
   add: { component_groups: add },
   set_property: { [`${P}role`]: name },
 });
@@ -152,6 +164,9 @@ events["bannerforge:spawn_guard"] = spawnAs("guard", ["adult", `${P}guard`]);
 events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}arriving`]);
 events["bannerforge:spawn_arriving_worker"] = spawnAs("worker", [...worker, `${P}arriving`]);
 events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
+events["bannerforge:spawn_applicant"] = spawnAs("applicant", applicant);
+// A child born in town (owner 2026-11-18): a vanilla baby that grows up as a settler.
+events["bannerforge:spawn_child"] = spawnAs("settler", ["baby", "child_schedule"]);
 
 // --- conversion of a vanilla villager (script: spawn with spawn_converted, then set look and job) ---------------------
 // Owner 2026-11-18: keep profession and looks; the script reads them from the villager and replays them with these

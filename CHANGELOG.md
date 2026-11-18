@@ -19,6 +19,10 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - **Economy breakdown:** the Economy page starts with where the score comes from: Shops, Craftsmen, Food and **Vanilla trades** (+1 for every 3 villagers who keep a vanilla job, no cap).
 - **Hiring:** a building waiting for its worker hires a jobless villager first, then a free settler. Nitwits never work.
 - **Recruit a villager** (building page, when it waits for a worker): pick a villager with a vanilla job; they stop vanilla trading and work here. Free; a warning says their trades are lost.
+- **How towns grow (changed):** settlers no longer move into free beds by themselves.
+  - **Births:** each dawn, one child per staffed Farmstead or Docks is born into a free bed. Children count at once and grow up into settlers after a day.
+  - **Newcomers:** once a Town Hall stands, one newcomer a day walks to its door and waits (yellow name). Talk to them: **Welcome** (needs a free bed) or **Not now**. Unanswered, they move on after two days.
+  - The ledger shows free beds and newcomers waiting.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

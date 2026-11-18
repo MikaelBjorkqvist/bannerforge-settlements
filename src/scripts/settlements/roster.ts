@@ -20,11 +20,17 @@ export const jobBuilding = (job: string) => job.slice(0, job.lastIndexOf(":"));
 export const rosterOf = (s: Settlement): Person[] => (citizensOf(s).people ??= []);
 /** Vanilla villagers that joined the town (convert.ts). Not part of the numbers. */
 export const villagersOf = (s: Settlement): Person[] => (citizensOf(s).villagers ??= []);
+/** Children born in town (roster side of rules.morning births). */
+export const childrenOf = (s: Settlement): Person[] => (citizensOf(s).children ??= []);
+/** Newcomers waiting for the player's word. */
+export const applicantsOf = (s: Settlement): Person[] => (citizensOf(s).applicants ??= []);
+/** A child is grown after this many days. */
+export const GROW_DAYS = 1;
 
 /** A new person with a name nobody in town has yet (if the name list allows). */
 function newPerson(s: Settlement): Person {
   const c = citizensOf(s);
-  const taken = new Set([...rosterOf(s), ...villagersOf(s)].map((p) => p.name));
+  const taken = new Set([...rosterOf(s), ...villagersOf(s), ...childrenOf(s), ...applicantsOf(s)].map((p) => p.name));
   let seed = "";
   let name = "";
   for (let tries = 0; tries < 12; tries++) {
@@ -102,6 +108,59 @@ export function addVillager(s: Settlement, vjob: number, ownName?: string): Pers
   p.vjob = vjob;
   villagersOf(s).push(p);
   return p;
+}
+
+/** A child is born (rules.morning counted the bed). Their entity is spawned by people.ts. */
+export function addChild(s: Settlement, day: number): Person {
+  const p = newPerson(s);
+  p.state = "here";
+  p.bornDay = day;
+  childrenOf(s).push(p);
+  return p;
+}
+
+/** Children old enough become free settlers (they can be hired). Returns them. */
+export function growUp(s: Settlement, day: number): Person[] {
+  const list = childrenOf(s);
+  const grown = list.filter((p) => day - (p.bornDay ?? day) >= GROW_DAYS);
+  for (const p of grown) {
+    list.splice(list.indexOf(p), 1);
+    delete p.bornDay;
+    rosterOf(s).push(p);
+    citizensOf(s).free += 1;
+  }
+  return grown;
+}
+
+/** A newcomer sets off for the Town Hall. */
+export function addApplicant(s: Settlement): Person {
+  const p = newPerson(s);
+  applicantsOf(s).push(p);
+  return p;
+}
+
+/** The player lets a newcomer stay: they become a free settler in town. False if there is no free bed. */
+export function acceptApplicant(s: Settlement, p: Person, freeBeds: number): boolean {
+  const list = applicantsOf(s);
+  if (freeBeds <= 0 || !list.includes(p)) return false;
+  list.splice(list.indexOf(p), 1);
+  p.state = "here";
+  delete p.since;
+  rosterOf(s).push(p);
+  citizensOf(s).free += 1;
+  return true;
+}
+
+/** A newcomer turned away, gone after waiting, or dead. */
+export function dropApplicant(s: Settlement, p: Person): void {
+  const list = applicantsOf(s);
+  if (list.includes(p)) list.splice(list.indexOf(p), 1);
+}
+
+/** A child died: out of the list (and so out of the numbers). */
+export function removeChild(s: Settlement, p: Person): void {
+  const list = childrenOf(s);
+  if (list.includes(p)) list.splice(list.indexOf(p), 1);
 }
 
 /** A villager died or was zombified: they leave the list (the numbers never counted them). */

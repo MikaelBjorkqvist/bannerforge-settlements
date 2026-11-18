@@ -4,6 +4,7 @@ import { registerCitizens } from "./settlements/citizens.js";
 import { registerConstruction } from "./settlements/construction.js";
 import { registerDevMenu } from "./settlements/dev.js";
 import { registerGarrisons } from "./settlements/garrison.js";
+import { registerGrowth } from "./settlements/growth.js";
 import { registerPeople } from "./settlements/people.js";
 import { registerPlacement } from "./settlements/placement.js";
 import { registerSteward } from "./settlements/steward.js";
@@ -19,6 +20,7 @@ registerImageTest();
 registerDevMenu();
 registerCitizens();
 registerPeople();
+registerGrowth();
 
 system.run(() => {
   console.log("[BannerForge] Settlements loaded");

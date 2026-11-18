@@ -149,22 +149,44 @@ export function releaseWorkers(s: Settlement): number {
   return released;
 }
 
+/** Food buildings with their worker: each lets one child be born a day (owner 2026-11-18). */
+export const FOOD = ["farmstead", "docks"];
+export function staffedFood(s: Settlement): number {
+  let n = 0;
+  for (const id of FOOD) {
+    const def = buildingById(id);
+    if (def) instances(s, id).forEach((level, i) => level > 0 && isStaffed(s, def, i) && n++);
+  }
+  return n;
+}
+
 /**
- * Dawn: settlers move into every free bed; if people outnumber beds, the unemployed leave first, then the newest
- * workers (their building waits for a new one). Returns how many arrived and left.
+ * Dawn (owner 2026-11-18: towns grow by births and by newcomers the player lets stay; nobody just moves in):
+ * as many children are born as there are staffed food buildings, up to the free beds; the caller names them
+ * (roster.addChild). If people outnumber beds, the unemployed leave first, then the newest workers.
  */
-export function morning(s: Settlement): { arrived: number; left: number } {
+export function morning(s: Settlement): { births: number; left: number } {
+  const births = Math.min(staffedFood(s), freeBeds(s));
+  return { births, left: evict(s) };
+}
+
+/** Developer and tests: every free bed gets a settler now (the pre-2026-11-18 dawn), then too many people leave. */
+export function settleAll(s: Settlement): { arrived: number; left: number } {
+  const c = citizensOf(s);
+  const arrived = freeBeds(s);
+  c.free += arrived;
+  return { arrived, left: evict(s) };
+}
+
+/** People who don't fit in the beds leave: the unemployed first, then the newest workers. Returns how many left. */
+function evict(s: Settlement): number {
   const c = citizensOf(s);
   releaseWorkers(s);
   const beds = housing(s);
-  // Converted villagers take beds too, but never leave by this rule (it is their village).
-  let people = c.free + workers(s) + villagers(s);
-  let arrived = 0;
+  // Converted villagers and children take beds too, but never leave by this rule (it is their home).
+  let people = population(s);
   let left = 0;
-  if (people < beds) {
-    arrived = beds - people;
-    c.free += arrived;
-  } else if (people > beds) {
+  if (people > beds) {
     const leaveFree = Math.min(c.free, people - beds);
     c.free -= leaveFree;
     left += leaveFree;
@@ -179,7 +201,7 @@ export function morning(s: Settlement): { arrived: number; left: number } {
       left += n;
     }
   }
-  return { arrived, left };
+  return left;
 }
 
 /**
@@ -212,8 +234,10 @@ export function housing(s: Settlement): number {
 }
 /** Converted vanilla villagers (owner 2026-11-18): they live in the adopted vanilla houses. */
 export const villagers = (s: Settlement): number => s.citizens?.villagers?.length ?? 0;
+/** Children born in town (roster.addChild): they take a bed and count; they work once grown. */
+export const children = (s: Settlement): number => s.citizens?.children?.length ?? 0;
 /** Population: the townsfolk who live there (free settlers, workers and converted villagers). Garrisons are not population. */
-export const population = (s: Settlement): number => freeSettlers(s) + workers(s) + villagers(s);
+export const population = (s: Settlement): number => freeSettlers(s) + workers(s) + villagers(s) + children(s);
 /** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */

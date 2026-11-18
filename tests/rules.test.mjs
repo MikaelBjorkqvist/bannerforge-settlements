@@ -34,10 +34,10 @@ delete s.sites;
 
 // Settlers (owner, 2026-11-17): nobody lives there until the next dawn; then every free bed fills.
 assert.equal(R.population(s), 0);
-assert.deepEqual(R.morning(s), { arrived: 8, left: 0 });
+assert.deepEqual(R.settleAll(s), { arrived: 8, left: 0 });
 assert.equal(R.population(s), 8);
 assert.equal(R.freeBeds(s), 0);
-assert.deepEqual(R.morning(s), { arrived: 0, left: 0 }, "a full town: nobody new");
+assert.deepEqual(R.settleAll(s), { arrived: 0, left: 0 }, "a full town: nobody new");
 
 // Under construction (level 0) counts for limits but gives nothing yet.
 s.buildings.watchtower = [0];
@@ -77,7 +77,7 @@ assert.equal(R.tier(s), "town");
 assert.equal(R.checkPromotion(s).next, "city");
 assert.match(promoKeys(), /promo_population/);
 for (let i = 0; i < 4; i++) act("house");
-R.morning(s);
+R.settleAll(s);
 R.assignJobs(s);
 assert.equal(R.population(s), 16);
 assert.equal(R.waitingForWorkers(s).length, 0);
@@ -108,11 +108,11 @@ assert.equal(R.military({ ...old, buildings: { defences: [1] } }), 0);
 
 // Fewer beds than people: the unemployed leave first, then the newest workers.
 const t = { buildings: { house: [1], market: [1], tavern: [1] }, citizens: { free: 1, staffed: { market: [1], tavern: [1] } } };
-assert.deepEqual(R.morning(t), { arrived: 0, left: 1 }, "3 people, 2 beds: the free settler leaves");
+assert.deepEqual(R.morning(t), { births: 0, left: 1 }, "3 people, 2 beds: the free settler leaves");
 assert.equal(R.workers(t), 2);
 t.citizens.staffed.tavern[0] = 1;
 t.buildings.house = [0]; // the house is being rebuilt: no beds tonight
-assert.deepEqual(R.morning(t), { arrived: 0, left: 2 });
+assert.deepEqual(R.morning(t), { births: 0, left: 2 });
 assert.equal(R.population(t), 0);
 // A workplace that no longer stands: its worker is free again.
 const u = { buildings: { market: [] }, citizens: { free: 0, staffed: { market: [1] } } };
@@ -142,9 +142,9 @@ assert.equal(R.freeSettlers(u), 1);
   const s = { id: "a", name: "A", buildings: {}, adopted: [{ design: "plains_small_house_1", x: 0, y: 0, z: 0, rot: 0, beds: 1 }, { design: "plains_medium_house_1", x: 9, y: 0, z: 0, rot: 0, beds: 2 }], citizens: { free: 0, staffed: {}, villagers: [{ seed: "a:1", name: "Nell", state: "here", vjob: 5 }] } };
   assert.equal(R.housing(s), 3);
   assert.equal(R.population(s), 1);
-  assert.equal(R.morning(s).arrived, 2);
+  assert.equal(R.settleAll(s).arrived, 2);
   s.adopted.pop();
-  assert.deepEqual(R.morning(s), { arrived: 0, left: 2 });
+  assert.deepEqual(R.morning(s), { births: 0, left: 2 });
   assert.equal(R.population(s), 1);
 }
 
@@ -170,4 +170,16 @@ assert.equal(R.freeSettlers(u), 1);
   assert.equal(R.vanillaBonus(s), 0);
   assert.equal(R.score(s, "economy"), before - 1);
   assert.equal(s.citizens.staffed.market[0], 2);
+}
+
+// Births (owner 2026-11-18): one per staffed food building, only into free beds; children count; nobody moves in.
+{
+  const s = { id: "b", name: "B", buildings: { house: [1, 1], farmstead: [1], docks: [1] }, citizens: { free: 0, staffed: { farmstead: [1], docks: [0] } } };
+  const beds = R.housing(s);
+  assert.equal(R.staffedFood(s), 1, "the docks have no worker");
+  assert.deepEqual(R.morning(s), { births: 1, left: 0 });
+  assert.equal(s.citizens.free, 0, "nobody moves in by themselves");
+  s.citizens.children = Array.from({ length: beds - 1 }, (_, i) => ({ seed: `c${i}`, name: `C${i}`, state: "here", bornDay: 1 }));
+  assert.equal(R.freeBeds(s), 0);
+  assert.deepEqual(R.morning(s), { births: 0, left: 0 }, "no free bed, no birth");
 }

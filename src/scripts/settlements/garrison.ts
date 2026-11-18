@@ -13,7 +13,7 @@ import { garrisonRank, posts, tier, type Post } from "./rules.js";
 import { news } from "./people.js";
 import { SOLDIER_ID, spawnSoldier, soldierTitle } from "./soldier.js";
 import { buildingName, raw, t, txt } from "./text.js";
-import type { Settlement } from "./types.js";
+import type { Settlement, Site } from "./types.js";
 
 const INTERVAL = 100;
 /** Same morning window as the settlers (citizens.ts): from 7:00 to dusk. */
@@ -93,7 +93,11 @@ function syncRank(e: Entity, post: Post, rank: 1 | 2 | 3): void {
  * up. Undefined while the chunk isn't loaded.
  */
 function doorOf(dim: Dimension, post: Post): Vector3 | undefined {
-  const site = post.site;
+  return doorOfSite(dim, post.site);
+}
+
+/** Just outside the middle of a site's entrance, on the first free spot from the ground up (also the Town Hall). */
+export function doorOfSite(dim: Dimension, site: Site): Vector3 | undefined {
   const w = site.w;
   const d = site.d ?? site.w;
   const at = toWorld({ x: site.x, z: site.z, w, d, rot: site.rot }, Math.floor((w - 1) / 2), d);

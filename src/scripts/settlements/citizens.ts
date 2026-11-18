@@ -7,11 +7,13 @@
 // - When people outnumber beds, the unemployed leave first at dawn, then the newest workers.
 // Pure rules live in rules.ts (unit-tested); this file runs them on the in-game clock and tells nearby players.
 
-import { system } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 import { gameTime } from "./clock.js";
-import { syncPeople } from "./people.js";
+import { news, syncPeople } from "./people.js";
 import { allSettlements, saveSettlement } from "./registry.js";
+import { addChild, growUp } from "./roster.js";
 import { assignJobs, citizensOf, freeBeds, morning } from "./rules.js";
+import { raw, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
 
 /** Settlers arrive after sunrise, from 7:00 (tick 1000 of the day)... */
@@ -36,7 +38,14 @@ export function update(s: Settlement, force = false): void {
   let changed = false;
   if (force || ((c.day ?? -1) < day && tod >= DAWN && tod < DUSK)) {
     c.day = day;
-    morning(s);
+    // Children born yesterday or earlier are grown: free settlers from now on (owner 2026-11-18).
+    for (const p of growUp(s, day)) {
+      const e = p.eid ? world.getEntity(p.eid) : undefined;
+      e?.triggerEvent("bannerforge:become_settler");
+      news(s, raw(txt("§7"), t("bannerforge.people.grown", p.name)));
+    }
+    const { births } = morning(s);
+    for (let i = 0; i < births; i++) addChild(s, day); // growth.ts gives them their entity in a house
     changed = true;
   }
   if (assignJobs(s).length) changed = true;

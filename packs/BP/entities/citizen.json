@@ -21,7 +21,8 @@
             "villager",
             "settler",
             "worker",
-            "guard"
+            "guard",
+            "applicant"
           ],
           "default": "villager",
           "client_sync": true
@@ -2389,6 +2390,34 @@
         "minecraft:variant": {
           "value": 14
         }
+      },
+      "bannerforge_settlements:applicant": {
+        "minecraft:type_family": {
+          "family": [
+            "villager",
+            "peasant",
+            "nitwit",
+            "bannerforge_applicant",
+            "mob"
+          ]
+        },
+        "minecraft:variant": {
+          "value": 0
+        },
+        "minecraft:home": {
+          "restriction_radius": 6,
+          "restriction_type": "random_movement"
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 2,
+          "speed_multiplier": 0.7,
+          "interval": 1,
+          "goal_radius": 2.5
+        },
+        "minecraft:follow_range": {
+          "value": 64,
+          "max": 64
+        }
       }
     },
     "events": {
@@ -4479,6 +4508,7 @@
             "job_specific_goals",
             "trade_components",
             "bannerforge_settlements:worker",
+            "bannerforge_settlements:applicant",
             "bannerforge_settlements:guard"
           ]
         },
@@ -4523,6 +4553,7 @@
             "baby",
             "job_specific_goals",
             "trade_components",
+            "bannerforge_settlements:applicant",
             "bannerforge_settlements:guard"
           ]
         },
@@ -4569,6 +4600,7 @@
             "job_specific_goals",
             "trade_components",
             "bannerforge_settlements:worker",
+            "bannerforge_settlements:applicant",
             "bed_schedule_villager",
             "work_schedule_farmer",
             "gather_schedule_villager",
@@ -5550,6 +5582,384 @@
           ]
         }
       },
+      "bannerforge:spawn_applicant": {
+        "sequence": [
+          {
+            "randomize": [
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_0"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_1"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_2"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_3"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_4"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_5"
+                  ]
+                },
+                "weight": 1
+              }
+            ],
+            "filters": {
+              "test": "has_component",
+              "operator": "!=",
+              "value": "minecraft:skin_id"
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "adult",
+                "behavior_peasant",
+                "basic_schedule",
+                "bannerforge_settlements:applicant"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:role": "applicant"
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "has_biome_tag",
+                  "value": "desert"
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "mesa"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "desert_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "has_biome_tag",
+              "value": "jungle"
+            },
+            "add": {
+              "component_groups": [
+                "jungle_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "has_biome_tag",
+              "value": "savanna"
+            },
+            "add": {
+              "component_groups": [
+                "savanna_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "all_of": [
+                    {
+                      "test": "has_biome_tag",
+                      "value": "cold"
+                    },
+                    {
+                      "test": "has_biome_tag",
+                      "operator": "!=",
+                      "value": "ocean"
+                    }
+                  ]
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "frozen"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "snow_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "has_biome_tag",
+                  "value": "swamp"
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "mangrove_swamp"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "swamp_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "any_of": [
+                    {
+                      "test": "has_biome_tag",
+                      "value": "taiga"
+                    },
+                    {
+                      "test": "has_biome_tag",
+                      "value": "extreme_hills"
+                    }
+                  ]
+                },
+                {
+                  "test": "has_biome_tag",
+                  "operator": "!=",
+                  "value": "cold"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "taiga_villager"
+              ]
+            }
+          }
+        ]
+      },
+      "bannerforge:spawn_child": {
+        "sequence": [
+          {
+            "randomize": [
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_0"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_1"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_2"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_3"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_4"
+                  ]
+                },
+                "weight": 1
+              },
+              {
+                "add": {
+                  "component_groups": [
+                    "villager_skin_5"
+                  ]
+                },
+                "weight": 1
+              }
+            ],
+            "filters": {
+              "test": "has_component",
+              "operator": "!=",
+              "value": "minecraft:skin_id"
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "baby",
+                "child_schedule"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:role": "settler"
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "has_biome_tag",
+                  "value": "desert"
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "mesa"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "desert_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "has_biome_tag",
+              "value": "jungle"
+            },
+            "add": {
+              "component_groups": [
+                "jungle_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "has_biome_tag",
+              "value": "savanna"
+            },
+            "add": {
+              "component_groups": [
+                "savanna_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "all_of": [
+                    {
+                      "test": "has_biome_tag",
+                      "value": "cold"
+                    },
+                    {
+                      "test": "has_biome_tag",
+                      "operator": "!=",
+                      "value": "ocean"
+                    }
+                  ]
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "frozen"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "snow_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "has_biome_tag",
+                  "value": "swamp"
+                },
+                {
+                  "test": "has_biome_tag",
+                  "value": "mangrove_swamp"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "swamp_villager"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "any_of": [
+                    {
+                      "test": "has_biome_tag",
+                      "value": "taiga"
+                    },
+                    {
+                      "test": "has_biome_tag",
+                      "value": "extreme_hills"
+                    }
+                  ]
+                },
+                {
+                  "test": "has_biome_tag",
+                  "operator": "!=",
+                  "value": "cold"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "taiga_villager"
+              ]
+            }
+          }
+        ]
+      },
       "bannerforge:skin_2": {
         "remove": {
           "component_groups": [
@@ -5770,6 +6180,7 @@
             "job_specific_goals",
             "trade_components",
             "bannerforge_settlements:worker",
+            "bannerforge_settlements:applicant",
             "bannerforge_settlements:guard"
           ]
         },

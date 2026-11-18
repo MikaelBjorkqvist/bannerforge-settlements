@@ -14,9 +14,9 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
-import { villagersOf } from "./roster.js";
+import { applicantsOf, villagersOf } from "./roster.js";
 import { news } from "./people.js";
-import { built, check, checkPromotion, economyParts, freeBeds, hireVillager, recruitable, vanillaTraders, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
+import { built, check, checkPromotion, economyParts, staffedFood, freeBeds, hireVillager, recruitable, vanillaTraders, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
@@ -124,7 +124,13 @@ export function showOverview(player: Player, s: Settlement): void {
   );
   // Vanilla villagers that joined keep their vanilla jobs and beds; not population until adopted houses count them.
   if (villagersOf(s).length) info.push(...grey("bannerforge.citizens.villagers", villagersOf(s).length, false));
-  if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
+  // Growth (owner 2026-11-18): births need a staffed food building, newcomers a Town Hall and the player's word.
+  if (freeBeds(s) > 0) {
+    info.push(txt("\n§7"), t("bannerforge.citizens.free_beds", String(freeBeds(s))));
+    if (!staffedFood(s)) info.push(txt(" "), t("bannerforge.citizens.births_need_food"));
+  }
+  const waitingNew = applicantsOf(s).length;
+  if (waitingNew) info.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
   form.label(raw(...info));
 

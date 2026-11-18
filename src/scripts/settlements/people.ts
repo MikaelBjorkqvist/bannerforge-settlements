@@ -11,7 +11,7 @@ import { CITIZEN_ID } from "./citizen_npc.js";
 import { gameTime } from "./clock.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
-import { addVillager, jobBuilding, reconcile, removeDead, removeVillager, rosterOf, villagersOf, type Change } from "./roster.js";
+import { addVillager, applicantsOf, childrenOf, dropApplicant, jobBuilding, reconcile, removeChild, removeDead, removeVillager, rosterOf, villagersOf, type Change } from "./roster.js";
 import { convertVillager, jobOf, VILLAGER_ID } from "./convert.js";
 import { adoptHousesDaily } from "./vanilla_houses.js";
 import { tier } from "./rules.js";
@@ -167,7 +167,7 @@ function tickPeople(s: Settlement): void {
   adoptHousesDaily(s, news);
 
   // Citizens of this settlement nobody knows any more (they left while their chunk was unloaded) go for good.
-  const known = new Set([...people, ...villagersOf(s)].map((p) => p.eid).filter(Boolean));
+  const known = new Set([...people, ...villagersOf(s), ...childrenOf(s), ...applicantsOf(s)].map((p) => p.eid).filter(Boolean));
   const r = BORDER_RADIUS[tier(s)] + 32;
   for (const e of world.getDimension(s.dimension).getEntities({ type: CITIZEN_ID, tags: [ofTag(s)], location: s.center, maxDistance: r })) {
     if (!known.has(e.id)) e.remove();
@@ -271,9 +271,12 @@ function safeAt(dimensionId: string, x: number, z: number): Vector3 | undefined 
 function citizenDied(e: Entity, killer: string | undefined): void {
   const s = settlementOf(e, OF_PREFIX);
   if (!s) return;
-  const p = rosterOf(s).find((q) => q.eid === e.id) ?? villagersOf(s).find((q) => q.eid === e.id);
+  const mine = (q: Person) => q.eid === e.id;
+  const p = rosterOf(s).find(mine) ?? villagersOf(s).find(mine) ?? childrenOf(s).find(mine) ?? applicantsOf(s).find(mine);
   if (!p) return;
-  if (p.vjob !== undefined) removeVillager(s, p);
+  if (childrenOf(s).includes(p)) removeChild(s, p);
+  else if (applicantsOf(s).includes(p)) dropApplicant(s, p);
+  else if (p.vjob !== undefined) removeVillager(s, p);
   else removeDead(s, p);
   saveSettlement(s);
   news(s, killer ? raw(txt("§c"), t("bannerforge.people.killed", p.name), txt(" "), killerName(killer)) : raw(txt("§c"), t("bannerforge.people.died", p.name)));
