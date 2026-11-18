@@ -146,8 +146,12 @@ export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: Retur
   if (s.housesDay === day && (again === undefined || system.currentTick < again)) return;
   const dim = world.getDimension(s.dimension);
   if (!dim.getPlayers({ location: s.center, maxDistance: BORDER_RADIUS[tier(s)] + 32 }).length) return; // nobody near: chunks not loaded
+  if (scanning.size) return; // one town at a time (ticking areas are limited per world)
   scanning.add(s.id);
-  scanHouses(dim, s.center, BORDER_RADIUS[tier(s)], (r) => {
+  // Owner 2026-11-18: every house inside the border must be found in one go, so the whole border is loaded first.
+  loadBorder(dim, s, (release) => scanHouses(dim, s.center, BORDER_RADIUS[tier(s)], (r) => {
+    // Keep the area loaded a little longer: villagers out there get converted meanwhile (people.ts, every 5 s).
+    system.runTimeout(release, KEEP_LOADED_TICKS);
     scanning.delete(s.id);
     const now = settlementById(s.id);
     if (!now) return;
@@ -172,7 +176,67 @@ export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: Retur
     const newBeds = fresh.reduce((n, h) => n + h.beds, 0);
     if (fresh.length) tell(now, raw(txt("§a"), t("bannerforge.houses.adopted", String(fresh.length), String(newBeds))));
     if (lostBeds) tell(now, raw(txt("§6"), t("bannerforge.houses.lost", String(lostBeds))));
+  }));
+}
+
+/** How long the border stays loaded after a look, so villagers out there can be converted. */
+const KEEP_LOADED_TICKS = 400;
+/** Waiting for the ticking areas to load: checks every second, at most this many times. */
+const LOAD_CHECKS = 20;
+
+/**
+ * Loads the whole border with temporary ticking areas (four quarters: a city border is too big for one), waits until
+ * every chunk answers, then calls next with a function that removes the areas again. If loading takes too long the
+ * look still runs (incomplete: it is retried a minute later).
+ */
+function loadBorder(dim: Dimension, s: Settlement, next: (release: () => void) => void): void {
+  const r = BORDER_RADIUS[tier(s)];
+  const { x, y, z } = s.center;
+  const tag = `bf_${s.id.replace(/[^a-zA-Z0-9]/g, "").slice(-8)}`;
+  const quarters = [
+    [x - r, z - r, x, z],
+    [x + 1, z - r, x + r, z],
+    [x - r, z + 1, x, z + r],
+    [x + 1, z + 1, x + r, z + r],
+  ];
+  const names: string[] = [];
+  quarters.forEach(([x0, z0, x1, z1], i) => {
+    const name = `${tag}_${i}`;
+    try {
+      dim.runCommand(`tickingarea add ${x0} ${y} ${z0} ${x1} ${y} ${z1} ${name}`);
+      names.push(name);
+    } catch (err) {
+      console.warn(`[BannerForge] tickingarea ${name}: ${String(err)}`);
+    }
   });
+  const release = () => {
+    for (const name of names) {
+      try {
+        dim.runCommand(`tickingarea remove ${name}`);
+      } catch {
+        // already gone
+      }
+    }
+  };
+  const loaded = (): boolean => {
+    for (let cx = x - r; cx <= x + r; cx += 16) {
+      for (let cz = z - r; cz <= z + r; cz += 16) {
+        try {
+          if (!dim.getBlock({ x: cx, y, z: cz })) return false;
+        } catch {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  let checks = 0;
+  const id = system.runInterval(() => {
+    if (loaded() || ++checks >= LOAD_CHECKS) {
+      system.clearRun(id);
+      next(release);
+    }
+  }, 20);
 }
 
 /** Is an adopted house still there? "unloaded" if its chunk can't be read now. */

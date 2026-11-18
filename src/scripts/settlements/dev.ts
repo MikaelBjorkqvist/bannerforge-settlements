@@ -13,7 +13,7 @@ import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { maintain } from "./garrison.js";
 import { showOverview, showSection } from "./ledger.js";
-import { onTalk, STEWARD_ID } from "./steward.js";
+import { onBellRung, onTalk, STEWARD_ID } from "./steward.js";
 import { talk } from "./growth.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { scanHouses } from "./vanilla_houses.js";
@@ -53,7 +53,9 @@ export function registerDevMenu(): void {
       const hit =
         p.getEntitiesFromViewDirection({ maxDistance: 12 })[0]?.entity ??
         p.dimension.getEntities({ location: p.location, maxDistance: 8, excludeTypes: ["minecraft:player"] }).find(talkable);
-      if (!hit) p.sendMessage("use: nothing in view");
+      const bell = hit ? undefined : p.getBlockFromViewDirection({ maxDistance: 8 })?.block;
+      if (bell?.typeId === "minecraft:bell") onBellRung(p, bell);
+      else if (!hit) p.sendMessage("use: nothing in view");
       else if (hit.typeId === STEWARD_ID) onTalk(p, hit);
       else if (hit.typeId === CITIZEN_ID && hit.getProperty("bannerforge_settlements:role") === "applicant") talk(p, hit);
       else p.sendMessage(`use: ${hit.typeId} has no talk`);

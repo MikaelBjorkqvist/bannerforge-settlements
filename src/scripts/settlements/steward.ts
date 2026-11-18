@@ -88,7 +88,7 @@ export function registerSteward(): void {
 
 // ---- bell ----------------------------------------------------------------
 
-function onBellRung(player: Player, block: Block): void {
+export function onBellRung(player: Player, block: Block): void {
   const { x, y, z } = block.location;
   const bell = { x, y, z };
   const s = settlementNear(block.dimension.id, bell, SETTLEMENT_RADIUS);
