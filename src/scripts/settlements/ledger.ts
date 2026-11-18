@@ -14,6 +14,7 @@ import { constructionMinutesLeft } from "./construction.js";
 import { devButtonInLedger, showDevMenu } from "./dev.js";
 import { showBorder, startPlacement } from "./placement.js";
 import { saveSettlement, settlementById } from "./registry.js";
+import { villagersOf } from "./roster.js";
 import { built, check, checkPromotion, freeBeds, military, score, freeSettlers, garrison, housing, instances, population, promote, prosperity, tier, waitingForWorkers, workers, type Check } from "./rules.js";
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, t, txt } from "./text.js";
@@ -118,8 +119,10 @@ export function showOverview(player: Player, s: Settlement): void {
     ...grey("bannerforge.citizens.workers", workers(s)),
     ...grey("bannerforge.citizens.unemployed", freeSettlers(s), false),
     txt("\n"),
-    ...grey("bannerforge.steward.garrison", garrison(s), false),
+    ...grey("bannerforge.steward.garrison", garrison(s), villagersOf(s).length > 0),
   );
+  // Vanilla villagers that joined keep their vanilla jobs and beds; not population until adopted houses count them.
+  if (villagersOf(s).length) info.push(...grey("bannerforge.citizens.villagers", villagersOf(s).length, false));
   if (freeBeds(s) > 0) info.push(txt("\n§7"), t("bannerforge.citizens.arrive_at_dawn", String(freeBeds(s))));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
   form.label(raw(...info));

@@ -55,3 +55,18 @@ assert.equal(s.citizens.free, 0);
   const names = Ro.rosterOf(big).map((p) => p.name);
   assert.equal(new Set(names).size, names.length, names.join(","));
 }
+
+// Converted villagers: their own list, outside the numbers; reconcile leaves them alone; names stay unique.
+{
+  const v = { id: "v", name: "V", buildings: {}, citizens: { free: 1, staffed: {} } };
+  Ro.reconcile(v);
+  const a = Ro.addVillager(v, 5);
+  const b = Ro.addVillager(v, 0, "Bob the Builder");
+  assert.equal(a.state, "here");
+  assert.equal(b.name, "Bob the Builder");
+  assert.notEqual(a.name, Ro.rosterOf(v)[0].name);
+  assert.equal(Ro.reconcile(v).length, 0);
+  assert.equal(v.citizens.free, 1);
+  Ro.removeVillager(v, a);
+  assert.deepEqual(Ro.villagersOf(v), [b]);
+}

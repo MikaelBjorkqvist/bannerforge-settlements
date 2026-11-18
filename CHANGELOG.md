@@ -13,6 +13,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - Dev menu: "Garrisons: refill now".
 - **Townsfolk are real people now:** every settler and worker in the numbers is a citizen in the world with their own name. Newcomers walk in from a safe spot near the border (by day, on dry ground, with no monsters near); hired newcomers arrive as workers and never take vanilla jobs. Chat tells the people in town when someone arrives, starts work, loses their job, leaves, dies or is killed (and by what).
 - **The steward walks to the bell** too, a new one and one returning after death: they appear a short walk away and come over. Ringing the bell meanwhile says they are on the way.
+- **Vanilla villagers join the town:** every villager inside the border becomes a citizen with a name, keeping their profession, skin and biome outfit (their trade level starts over). Villagers born, cured or wandering in later join too. The ledger counts them as "Villagers"; chat says who joined and when one dies.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 
 ## [0.2.0] - 2026-11-18

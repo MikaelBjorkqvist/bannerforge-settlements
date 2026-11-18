@@ -18,11 +18,13 @@ export const jobKey = (id: string, index: number) => `${id}:${index}`;
 export const jobBuilding = (job: string) => job.slice(0, job.lastIndexOf(":"));
 
 export const rosterOf = (s: Settlement): Person[] => (citizensOf(s).people ??= []);
+/** Vanilla villagers that joined the town (convert.ts). Not part of the numbers. */
+export const villagersOf = (s: Settlement): Person[] => (citizensOf(s).villagers ??= []);
 
 /** A new person with a name nobody in town has yet (if the name list allows). */
 function newPerson(s: Settlement): Person {
   const c = citizensOf(s);
-  const taken = new Set(rosterOf(s).map((p) => p.name));
+  const taken = new Set([...rosterOf(s), ...villagersOf(s)].map((p) => p.name));
   let seed = "";
   let name = "";
   for (let tries = 0; tries < 12; tries++) {
@@ -90,6 +92,23 @@ export function reconcile(s: Settlement): Change[] {
     }
   }
   return out;
+}
+
+/** A converted villager joins the town: named (their own name tag if they had one), already here. */
+export function addVillager(s: Settlement, vjob: number, ownName?: string): Person {
+  const p = newPerson(s);
+  if (ownName) p.name = ownName;
+  p.state = "here";
+  p.vjob = vjob;
+  villagersOf(s).push(p);
+  return p;
+}
+
+/** A villager died or was zombified: they leave the list (the numbers never counted them). */
+export function removeVillager(s: Settlement, p: Person): void {
+  const list = villagersOf(s);
+  const i = list.indexOf(p);
+  if (i >= 0) list.splice(i, 1);
 }
 
 /** A person died (or was turned into a zombie): they leave the roster and the numbers. */

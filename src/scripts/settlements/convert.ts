@@ -8,6 +8,9 @@ import { CITIZEN_ID } from "./citizen_npc.js";
 
 export const VILLAGER_ID = "minecraft:villager_v2";
 
+/** The vanilla job variant of a villager (0 none, 14 nitwit). */
+export const jobOf = (v: Entity): number => v.getComponent("minecraft:variant")?.value ?? 0;
+
 /** Job variant → the event that gives a citizen that job (vanilla's own events; 3 is spelled "sheperd" there). */
 const JOB_EVENT: Record<number, string> = {
   0: "minecraft:become_unskilled",
@@ -36,7 +39,10 @@ const LOOK_EVENT: Record<number, string> = {
   6: "bannerforge:look_taiga",
 };
 
-/** Replaces a vanilla villager with a citizen with the same job, skin, outfit, name and age. */
+/**
+ * Replaces a vanilla villager with a citizen with the same job, skin, outfit, name and age. The citizen is spawned
+ * before the villager goes, so a failure (e.g. a chunk that is loaded but not ticking) leaves the villager as it was.
+ */
 export function convertVillager(v: Entity): Entity | undefined {
   if (v.typeId !== VILLAGER_ID || !v.isValid) return undefined;
   const job = v.getComponent("minecraft:variant")?.value ?? 0;
@@ -47,10 +53,10 @@ export function convertVillager(v: Entity): Entity | undefined {
   const rotation = v.getRotation();
   const name = v.nameTag;
 
-  v.remove();
   const c = dimension.spawnEntity(CITIZEN_ID, location, {
     spawnEvent: baby ? "bannerforge:spawn_converted_baby" : "bannerforge:spawn_converted",
   });
+  v.remove();
   c.setRotation(rotation);
   c.triggerEvent(`bannerforge:skin_${skin}`);
   if (LOOK_EVENT[look]) c.triggerEvent(LOOK_EVENT[look]);

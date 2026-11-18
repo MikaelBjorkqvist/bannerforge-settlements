@@ -11,7 +11,8 @@ import { CITIZEN_ID } from "./citizen_npc.js";
 import { gameTime } from "./clock.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
-import { jobBuilding, reconcile, removeDead, rosterOf, type Change } from "./roster.js";
+import { addVillager, jobBuilding, reconcile, removeDead, removeVillager, rosterOf, villagersOf, type Change } from "./roster.js";
+import { convertVillager, jobOf, VILLAGER_ID } from "./convert.js";
 import { tier } from "./rules.js";
 import { SOLDIER_ID } from "./soldier.js";
 import { buildingName, raw, t, txt } from "./text.js";
@@ -29,6 +30,8 @@ const WALK_TICKS = 1800;
 const SAFE_RADIUS = 24;
 /** Newcomers never appear closer to the bell than this (they should be seen walking in). */
 const MIN_WALK = 28;
+/** Vanilla villagers converted per settlement per pass (a big village joins over a few passes). */
+const CONVERT_PER_PASS = 6;
 
 export const ofTag = (s: Settlement) => `bannerforge:of:${s.id}`;
 const OF_PREFIX = "bannerforge:of:";
@@ -64,11 +67,14 @@ export function registerPeople(): void {
     const z = ev.entity;
     if (z.typeId !== "minecraft:zombie_villager_v2" || !z.nameTag) return;
     for (const s of allSettlements()) {
-      const p = rosterOf(s).find((q) => q.eid && q.name === z.nameTag && !world.getEntity(q.eid));
-      if (!p) continue;
-      removeDead(s, p);
+      const gone = (q: Person) => !!q.eid && q.name === z.nameTag && !world.getEntity(q.eid);
+      const p = rosterOf(s).find(gone);
+      const v = p ? undefined : villagersOf(s).find(gone);
+      if (!p && !v) continue;
+      if (p) removeDead(s, p);
+      else removeVillager(s, v!);
       saveSettlement(s);
-      news(s, raw(txt("§c"), t("bannerforge.people.zombified", p.name)));
+      news(s, raw(txt("§c"), t("bannerforge.people.zombified", (p ?? v)!.name)));
       return;
     }
   });
@@ -134,13 +140,51 @@ function tickPeople(s: Settlement): void {
     }
   }
 
+  // Vanilla villagers inside the border join the town (owner 2026-11-18): at founding, and whenever one is born,
+  // cured, loaded with its chunk or walks in.
+  if (convertVillagers(s)) changed = true;
+
   // Citizens of this settlement nobody knows any more (they left while their chunk was unloaded) go for good.
-  const known = new Set(people.map((p) => p.eid).filter(Boolean));
+  const known = new Set([...people, ...villagersOf(s)].map((p) => p.eid).filter(Boolean));
   const r = BORDER_RADIUS[tier(s)] + 32;
   for (const e of world.getDimension(s.dimension).getEntities({ type: CITIZEN_ID, tags: [ofTag(s)], location: s.center, maxDistance: r })) {
     if (!known.has(e.id)) e.remove();
   }
   if (changed) saveSettlement(s);
+}
+
+/** Converts up to CONVERT_PER_PASS vanilla villagers inside the border. Returns true if any joined. */
+function convertVillagers(s: Settlement): boolean {
+  const dim = world.getDimension(s.dimension);
+  const border = BORDER_RADIUS[tier(s)];
+  const inside = dim
+    .getEntities({ type: VILLAGER_ID, location: s.center, maxDistance: border * 1.42 })
+    .filter((v) => Math.max(Math.abs(v.location.x - s.center.x), Math.abs(v.location.z - s.center.z)) <= border);
+  const joined: string[] = [];
+  for (const v of inside.slice(0, CONVERT_PER_PASS)) {
+    const vjob = jobOf(v);
+    const ownName = v.nameTag || undefined;
+    let c;
+    try {
+      c = convertVillager(v);
+    } catch {
+      continue; // its chunk isn't ticking: next pass
+    }
+    if (!c) continue;
+    const p = addVillager(s, vjob, ownName);
+    c.nameTag = p.name;
+    c.addTag(ofTag(s));
+    try {
+      c.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[s.faction as keyof typeof OUTFIT_INDEX] ?? 0);
+    } catch {
+      // look property is optional
+    }
+    p.eid = c.id;
+    joined.push(p.name);
+  }
+  if (joined.length === 1) news(s, raw(txt("§a"), t("bannerforge.people.joined", joined[0], s.name)));
+  else if (joined.length > 1) news(s, raw(txt("§a"), t("bannerforge.people.joined_many", String(joined.length), s.name)));
+  return joined.length > 0;
 }
 
 function spawnWalker(s: Settlement, p: Person, at: Vector3): void {
@@ -205,9 +249,10 @@ function safeAt(dimensionId: string, x: number, z: number): Vector3 | undefined 
 function citizenDied(e: Entity, killer: string | undefined): void {
   const s = settlementOf(e, OF_PREFIX);
   if (!s) return;
-  const p = rosterOf(s).find((q) => q.eid === e.id);
+  const p = rosterOf(s).find((q) => q.eid === e.id) ?? villagersOf(s).find((q) => q.eid === e.id);
   if (!p) return;
-  removeDead(s, p);
+  if (p.vjob !== undefined) removeVillager(s, p);
+  else removeDead(s, p);
   saveSettlement(s);
   news(s, killer ? raw(txt("§c"), t("bannerforge.people.killed", p.name), txt(" "), killerName(killer)) : raw(txt("§c"), t("bannerforge.people.died", p.name)));
 }

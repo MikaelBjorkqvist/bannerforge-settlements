@@ -117,6 +117,11 @@ export interface Citizens {
   people?: Person[];
   /** Counter for new people's names. */
   serial?: number;
+  /**
+   * Vanilla villagers taken into town (owner 2026-11-18): they keep their vanilla job and life and are not part of
+   * free/staffed (their beds are vanilla beds, not our housing, until adopted houses count them).
+   */
+  villagers?: Person[];
 }
 
 /**
@@ -130,6 +135,8 @@ export interface Person {
   /** Worker slot "<building>:<instance>", if employed. */
   job?: string;
   eid?: string;
+  /** Converted villagers: the vanilla job variant they had (0 none, 14 nitwit). */
+  vjob?: number;
   /** gameTime they set off from the border. */
   since?: number;
 }
