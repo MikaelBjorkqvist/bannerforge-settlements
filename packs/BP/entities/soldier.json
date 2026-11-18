@@ -1,0 +1,705 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "bannerforge_settlements:soldier",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "properties": {
+        "bannerforge_settlements:outfit": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "bannerforge_settlements:kind": {
+          "type": "enum",
+          "values": [
+            "melee",
+            "ranged"
+          ],
+          "default": "melee",
+          "client_sync": true
+        },
+        "bannerforge_settlements:rank": {
+          "type": "int",
+          "range": [
+            1,
+            3
+          ],
+          "default": 1,
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "melee": {
+        "minecraft:behavior.melee_box_attack": {
+          "priority": 3,
+          "speed_multiplier": 1.1,
+          "track_target": true,
+          "cooldown_time": 0.6
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "must_see": true,
+          "reselect_targets": true,
+          "within_radius": 16,
+          "persist_time": 0.5,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "monster"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "creeper"
+                  }
+                ]
+              },
+              "max_dist": 16
+            }
+          ]
+        }
+      },
+      "ranged": {
+        "minecraft:shooter": {
+          "def": "minecraft:arrow"
+        },
+        "minecraft:behavior.ranged_attack": {
+          "priority": 3,
+          "speed_multiplier": 1.0,
+          "attack_interval_min": 1.5,
+          "attack_interval_max": 2.5,
+          "attack_radius": 16
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "must_see": true,
+          "reselect_targets": true,
+          "within_radius": 20,
+          "persist_time": 0.5,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "monster"
+                  }
+                ]
+              },
+              "max_dist": 20
+            }
+          ]
+        }
+      },
+      "melee_1": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/melee_1.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 24,
+          "max": 24
+        },
+        "minecraft:attack": {
+          "damage": 3
+        }
+      },
+      "melee_2": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/melee_2.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 30,
+          "max": 30
+        },
+        "minecraft:attack": {
+          "damage": 4
+        }
+      },
+      "melee_3": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/melee_3.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 40,
+          "max": 40
+        },
+        "minecraft:attack": {
+          "damage": 5
+        }
+      },
+      "ranged_1": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/ranged_1.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 24,
+          "max": 24
+        },
+        "minecraft:attack": {
+          "damage": 3
+        }
+      },
+      "ranged_2": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/ranged_2.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 30,
+          "max": 30
+        },
+        "minecraft:attack": {
+          "damage": 4
+        }
+      },
+      "ranged_3": {
+        "minecraft:equipment": {
+          "table": "loot_tables/bannerforge/settlements/soldier/ranged_3.json",
+          "slot_drop_chance": [
+            {
+              "slot": "slot.weapon.mainhand",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.head",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.chest",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.legs",
+              "drop_chance": 0
+            },
+            {
+              "slot": "slot.armor.feet",
+              "drop_chance": 0
+            }
+          ]
+        },
+        "minecraft:health": {
+          "value": 40,
+          "max": 40
+        },
+        "minecraft:attack": {
+          "damage": 5
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "bannerforge_soldier",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:health": {
+        "value": 24,
+        "max": 24
+      },
+      "minecraft:attack": {
+        "damage": 3
+      },
+      "minecraft:movement": {
+        "value": 0.5
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_water": true,
+        "can_open_doors": true,
+        "can_pass_doors": true
+      },
+      "minecraft:annotation.open_door": {},
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:follow_range": {
+        "value": 32
+      },
+      "minecraft:home": {
+        "restriction_radius": 12,
+        "restriction_type": "random_movement"
+      },
+      "minecraft:dweller": {
+        "dwelling_type": "village",
+        "dweller_role": "defender",
+        "can_find_poi": false,
+        "can_migrate": false,
+        "first_founding_reward": 0,
+        "update_interval_base": 60,
+        "update_interval_variant": 40
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "bannerforge_soldier"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "villager"
+                  }
+                ]
+              }
+            },
+            "deals_damage": "no"
+          },
+          {
+            "cause": "fall",
+            "deals_damage": "yes",
+            "damage_modifier": -5
+          }
+        ]
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "bannerforge_soldier"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "villager"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "player"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "bannerforge_npc"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "minecraft:behavior.defend_village_target": {
+        "priority": 2,
+        "must_reach": true,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "==",
+                  "value": "mob"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "bannerforge_soldier"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "villager"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "player"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "bannerforge_npc"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "minecraft:behavior.go_home": {
+        "priority": 5,
+        "speed_multiplier": 0.8,
+        "interval": 1,
+        "goal_radius": 2.5
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 7,
+        "speed_multiplier": 0.6,
+        "xz_dist": 6,
+        "y_dist": 3,
+        "interval": 200
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 8,
+        "look_distance": 8,
+        "probability": 0.02
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 9
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "melee",
+            "melee_1"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:kind": "melee",
+          "bannerforge_settlements:rank": 1
+        }
+      },
+      "bannerforge:spawn_melee": {
+        "add": {
+          "component_groups": [
+            "melee",
+            "melee_1"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:kind": "melee",
+          "bannerforge_settlements:rank": 1
+        }
+      },
+      "bannerforge:spawn_ranged": {
+        "add": {
+          "component_groups": [
+            "ranged",
+            "ranged_1"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:kind": "ranged",
+          "bannerforge_settlements:rank": 1
+        }
+      },
+      "bannerforge:rank_1": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "melee"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "melee_1"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 1
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "ranged"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "ranged_1"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 1
+            }
+          }
+        ]
+      },
+      "bannerforge:rank_2": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "melee"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "melee_2"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 2
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "ranged"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "ranged_2"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 2
+            }
+          }
+        ]
+      },
+      "bannerforge:rank_3": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "melee"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "melee_3"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 3
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "ranged"
+            },
+            "remove": {
+              "component_groups": [
+                "melee_1",
+                "melee_2",
+                "melee_3",
+                "ranged_1",
+                "ranged_2",
+                "ranged_3"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "ranged_3"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:rank": 3
+            }
+          }
+        ]
+      }
+    }
+  }
+}

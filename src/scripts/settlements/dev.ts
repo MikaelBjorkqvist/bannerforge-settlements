@@ -10,6 +10,7 @@ import { addSettlerNow, update } from "./citizens.js";
 import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
+import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
 import { raw, t, txt } from "./text.js";
@@ -153,6 +154,23 @@ export function showDevMenu(player: Player): void {
     done(t("bannerforge.dev.removed", String(n)));
   });
 
+  // Soldier prototype: its own entity (owner 2026-11-18), spawned where you stand; that spot is its post.
+  form.header(t("bannerforge.dev.soldiers"));
+  for (const kind of ["melee", "ranged"] as SoldierKind[]) {
+    form.button(t(`bannerforge.dev.spawn_${kind}`), () => {
+      const e = spawnSoldier(player.dimension, player.location, kind, s?.faction ?? "blue", `${Date.now()}`);
+      done(t("bannerforge.dev.spawned", e.nameTag));
+    });
+  }
+  form.button(t("bannerforge.dev.remove_soldiers"), () => {
+    let n = 0;
+    for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 64 })) {
+      e.remove();
+      n++;
+    }
+    done(t("bannerforge.dev.removed", String(n)));
+  });
+
   // Citizen research lab (draft only): an exact villager_v2 copy under our identifier, next to vanilla villagers.
   form.header(t("bannerforge.dev.lab"));
   form.button(t("bannerforge.dev.lab_spawn"), () => {
@@ -190,6 +208,14 @@ export function showDevMenu(player: Player): void {
  */
 function census(player: Player): void {
   const lines: string[] = [];
+  for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 48 })) {
+    const p = e.location;
+    const hp = e.getComponent("minecraft:health");
+    lines.push(
+      `SOL ${e.nameTag || "?"} ${String(e.getProperty("bannerforge_settlements:kind"))} r${String(e.getProperty("bannerforge_settlements:rank"))}` +
+        ` hp=${hp ? Math.round(hp.currentValue) : "?"} @${p.x | 0},${p.z | 0}`,
+    );
+  }
   for (const type of [CITIZEN_ID, LAB_ID, VILLAGER_ID]) {
     for (const e of player.dimension.getEntities({ type, location: player.location, maxDistance: 48 })) {
       const p = e.location;
