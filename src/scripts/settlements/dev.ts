@@ -60,6 +60,14 @@ export function registerDevMenu(): void {
     }
     // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
+    // "/scriptevent bannerforge:soldier melee patrol": a soldier of the nearest town where you stand (testing duties).
+    if (e.id === "bannerforge:soldier") {
+      const p = e.sourceEntity as Player;
+      const [kind, duty] = e.message.split(" ");
+      const s = nearest(p);
+      const sol = spawnSoldier(p.dimension, p.location, kind === "ranged" ? "ranged" : "melee", s?.faction ?? "blue", `dev:${system.currentTick}`, 1);
+      if (duty === "patrol") sol.triggerEvent("bannerforge:patrol");
+    }
     if (e.id === "bannerforge:promote") {
       const s = nearest(e.sourceEntity as Player);
       if (s) {

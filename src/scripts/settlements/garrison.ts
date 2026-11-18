@@ -55,9 +55,16 @@ export function maintain(s: Settlement, forceDawn = false): void {
     const soldiers = dim.getEntities({ type: SOLDIER_ID, tags: [tag] });
     for (const e of soldiers) syncRank(e, post, rank);
     if (!post.site.manned || dawn) {
-      for (let n = soldiers.length; n < post.count; n++) {
-        const e = spawnSoldier(dim, door, post.kind, s.faction, `${tag}:${now}:${n}`, rank);
+      // Who is missing: each soldier of a post has a duty (its index), so a refill takes the fallen one's place.
+      const held = new Set(soldiers.map((e) => Number(e.getDynamicProperty(P_DUTY) ?? -1)));
+      for (let n = 0, missing = post.count - soldiers.length; n < post.count && missing > 0; n++) {
+        if (held.has(n)) continue;
+        missing--;
+        const duty = dutyOf(dim, s, post, n, door);
+        const e = spawnSoldier(dim, duty.at, post.kind, s.faction, `${tag}:${now}:${n}`, rank);
         e.addTag(tag);
+        e.setDynamicProperty(P_DUTY, n);
+        if (duty.patrol) e.triggerEvent("bannerforge:patrol");
         if (post.site.manned) news(s, raw(txt("§7"), t("bannerforge.people.replaced", soldierTitle(post.kind, rank)), txt(" "), buildingName(post.id)));
       }
       if (!post.site.manned) {
@@ -78,6 +85,55 @@ export function maintain(s: Settlement, forceDawn = false): void {
     if (tag && !live.has(tag)) e.remove();
   }
   if (changed) saveSettlement(s);
+}
+
+const P_DUTY = "bannerforge:duty";
+
+/**
+ * Where a garrison soldier serves (2026-11-19: they used to crowd the barracks door). The soldier's post is where it
+ * is spawned (its home). Watchtower archer: on top of the tower. Barracks: one at the door, one patrolling the town,
+ * the others at the border on the four sides. Keep: one at the door, one at the bell. Falls back to the door while a
+ * spot isn't loaded.
+ */
+function dutyOf(dim: Dimension, s: Settlement, post: Post, n: number, door: Vector3): { at: Vector3; patrol: boolean } {
+  if (post.kind === "ranged") return { at: towerTop(dim, post.site) ?? door, patrol: false };
+  if (post.id === "keep") return { at: n === 0 ? door : (standOn(dim, s.center.x + 2, s.center.z) ?? door), patrol: false };
+  if (n === 0) return { at: door, patrol: false };
+  if (n === 1) return { at: door, patrol: true };
+  // Border watch: four sides at 80 % of the border, spread over the barracks.
+  const r = Math.floor(BORDER_RADIUS[tier(s)] * 0.8);
+  const sides = [[0, -r], [r, 0], [0, r], [-r, 0]];
+  const [dx, dz] = sides[(post.index * 2 + n - 2) % 4];
+  return { at: standOn(dim, s.center.x + dx, s.center.z + dz) ?? door, patrol: false };
+}
+
+/** The top of a tower: the highest spot with room to stand inside the site's middle (archers shoot from there). */
+function towerTop(dim: Dimension, site: Site): Vector3 | undefined {
+  const w = site.w;
+  const d = site.d ?? site.w;
+  const mid = toWorld({ x: site.x, z: site.z, w, d, rot: site.rot }, Math.floor((w - 1) / 2), Math.floor((d - 1) / 2));
+  try {
+    for (let y = site.y + 24; y > site.y + 2; y--) {
+      const ground = dim.getBlock({ x: mid.x, y: y - 1, z: mid.z });
+      const feet = dim.getBlock({ x: mid.x, y, z: mid.z });
+      const head = dim.getBlock({ x: mid.x, y: y + 1, z: mid.z });
+      if (ground && feet && head && !ground.isAir && !ground.isLiquid && feet.isAir && head.isAir) return { x: mid.x + 0.5, y, z: mid.z + 0.5 };
+    }
+  } catch {
+    // not loaded
+  }
+  return undefined;
+}
+
+/** Standing spot on the ground at x, z (undefined while not loaded or in water). */
+function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
+  try {
+    const top = dim.getTopmostBlock({ x, z });
+    if (!top || top.isLiquid) return undefined;
+    return { x: x + 0.5, y: top.location.y + 1, z: z + 0.5 };
+  } catch {
+    return undefined;
+  }
 }
 
 /** Rank and title follow the tier (the Captain's training takes over later). */

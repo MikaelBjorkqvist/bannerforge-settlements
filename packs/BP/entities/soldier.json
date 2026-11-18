@@ -70,6 +70,21 @@
               "max_dist": 16
             }
           ]
+        },
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 1,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "creeper"
+              },
+              "max_dist": 7,
+              "walk_speed_multiplier": 1.0,
+              "sprint_speed_multiplier": 1.2
+            }
+          ]
         }
       },
       "ranged": {
@@ -308,6 +323,29 @@
         },
         "minecraft:attack": {
           "damage": 5
+        }
+      },
+      "patrol": {
+        "minecraft:home": {
+          "restriction_radius": 40,
+          "restriction_type": "random_movement"
+        },
+        "minecraft:behavior.move_through_village": {
+          "priority": 5,
+          "speed_multiplier": 0.6,
+          "only_at_night": false
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 60,
+          "xz_dist": 16
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 9,
+          "speed_multiplier": 0.6,
+          "interval": 400,
+          "goal_radius": 4
         }
       }
     },
@@ -699,6 +737,13 @@
             }
           }
         ]
+      },
+      "bannerforge:patrol": {
+        "add": {
+          "component_groups": [
+            "patrol"
+          ]
+        }
       }
     }
   }
