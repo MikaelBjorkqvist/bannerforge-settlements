@@ -29,6 +29,7 @@ export function registerDevMenu(): void {
     if (e.id === "bannerforge:dev") showDevMenu(e.sourceEntity as Player);
     if (e.id === "bannerforge:census") census(e.sourceEntity as Player);
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
+    if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
   });
 }
 
@@ -252,3 +253,15 @@ function convertNearby(player: Player): void {
   }
   player.sendMessage(`converted ${n} villager(s)`);
 }
+
+/** Roster test (draft only): the nearest settlement's people with state, job and whether their entity is loaded. */
+function roster(player: Player): void {
+  const s = allSettlements()
+    .filter((x) => x.dimension === player.dimension.id)
+    .sort((a, b) => dist(a, player) - dist(b, player))[0];
+  if (!s) return;
+  const c = s.citizens;
+  const lines = (c?.people ?? []).map((p) => `${p.name} ${p.state}${p.job ? " @" + p.job : ""} ${p.eid ? (world.getEntity(p.eid) ? "seen" : "away") : "-"}`);
+  player.sendMessage(`${s.name}: free=${c?.free ?? 0} staffed=${JSON.stringify(c?.staffed ?? {})}\n${lines.join("\n")}`);
+}
+const dist = (s: Settlement, p: Player) => Math.hypot(s.center.x - p.location.x, s.center.z - p.location.z);

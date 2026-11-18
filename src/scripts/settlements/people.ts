@@ -20,8 +20,12 @@ import { OUTFIT_INDEX, type Person, type Settlement } from "./types.js";
 const INTERVAL = 100;
 const DAWN = 1000;
 const DUSK = 12000;
-/** A walker counts as arrived this close to the bell. */
-const ARRIVED = 20;
+/**
+ * A walker has arrived once inside the inner half of the border: vanilla's "move to village" goal brings them to the
+ * village, not to the bell (play-test 2026-11-18: they stopped 35-40 blocks out). After WALK_TICKS inside the border
+ * they count as arrived too.
+ */
+const WALK_TICKS = 1800;
 const SAFE_RADIUS = 24;
 /** Newcomers never appear closer to the bell than this (they should be seen walking in). */
 const MIN_WALK = 28;
@@ -107,9 +111,11 @@ function tickPeople(s: Settlement): void {
     if (p.state !== "walking" || !p.eid) continue;
     const e = world.getEntity(p.eid);
     if (!e) continue;
-    if (Math.hypot(e.location.x - s.center.x, e.location.z - s.center.z) <= ARRIVED) {
+    const d = Math.max(Math.abs(e.location.x - s.center.x), Math.abs(e.location.z - s.center.z));
+    const border = BORDER_RADIUS[tier(s)];
+    if (d <= border / 2 || (d <= border && gameTime() - (p.since ?? 0) >= WALK_TICKS)) {
       e.triggerEvent("bannerforge:arrived");
-      if (p.job) e.triggerEvent("bannerforge:become_worker");
+      if (p.job && e.getProperty("bannerforge_settlements:role") !== "worker") e.triggerEvent("bannerforge:become_worker");
       p.state = "here";
       changed = true;
       news(s, raw(txt("§a"), t("bannerforge.people.arrived", p.name, s.name)));
@@ -139,7 +145,8 @@ function tickPeople(s: Settlement): void {
 
 function spawnWalker(s: Settlement, p: Person, at: Vector3): void {
   const dim = world.getDimension(s.dimension);
-  const e = dim.spawnEntity(CITIZEN_ID, at, { spawnEvent: "bannerforge:spawn_arriving" });
+  const spawnEvent = p.job ? "bannerforge:spawn_arriving_worker" : "bannerforge:spawn_arriving";
+  const e = dim.spawnEntity(CITIZEN_ID, at, { spawnEvent });
   try {
     e.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[s.faction as keyof typeof OUTFIT_INDEX] ?? 0);
   } catch {
@@ -149,6 +156,7 @@ function spawnWalker(s: Settlement, p: Person, at: Vector3): void {
   e.addTag(ofTag(s));
   p.eid = e.id;
   p.state = "walking";
+  p.since = gameTime();
 }
 
 /**

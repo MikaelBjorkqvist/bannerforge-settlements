@@ -150,6 +150,7 @@ events["bannerforge:spawn_settler"] = spawnAs("settler", unskilled);
 events["bannerforge:spawn_worker"] = spawnAs("worker", worker);
 events["bannerforge:spawn_guard"] = spawnAs("guard", ["adult", `${P}guard`]);
 events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}arriving`]);
+events["bannerforge:spawn_arriving_worker"] = spawnAs("worker", [...worker, `${P}arriving`]);
 events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
 
 // --- conversion of a vanilla villager (script: spawn with spawn_converted, then set look and job) ---------------------

@@ -130,5 +130,7 @@ export interface Person {
   /** Worker slot "<building>:<instance>", if employed. */
   job?: string;
   eid?: string;
+  /** gameTime they set off from the border. */
+  since?: number;
 }
 
