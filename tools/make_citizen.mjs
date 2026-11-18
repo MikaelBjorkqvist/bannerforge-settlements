@@ -57,6 +57,12 @@ ent.description = {
   },
 };
 
+// --- our soldiers never hurt townsfolk (a stray arrow, a wide swing): first damage_sensor trigger wins ------------
+ent.components["minecraft:damage_sensor"].triggers.unshift({
+  on_damage: { filters: { test: "is_family", subject: "other", value: "bannerforge_soldier" } },
+  deals_damage: "no",
+});
+
 // --- the groups a role change has to clear --------------------------------------------------------------------------
 // Do exactly what vanilla's own job change (minecraft:become_<job>) does: swap the profession, its trades and its
 // daily plan, and leave the time-of-day state groups (wander/gather/home/bed_schedule_villager, work_schedule_<job>)

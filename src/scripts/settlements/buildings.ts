@@ -44,6 +44,8 @@ export interface BuildingDef {
    * townsfolk, and don't count as population. Their rank follows the tier (lang bannerforge.garrison.<id>.<tier>).
    */
   garrison?: number;
+  /** What its garrison fights with (owner 2026-11-18: towers hold archers, barracks and the Keep melee soldiers). */
+  garrisonKind?: "melee" | "ranged";
   /** Defence points it adds (per instance): towers, barracks, the Keep (owner, 2026-11-17). */
   defence?: number;
   /** Repeatable buildings: how many instances each tier allows. Absent = unique. */
@@ -72,9 +74,9 @@ export const BUILDINGS: BuildingDef[] = [
   { id: "docks", category: "economy", group: "food", plot: "L", emeralds: 8, prosperity: 3, npcs: 1 },
   // Military: defence buildings and their garrisons (owner, 2026-11-17/18). Garrisons sleep in their own building
   // and start at the lowest rank; the tier only unlocks higher ranks, the Captain trains them (later).
-  { id: "watchtower", category: "military", plot: "S", emeralds: 6, prosperity: 0, npcs: 0, garrison: 1, defence: 2, perTier: { village: 3, town: 6, city: 10 } },
-  { id: "barracks", category: "military", plot: "L", emeralds: 12, prosperity: 0, npcs: 0, garrison: 4, defence: 4, perTier: { village: 1, town: 2, city: 3 } },
-  { id: "keep", category: "military", plot: "L", emeralds: 16, prosperity: 0, npcs: 0, garrison: 2, defence: 6 },
+  { id: "watchtower", category: "military", plot: "S", emeralds: 6, prosperity: 0, npcs: 0, garrison: 1, garrisonKind: "ranged", defence: 2, perTier: { village: 3, town: 6, city: 10 } },
+  { id: "barracks", category: "military", plot: "L", emeralds: 12, prosperity: 0, npcs: 0, garrison: 4, garrisonKind: "melee", defence: 4, perTier: { village: 1, town: 2, city: 3 } },
+  { id: "keep", category: "military", plot: "L", emeralds: 16, prosperity: 0, npcs: 0, garrison: 2, garrisonKind: "melee", defence: 6 },
   // Civic: public places without trade (owner, 2026-11-18): the Town Hall, the shrine; plazas, parks, statues later
   { id: "town_hall", category: "civic", plot: "M", emeralds: 8, prosperity: 5, npcs: 0 },
   { id: "shrine", category: "civic", plot: "S", emeralds: 8, prosperity: 4, npcs: 1 },

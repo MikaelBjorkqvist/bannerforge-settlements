@@ -11,6 +11,7 @@ import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
+import { maintain } from "./garrison.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { military, freeBeds, freeSettlers, population, prosperity, promote, tier, waitingForWorkers } from "./rules.js";
 import { raw, t, txt } from "./text.js";
@@ -162,6 +163,11 @@ export function showDevMenu(player: Player): void {
       done(t("bannerforge.dev.spawned", e.nameTag));
     });
   }
+  form.button(t("bannerforge.dev.garrison_dawn"), () => {
+    if (!s) return;
+    maintain(s, true);
+    done(t("bannerforge.dev.garrison_done"));
+  });
   form.button(t("bannerforge.dev.remove_soldiers"), () => {
     let n = 0;
     for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 64 })) {

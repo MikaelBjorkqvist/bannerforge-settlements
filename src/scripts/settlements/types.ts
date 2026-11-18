@@ -49,6 +49,8 @@ export interface Settlement {
    * buildings[id][i]. null = not placed yet (bought before M2a, or a perimeter building like Defences).
    */
   sites?: Record<string, (Site | null)[]>;
+  /** Day (gameTime / 24000) the garrisons were last refilled at dawn. */
+  garrisonDay?: number;
 }
 
 /** A building's plot in the world and its construction state. */
@@ -71,6 +73,9 @@ export interface Site {
   built: BuildingLevel;
   /** Construction in progress. */
   build?: Construction;
+  /** Military: its garrison has been sent once (owner 2026-11-18: soldiers arrive with the finished building; after
+   *  that, fallen soldiers are replaced at dawn). */
+  manned?: boolean;
 }
 
 export interface Construction {

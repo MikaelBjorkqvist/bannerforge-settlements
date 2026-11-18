@@ -15,14 +15,24 @@ const TITLES: Record<SoldierKind, string[]> = {
   ranged: ["Archer", "Marksman", "Ranger"],
 };
 
-/** Spawns a rank-1 soldier of a kind in the faction's colours, with a name ("Militiaman, Edric"). */
-export function spawnSoldier(dim: Dimension, at: Vector3, kind: SoldierKind, faction: string, seed: string): Entity {
+export const soldierTitle = (kind: SoldierKind, rank: 1 | 2 | 3): string => TITLES[kind][rank - 1];
+
+/** Spawns a soldier of a kind and rank in the faction's colours, with a name ("Militiaman, Edric"). */
+export function spawnSoldier(
+  dim: Dimension,
+  at: Vector3,
+  kind: SoldierKind,
+  faction: string,
+  seed: string,
+  rank: 1 | 2 | 3 = 1,
+): Entity {
   const e = dim.spawnEntity(SOLDIER_ID, at, { spawnEvent: `bannerforge:spawn_${kind}` });
+  if (rank > 1) e.triggerEvent(`bannerforge:rank_${rank}`);
   try {
     e.setProperty("bannerforge_settlements:outfit", OUTFIT_INDEX[faction as keyof typeof OUTFIT_INDEX] ?? 0);
   } catch (err) {
     console.warn(`[BannerForge] soldier outfit: ${String(err)}`);
   }
-  e.nameTag = `${TITLES[kind][0]}, ${pickName(seed + kind)}`;
+  e.nameTag = `${soldierTitle(kind, rank)}, ${pickName(seed + kind)}`;
   return e;
 }

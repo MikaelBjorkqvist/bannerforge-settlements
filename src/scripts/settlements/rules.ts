@@ -3,7 +3,7 @@
 // points are met). Pure functions (no game imports) so they can be unit-tested.
 
 import { BUILDINGS, PROMOTION, buildingById, type BuildingDef, type Cost, type ScoreCategory } from "./buildings.js";
-import type { BuildingLevel, Citizens, Settlement, Tier } from "./types.js";
+import type { BuildingLevel, Citizens, Settlement, Site, Tier } from "./types.js";
 
 /** Why an action isn't possible. `key` is a lang key suffix (bannerforge.rule.<key>); args fill its %s slots. */
 export interface Reason {
@@ -163,6 +163,33 @@ export const population = (s: Settlement): number => freeSettlers(s) + workers(s
 /** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */
+/** One building's garrison: where it stands, how many soldiers of which kind (owner 2026-11-18). */
+export interface Post {
+  id: string;
+  index: number;
+  kind: "melee" | "ranged";
+  count: number;
+  site: Site;
+}
+
+/** Every finished, placed military building with a garrison. Soldiers come with the building, not the population. */
+export function posts(s: Settlement): Post[] {
+  const out: Post[] = [];
+  for (const def of BUILDINGS) {
+    if (!def.garrison) continue;
+    instances(s, def.id).forEach((level, index) => {
+      const site = s.sites?.[def.id]?.[index];
+      if (level > 0 && site && site.built > 0) {
+        out.push({ id: def.id, index, kind: def.garrisonKind ?? "melee", count: def.garrison!, site });
+      }
+    });
+  }
+  return out;
+}
+
+/** Garrison rank follows the tier for now (1 Militia/Archer, 2 Soldier/Marksman, 3 Knight/Ranger). */
+export const garrisonRank = (s: Settlement): 1 | 2 | 3 => (TIER_ORDER.indexOf(tier(s)) + 1) as 1 | 2 | 3;
+
 export const npcDemand = (s: Settlement): number => sumOver(s, (d) => d.npcs);
 /** Military score: defence points of towers, barracks and the Keep (Captain training adds more later). */
 export const military = (s: Settlement): number => score(s, "military");

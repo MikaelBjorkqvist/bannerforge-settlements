@@ -119,3 +119,20 @@ const u = { buildings: { market: [] }, citizens: { free: 0, staffed: { market: [
 assert.equal(R.releaseWorkers(u), 1);
 assert.equal(R.freeSettlers(u), 1);
 
+
+// Garrisons (owner 2026-11-18): only finished, placed military buildings have a post; towers hold archers,
+// barracks and the Keep melee soldiers; the rank follows the tier.
+{
+  const site = (built) => ({ x: 0, y: 64, z: 0, w: 9, rot: 0, built });
+  const g = {
+    ...s,
+    tier: "village",
+    buildings: { watchtower: [1, 1, 1], barracks: [1], keep: [1], market: [1] },
+    sites: { watchtower: [site(1), site(0), null], barracks: [site(1)], keep: [site(1)], market: [site(1)] },
+  };
+  const p = R.posts(g).map((x) => `${x.id}#${x.index}:${x.kind}x${x.count}`);
+  assert.deepEqual(p, ["watchtower#0:rangedx1", "barracks#0:meleex4", "keep#0:meleex2"], "unfinished or unplaced towers have no post");
+  assert.equal(R.garrisonRank(g), 1);
+  assert.equal(R.garrisonRank({ ...g, tier: "town" }), 2);
+  assert.equal(R.garrisonRank({ ...g, tier: "city" }), 3);
+}
