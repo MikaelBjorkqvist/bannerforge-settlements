@@ -231,7 +231,8 @@ function census(player: Player): void {
       const block = e.dimension.getBlock({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) });
       const inBed = block?.typeId === "minecraft:bed";
       const kind = type === CITIZEN_ID ? "CIT" : type === LAB_ID ? "LAB" : "VAN";
-      lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} skin=${skin}/${look} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
+      const hp = Math.round(e.getComponent("minecraft:health")?.currentValue ?? -1);
+      lines.push(`${kind} ${e.nameTag || "?"} role=${role} job=${job} skin=${skin}/${look} hp=${hp} ${inBed ? "§aBED§r" : "awake"} @${p.x | 0},${p.z | 0}`);
     }
   }
   player.sendMessage(lines.length ? lines.join("\n") : "census: nobody within 48");
