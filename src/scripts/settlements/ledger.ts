@@ -141,7 +141,7 @@ function buyBook(player: Player, s: Settlement): void {
 
 export function showOverview(player: Player, s: Settlement): void {
   s = latest(s);
-  const form = new CustomForm(player, t("bannerforge.ledger.title"));
+  const form = new CustomForm(player, t("bannerforge.ledger.title", s.name));
 
   // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));

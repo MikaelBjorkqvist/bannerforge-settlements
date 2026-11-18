@@ -40,7 +40,7 @@ bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
 
 ## Steward's ledger
-bannerforge.ledger.title=Steward's Ledger
+bannerforge.ledger.title=%s Ledger
 bannerforge.ledger.back=← Back
 bannerforge.ledger.legend_1=+ can build
 bannerforge.ledger.legend_2=✔ built     ✘ locked     ⚒ building

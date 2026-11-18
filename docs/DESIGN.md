@@ -149,3 +149,4 @@ Village → Town → City tiers. It is the source of truth for game data.
 6. NPC ranks: decided in outline 2026-11-16 (tier cap + quests). Still open: the quests per role, rewards, and whether rank-ups add prosperity.
 7. Multiplayer: can several players own or contribute to one settlement?
 8. Defences: wall / gate / tower system and its building interface, the Keep's role, defence point values and thresholds.
+| 2026-11-19 | **Owner answers:** the ledger is titled "<Town> Ledger" everywhere (steward and book). Creepers: archers shoot them, melee soldiers keep their distance. Release v0.3.0 after the military AI work. Town Ledger book stays at 3 emeralds. |
