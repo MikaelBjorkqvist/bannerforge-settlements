@@ -273,6 +273,9 @@ function houses(player: Player): void {
   if (!s) return;
   const started = system.currentTick;
   player.sendMessage(`${s.name}: looking for vanilla houses...`);
+  // Also look again for adoption within a few seconds (normally once a day).
+  delete s.housesDay;
+  saveSettlement(s);
   scanHouses(player.dimension, s.center, BORDER_RADIUS[tier(s)], (r) => {
     const beds = r.houses.reduce((n, h) => n + h.beds, 0);
     const lines = r.houses.map((h) => `${h.id} x${h.beds} @${h.at.x} ${h.at.y} ${h.at.z} r${h.rot} ${(h.score * 100).toFixed(0)}%`);

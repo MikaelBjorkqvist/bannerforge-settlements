@@ -13,6 +13,7 @@ import { BORDER_RADIUS } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { addVillager, jobBuilding, reconcile, removeDead, removeVillager, rosterOf, villagersOf, type Change } from "./roster.js";
 import { convertVillager, jobOf, VILLAGER_ID } from "./convert.js";
+import { adoptHousesDaily } from "./vanilla_houses.js";
 import { tier } from "./rules.js";
 import { SOLDIER_ID } from "./soldier.js";
 import { buildingName, raw, t, txt } from "./text.js";
@@ -143,6 +144,8 @@ function tickPeople(s: Settlement): void {
   // Vanilla villagers inside the border join the town (owner 2026-11-18): at founding, and whenever one is born,
   // cured, loaded with its chunk or walks in.
   if (convertVillagers(s)) changed = true;
+  // Their houses are adopted as house sites (once a day, spread over ticks; saves by itself).
+  adoptHousesDaily(s, news);
 
   // Citizens of this settlement nobody knows any more (they left while their chunk was unloaded) go for good.
   const known = new Set([...people, ...villagersOf(s)].map((p) => p.eid).filter(Boolean));

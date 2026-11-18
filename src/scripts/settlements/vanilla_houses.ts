@@ -3,10 +3,18 @@
 // its beds and up to 32 sample blocks relative to its first bed head. To recognise houses we find the beds inside
 // the border, then try every fingerprint in all four turns at each bed head: every bed of the design must be there
 // and most sample blocks must match. Loose beds (not part of a recognised house) never count.
-// Spike: a dev report only (`/scriptevent bannerforge:houses`); adopting the houses as sites comes next.
+// Adoption (owner 2026-11-18): once a day per settlement the houses are looked for again. New ones are adopted
+// (their beds count as housing) and get one faction banner by the door; an adopted house that is loaded and no
+// longer matches is dropped; one in an unloaded chunk is kept. Dev report: `/scriptevent bannerforge:houses`.
 
-import { BlockVolume, type Dimension, system, type Vector3 } from "@minecraft/server";
+import { BlockPermutation, BlockVolume, type Dimension, system, type Vector3, world } from "@minecraft/server";
+import { gameTime } from "./clock.js";
 import { VANILLA_HOUSES, type VanillaHouse } from "./generated/vanilla_houses.js";
+import { BORDER_RADIUS } from "./plots.js";
+import { saveSettlement, settlementById } from "./registry.js";
+import { tier } from "./rules.js";
+import { raw, t, txt } from "./text.js";
+import type { AdoptedHouse, Settlement } from "./types.js";
 
 /** Share of sample blocks that must match. Damaged or lived-in houses still pass; other designs score lower. */
 const MIN_SCORE = 0.7;
@@ -112,4 +120,100 @@ function score(fp: VanillaHouse, at: Vector3, rot: number, typeAt: (x: number, y
     if (got && names.split("|").includes(got)) ok++;
   }
   return ok / fp.anchors.length;
+}
+
+// ---- adoption ----------------------------------------------------------------------------------------------------
+
+const scanning = new Set<string>();
+const keyOf = (h: { x: number; y: number; z: number }) => `${h.x},${h.y},${h.z}`;
+const DIR_NAME: Record<string, string> = { "0,-1": "north", "0,1": "south", "1,0": "east", "-1,0": "west" };
+
+/**
+ * Once a day (and soon after founding): look for vanilla houses and update the adopted list. Calls tell(news) with
+ * what changed. Cheap to call often: it starts at most one scan per settlement per day.
+ */
+export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: ReturnType<typeof raw>) => void): void {
+  const day = Math.floor(gameTime() / 24000);
+  if (s.housesDay === day || scanning.has(s.id)) return;
+  const dim = world.getDimension(s.dimension);
+  if (!dim.getPlayers({ location: s.center, maxDistance: BORDER_RADIUS[tier(s)] + 32 }).length) return; // nobody near: chunks not loaded
+  scanning.add(s.id);
+  scanHouses(dim, s.center, BORDER_RADIUS[tier(s)], (r) => {
+    scanning.delete(s.id);
+    const now = settlementById(s.id);
+    if (!now) return;
+    const old = now.adopted ?? [];
+    const kept: AdoptedHouse[] = [];
+    let lostBeds = 0;
+    for (const h of old) {
+      const v = verify(dim, h);
+      if (v === "gone") lostBeds += h.beds;
+      else kept.push(h);
+    }
+    const have = new Set(kept.map(keyOf));
+    const fresh = r.houses
+      .filter((h) => !have.has(keyOf(h.at)))
+      .map((h): AdoptedHouse => ({ design: h.id, x: h.at.x, y: h.at.y, z: h.at.z, rot: h.rot, beds: h.beds }));
+    for (const h of fresh) h.banner = putUpBanner(dim, h, now.faction);
+    now.adopted = [...kept, ...fresh];
+    now.housesDay = day;
+    saveSettlement(now);
+    const newBeds = fresh.reduce((n, h) => n + h.beds, 0);
+    if (fresh.length) tell(now, raw(txt("§a"), t("bannerforge.houses.adopted", String(fresh.length), String(newBeds))));
+    if (lostBeds) tell(now, raw(txt("§6"), t("bannerforge.houses.lost", String(lostBeds))));
+  });
+}
+
+/** Is an adopted house still there? "unloaded" if its chunk can't be read now. */
+function verify(dim: Dimension, h: AdoptedHouse): "ok" | "gone" | "unloaded" {
+  const fp = VANILLA_HOUSES.find((f) => f.id === h.design);
+  if (!fp) return "gone";
+  let unloaded = false;
+  const typeAt = (x: number, y: number, z: number): string | undefined => {
+    try {
+      const b = dim.getBlock({ x, y, z });
+      if (!b) unloaded = true;
+      return b?.typeId.replace("minecraft:", "");
+    } catch {
+      unloaded = true;
+      return undefined;
+    }
+  };
+  const sc = score(fp, h, h.rot, typeAt);
+  if (unloaded) return "unloaded";
+  return sc >= MIN_SCORE ? "ok" : "gone";
+}
+
+/**
+ * One faction banner beside the front door, on the outside wall (2 blocks: top at door height + 1).
+ * Returns false if there is no room (the house still counts).
+ */
+function putUpBanner(dim: Dimension, h: AdoptedHouse, faction: string): boolean {
+  const fp = VANILLA_HOUSES.find((f) => f.id === h.design);
+  if (!fp?.entrance) return false;
+  const [ddx, ddy, ddz] = fp.entrance.door;
+  const [rdx, rdz] = turn(ddx, ddz, h.rot);
+  const door = { x: h.x + rdx, y: h.y + ddy, z: h.z + rdz };
+  const [ox, oz] = turn(fp.entrance.out[0], fp.entrance.out[1], h.rot);
+  const facing = DIR_NAME[`${ox},${oz}`];
+  if (!facing) return false;
+  const id = `bannerforge_settlements:banner_${faction}`;
+  try {
+    for (const side of [1, -1]) {
+      const lx = -oz * side;
+      const lz = ox * side;
+      const wall = dim.getBlock({ x: door.x + lx, y: door.y, z: door.z + lz });
+      const wallUp = dim.getBlock({ x: door.x + lx, y: door.y + 1, z: door.z + lz });
+      const bottom = dim.getBlock({ x: door.x + lx + ox, y: door.y, z: door.z + lz + oz });
+      const top = dim.getBlock({ x: door.x + lx + ox, y: door.y + 1, z: door.z + lz + oz });
+      if (!wall || !wallUp || !bottom || !top) continue;
+      if (wall.isAir || wall.isLiquid || wallUp.isAir || !bottom.isAir || !top.isAir) continue;
+      top.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "top", "minecraft:cardinal_direction": facing }));
+      bottom.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "bottom", "minecraft:cardinal_direction": facing }));
+      return true;
+    }
+  } catch (err) {
+    console.warn(`[BannerForge] banner at ${h.design}: ${String(err)}`);
+  }
+  return false;
 }

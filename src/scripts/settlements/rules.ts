@@ -107,7 +107,8 @@ export function morning(s: Settlement): { arrived: number; left: number } {
   const c = citizensOf(s);
   releaseWorkers(s);
   const beds = housing(s);
-  let people = c.free + workers(s);
+  // Converted villagers take beds too, but never leave by this rule (it is their village).
+  let people = c.free + workers(s) + villagers(s);
   let arrived = 0;
   let left = 0;
   if (people < beds) {
@@ -147,9 +148,10 @@ export function score(s: Settlement, category: ScoreCategory): number {
 
 /** Prosperity, the town's overall score: Economy + Military + Civic. */
 export const prosperity = (s: Settlement): number => score(s, "economy") + score(s, "military") + score(s, "civic");
-/** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). */
+/** Beds in the houses: a house sleeps as many as its design has beds (stored on its site when placed). Adopted
+ *  vanilla houses count their own beds. */
 export function housing(s: Settlement): number {
-  let total = 0;
+  let total = (s.adopted ?? []).reduce((n, h) => n + h.beds, 0);
   for (const def of BUILDINGS) {
     if (!def.housing) continue;
     instances(s, def.id).forEach((level, i) => {
@@ -158,8 +160,10 @@ export function housing(s: Settlement): number {
   }
   return total;
 }
-/** Population: the townsfolk who live there (free settlers and workers). Garrisons are not population. */
-export const population = (s: Settlement): number => freeSettlers(s) + workers(s);
+/** Converted vanilla villagers (owner 2026-11-18): they live in the adopted vanilla houses. */
+export const villagers = (s: Settlement): number => s.citizens?.villagers?.length ?? 0;
+/** Population: the townsfolk who live there (free settlers, workers and converted villagers). Garrisons are not population. */
+export const population = (s: Settlement): number => freeSettlers(s) + workers(s) + villagers(s);
 /** Military in barracks, towers and the Keep (owner, 2026-11-17: they sleep there and need no townsfolk). */
 export const garrison = (s: Settlement): number => sumOver(s, (d) => d.garrison ?? 0);
 /** Workers the standing buildings employ (from the townsfolk). */

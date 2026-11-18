@@ -136,3 +136,14 @@ assert.equal(R.freeSettlers(u), 1);
   assert.equal(R.garrisonRank({ ...g, tier: "town" }), 2);
   assert.equal(R.garrisonRank({ ...g, tier: "city" }), 3);
 }
+
+// Adopted vanilla houses add their beds; converted villagers are population and take beds (owner 2026-11-18).
+{
+  const s = { id: "a", name: "A", buildings: {}, adopted: [{ design: "plains_small_house_1", x: 0, y: 0, z: 0, rot: 0, beds: 1 }, { design: "plains_medium_house_1", x: 9, y: 0, z: 0, rot: 0, beds: 2 }], citizens: { free: 0, staffed: {}, villagers: [{ seed: "a:1", name: "Nell", state: "here", vjob: 5 }] } };
+  assert.equal(R.housing(s), 3);
+  assert.equal(R.population(s), 1);
+  assert.equal(R.morning(s).arrived, 2);
+  s.adopted.pop();
+  assert.deepEqual(R.morning(s), { arrived: 0, left: 2 });
+  assert.equal(R.population(s), 1);
+}

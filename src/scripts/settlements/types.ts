@@ -51,6 +51,25 @@ export interface Settlement {
   sites?: Record<string, (Site | null)[]>;
   /** Day (gameTime / 24000) the garrisons were last refilled at dawn. */
   garrisonDay?: number;
+  /** Vanilla village houses taken over as house sites (owner 2026-11-18: adopt). Missing = none yet. */
+  adopted?: AdoptedHouse[];
+  /** Day the vanilla houses were last looked for (vanilla_houses.ts runs once a day). */
+  housesDay?: number;
+}
+
+/** A recognised vanilla house (generated/vanilla_houses.ts): its beds count as housing. */
+export interface AdoptedHouse {
+  /** Vanilla design id, e.g. plains_small_house_3. */
+  design: string;
+  /** World position of the design's first bed head. */
+  x: number;
+  y: number;
+  z: number;
+  /** Quarter turns of the design (tools/vanilla_houses.mjs turn()). */
+  rot: number;
+  beds: number;
+  /** The faction banner by its door has been put up (once; a player may take it down). */
+  banner?: boolean;
 }
 
 /** A building's plot in the world and its construction state. */
