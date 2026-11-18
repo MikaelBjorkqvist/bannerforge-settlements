@@ -23,6 +23,8 @@ const DUSK = 12000;
 /** A walker counts as arrived this close to the bell. */
 const ARRIVED = 20;
 const SAFE_RADIUS = 24;
+/** Newcomers never appear closer to the bell than this (they should be seen walking in). */
+const MIN_WALK = 28;
 
 export const ofTag = (s: Settlement) => `bannerforge:of:${s.id}`;
 const OF_PREFIX = "bannerforge:of:";
@@ -150,32 +152,42 @@ function spawnWalker(s: Settlement, p: Person, at: Vector3): void {
 }
 
 /**
- * A safe place on the border to walk in from: loaded, dry solid ground with room to stand, and no monster within
- * SAFE_RADIUS. A few random tries; undefined if none is safe right now (try again next pass).
+ * A safe place to walk in from: on a line from the border towards the bell, the first spot that is loaded and
+ * simulated (the border itself is often beyond a player's simulation distance), with dry solid ground, room to stand
+ * and no monster within SAFE_RADIUS. A few random lines; undefined if none is safe right now (try next pass).
  */
 export function safeBorderSpot(s: Settlement): Vector3 | undefined {
-  const dim = world.getDimension(s.dimension);
   const r = BORDER_RADIUS[tier(s)] - 3;
-  for (let i = 0; i < 6; i++) {
-    const along = (Math.random() * 2 - 1) * r;
+  for (let i = 0; i < 4; i++) {
+    const along = Math.random() * 2 - 1;
     const side = Math.floor(Math.random() * 4);
-    const x = Math.floor(s.center.x + (side === 0 ? r : side === 1 ? -r : along));
-    const z = Math.floor(s.center.z + (side === 2 ? r : side === 3 ? -r : along));
-    let top;
-    try {
-      top = dim.getTopmostBlock({ x, z });
-    } catch {
-      continue; // not loaded
+    const ux = side === 0 ? 1 : side === 1 ? -1 : along;
+    const uz = side === 2 ? 1 : side === 3 ? -1 : along;
+    for (let d = r; d >= MIN_WALK; d -= 8) {
+      const spot = safeAt(s, Math.floor(s.center.x + ux * d), Math.floor(s.center.z + uz * d));
+      if (spot === "unloaded") continue;
+      if (spot) return spot;
+      break; // loaded but unsafe: try another line
     }
-    if (!top || top.isLiquid || /leaves|log|lava|water|ice|cactus|magma/.test(top.typeId)) continue;
-    const feet = dim.getBlock({ x, y: top.location.y + 1, z });
-    const head = dim.getBlock({ x, y: top.location.y + 2, z });
-    if (!feet?.isAir || !head?.isAir) continue;
-    const at = { x: x + 0.5, y: top.location.y + 1, z: z + 0.5 };
-    if (dim.getEntities({ location: at, maxDistance: SAFE_RADIUS, families: ["monster"] }).length) continue;
-    return at;
   }
   return undefined;
+}
+
+function safeAt(s: Settlement, x: number, z: number): Vector3 | undefined | "unloaded" {
+  const dim = world.getDimension(s.dimension);
+  try {
+    const top = dim.getTopmostBlock({ x, z });
+    if (!top) return "unloaded";
+    if (top.isLiquid || /leaves|log|lava|water|ice|cactus|magma|fire/.test(top.typeId)) return undefined;
+    const feet = dim.getBlock({ x, y: top.location.y + 1, z });
+    const head = dim.getBlock({ x, y: top.location.y + 2, z });
+    if (!feet?.isAir || !head?.isAir) return undefined;
+    const at = { x: x + 0.5, y: top.location.y + 1, z: z + 0.5 };
+    if (dim.getEntities({ location: at, maxDistance: SAFE_RADIUS, families: ["monster"] }).length) return undefined;
+    return at;
+  } catch {
+    return "unloaded"; // not loaded or not simulated
+  }
 }
 
 function citizenDied(e: Entity, killer: string | undefined): void {
