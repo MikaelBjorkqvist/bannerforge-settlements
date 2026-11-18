@@ -95,8 +95,7 @@ export function showOverview(player: Player, s: Settlement): void {
   // start at the left edge, so they line up whatever the font.
   form.divider();
   const waiting = waitingForWorkers(s).length;
-  // Prosperity is the full bar (100%), stacked from the three colours; each score's bar is its share of the total
-  // (owner, 2026-11-18). Largest-remainder rounding so the shares add up to exactly BAR_MAX blocks.
+  // Each score's bar is its share of Prosperity, BAR_MAX blocks in total (owner, 2026-11-18). Largest-remainder rounding so the shares add up to exactly BAR_MAX blocks.
   const scores = SCORES.map((c) => ({ c, v: score(s, c) }));
   const total = scores.reduce((n, x) => n + x.v, 0);
   const exact = scores.map((x) => (total ? (x.v / total) * BAR_MAX : 0));
@@ -105,7 +104,8 @@ export function showOverview(player: Player, s: Settlement): void {
   for (let k = 0; total && blocks.reduce((n, b) => n + b, 0) < BAR_MAX; k++) blocks[order[k].i]++;
   const bar = (i: number) => `${CAT_COLOUR[scores[i].c]}${"█".repeat(blocks[i])}`;
   const info: RawMessage[] = [txt(CAT_COLOUR.prosperity), t("bannerforge.steward.prosperity"), txt(` §f${prosperity(s)}`)];
-  if (total) info.push(txt(`\n${scores.map((_, i) => bar(i)).join("")}`));
+  // No separate Prosperity bar (owner, 2026-11-18): an empty line, then the share bars.
+  info.push(txt("\n"));
   scores.forEach(({ c, v }, i) => {
     info.push(txt(`\n${bar(i)}${blocks[i] ? " " : ""}§7`), t(`bannerforge.category.${c}`), txt(` §f${v}`));
   });
