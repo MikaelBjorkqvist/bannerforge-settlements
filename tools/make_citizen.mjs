@@ -106,11 +106,12 @@ groups[`${P}guard`] = {
 };
 
 // --- worker: staff of one of our buildings, never a vanilla job ---------------------------------------------------
-// Owner 2026-11-18: a worker is a worker and nothing else until the building is lost or they die. Vanilla decides who
-// looks for a job block by the job variant (0 = jobless looks, 14 = nitwit never does), so a worker carries variant 14
-// and its own family (no "unskilled"). The vanilla look shows the nitwit robe until our model (role property) exists.
+// Owner 2026-11-18: a worker is a worker and nothing else until the building is lost or they die. Lab 2026-11-18: the
+// game keeps a villager out of the vanilla job search by its "nitwit" family. Job variant 14 alone, or a dweller that
+// prefers a job no block offers, still took a job within minutes; with the nitwit family a worker stayed a worker for
+// 4.5 minutes next to a free job block. The vanilla look shows the nitwit robe until our model (role property) exists.
 groups[`${P}worker`] = {
-  "minecraft:type_family": { family: ["villager", "peasant", "bannerforge_worker", "mob"] },
+  "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_worker", "mob"] },
   "minecraft:variant": { value: 14 },
 };
 const worker = ["adult", "behavior_peasant", "basic_schedule", `${P}worker`];

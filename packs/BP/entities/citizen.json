@@ -2364,6 +2364,7 @@
           "family": [
             "villager",
             "peasant",
+            "nitwit",
             "bannerforge_worker",
             "mob"
           ]
