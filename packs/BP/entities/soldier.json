@@ -80,6 +80,15 @@
           ],
           "default": 2,
           "client_sync": false
+        },
+        "bannerforge_settlements:fb_time": {
+          "type": "int",
+          "range": [
+            0,
+            10
+          ],
+          "default": 0,
+          "client_sync": false
         }
       }
     },
@@ -217,6 +226,32 @@
               "max_dist": 6,
               "walk_speed_multiplier": 1.0,
               "sprint_speed_multiplier": 1.2
+            },
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "monster"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "skeleton"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "pillager"
+                  }
+                ]
+              },
+              "max_dist": 5,
+              "walk_speed_multiplier": 1.0,
+              "sprint_speed_multiplier": 1.25
             }
           ]
         },
@@ -1674,6 +1709,80 @@
           },
           {
             "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:falling_back",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:fb_time": "math.min(query.property('bannerforge_settlements:fb_time') + 1, 10)"
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": true
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:fb_time",
+                  "operator": ">=",
+                  "value": 6
+                },
+                {
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "ranged"
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "fall_back",
+                "ranged"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": false,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": true
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:fb_time",
+                  "operator": ">=",
+                  "value": 6
+                },
+                {
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "melee"
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "fall_back",
+                "melee"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": false,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
               "all_of": [
                 {
                   "test": "bool_property",
@@ -1690,6 +1799,12 @@
                   "subject": "self",
                   "operator": "<",
                   "value": 12
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 }
               ]
             },
@@ -1699,7 +1814,8 @@
               ]
             },
             "set_property": {
-              "bannerforge_settlements:falling_back": true
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
             }
           },
           {
@@ -1720,6 +1836,12 @@
                   "subject": "self",
                   "operator": "<",
                   "value": 15
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 }
               ]
             },
@@ -1729,7 +1851,8 @@
               ]
             },
             "set_property": {
-              "bannerforge_settlements:falling_back": true
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
             }
           },
           {
@@ -1750,6 +1873,12 @@
                   "subject": "self",
                   "operator": "<",
                   "value": 20
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 }
               ]
             },
@@ -1759,223 +1888,8 @@
               ]
             },
             "set_property": {
-              "bannerforge_settlements:falling_back": true
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 1
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "melee"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 20
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "melee"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 1
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "ranged"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 20
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "ranged"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 2
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "melee"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 25
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "melee"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 2
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "ranged"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 25
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "ranged"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 3
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "melee"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 34
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "melee"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
-            }
-          },
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                },
-                {
-                  "test": "int_property",
-                  "domain": "bannerforge_settlements:rank",
-                  "value": 3
-                },
-                {
-                  "test": "enum_property",
-                  "domain": "bannerforge_settlements:kind",
-                  "value": "ranged"
-                },
-                {
-                  "test": "actor_health",
-                  "subject": "self",
-                  "operator": ">=",
-                  "value": 34
-                }
-              ]
-            },
-            "remove": {
-              "component_groups": [
-                "fall_back",
-                "ranged"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:falling_back": false
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
             }
           },
           {
