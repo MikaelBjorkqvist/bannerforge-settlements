@@ -72,7 +72,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
       if (e.getDynamicProperty(P_GEAR) !== GEAR_VERSION) {
         const r = Number(e.getProperty(RANK_PROP)) || 1;
         e.triggerEvent(`bannerforge:rank_${r}`);
-        equipGear(e, r);
+        equipGear(e);
         e.setDynamicProperty(P_GEAR, GEAR_VERSION);
       }
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
@@ -81,7 +81,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
       if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:falling_back")) continue;
       const at = placeOf(dim, s, all, slot, door);
       const home = postAt(e);
-      const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
+      const moved = at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
       if (dutyOf(e) !== slot.role || moved) {
         fixes++;
         reassign(e, at, slot.role);
@@ -97,7 +97,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
         const at = placeOf(dim, s, all, slot, door);
         const rank = slotRank(s, slot.key, maxRank);
         const e = spawnSoldier(dim, at, post.kind, s.faction, `${tag}:${now}:${n}`, rank);
-        equipGear(e, rank);
+        equipGear(e);
         e.addTag(tag);
         e.setDynamicProperty(P_DUTY, n);
         setRole(e, slot.role, at);
@@ -126,7 +126,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
 
 export const P_DUTY = "bannerforge:duty";
 const P_GEAR = "bannerforge:gear";
-const GEAR_VERSION = 3;
+const GEAR_VERSION = 4;
 /** Longest walk to a new duty: within the soldier's follow range (32, soldier.json). */
 const SOLDIER_WALK = 28;
 /** The spot a soldier serves at (his home: where he was spawned), as "x,y,z". His duty is an entity property. */
@@ -135,12 +135,12 @@ export const captainTag = (s: Settlement) => `bannerforge:captain:${s.id}`;
 
 /** The soldier's duty, kept by the behaviour file ("none" before he got one). */
 /**
- * Gear the rank's loot table can't place: melee soldiers from rank 2 carry a shield in the off hand (the behaviour file
+ * Gear the rank's loot table can't place: every melee fighter carries a shield in the off hand (the behaviour file
  * blocks with it). Run after spawning and after every rank change.
  */
-export function equipGear(e: Entity, rank: number = Number(e.getProperty(RANK_PROP)) || 1): void {
-  const melee = e.getProperty("bannerforge_settlements:kind") === "melee";
-  const shield = melee && rank >= 2;
+export function equipGear(e: Entity): void {
+  // Owner 2026-11-19: every melee fighter carries a shield (militia too).
+  const shield = e.getProperty("bannerforge_settlements:kind") === "melee";
   try {
     e.runCommand(`replaceitem entity @s slot.weapon.offhand 0 ${shield ? "shield" : "air"}`);
   } catch (err) {
@@ -185,7 +185,7 @@ export function reassign(old: Entity, at: Vector3, role: Role): Entity {
   for (const tag of old.getTags()) e.addTag(tag);
   e.setDynamicProperty(P_DUTY, old.getDynamicProperty(P_DUTY));
   setRole(e, role, at);
-  equipGear(e, rank);
+  equipGear(e);
   const hpOld = old.getComponent("minecraft:health");
   const hpNew = e.getComponent("minecraft:health");
   if (hpOld && hpNew) hpNew.setCurrentValue(Math.max(1, Math.min(hpOld.currentValue, hpNew.effectiveMax)));
@@ -200,6 +200,9 @@ function placeOf(dim: Dimension, s: Settlement, all: Slot[], slot: Slot, door: V
   switch (slot.role) {
     case "tower":
       return towerTop(dim, slot.post.site) ?? door;
+    case "patrol":
+      // The town patrol's home is the bell: he roams the whole town from there (soldier.json duty_patrol).
+      return standOn(dim, s.center.x - 2, s.center.z + 2) ?? door;
     case "bell":
       return standOn(dim, s.center.x + 2, s.center.z) ?? door;
     case "gate": {
@@ -246,7 +249,7 @@ function keepCaptain(dim: Dimension, s: Settlement, dawn: boolean): boolean {
   const e = spawnSoldier(dim, at, "melee", s.faction, `${tag}:${gameTime()}`, 3);
   e.nameTag = `${CAPTAIN_TITLE}, ${e.nameTag.split(", ")[1] ?? ""}`;
   e.addTag(tag);
-  equipGear(e, 3);
+  equipGear(e);
   setRole(e, "captain", at);
   if (first) {
     s.captainSent = true;
@@ -316,7 +319,7 @@ function syncRank(e: Entity, post: Post, rank: 1 | 2 | 3): void {
   if (e.getProperty(RANK_PROP) === rank) return;
   if (dutyOf(e) === "captain") return;
   e.triggerEvent(`bannerforge:rank_${rank}`);
-  equipGear(e, rank);
+  equipGear(e);
   const name = e.nameTag.split(", ")[1];
   if (name) e.nameTag = `${soldierTitle(post.kind, rank)}, ${name}`;
 }

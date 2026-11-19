@@ -562,20 +562,21 @@
       },
       "duty_patrol": {
         "minecraft:home": {
-          "restriction_radius": 40,
+          "restriction_radius": 44,
           "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
-          "priority": 7,
-          "speed_multiplier": 0.6,
-          "interval": 60,
-          "xz_dist": 16,
-          "y_dist": 3
-        },
-        "minecraft:behavior.move_through_village": {
           "priority": 5,
           "speed_multiplier": 0.6,
-          "only_at_night": false
+          "interval": 20,
+          "xz_dist": 24,
+          "y_dist": 4
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 8,
+          "speed_multiplier": 0.7,
+          "interval": 600,
+          "goal_radius": 6
         }
       },
       "duty_captain": {
@@ -787,7 +788,7 @@
       "minecraft:behavior.go_home": {
         "priority": 6,
         "speed_multiplier": 0.8,
-        "interval": 1,
+        "interval": 80,
         "goal_radius": 3
       },
       "minecraft:behavior.random_stroll": {
