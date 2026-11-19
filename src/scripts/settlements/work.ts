@@ -13,8 +13,14 @@ import { walkFrom } from "./walk.js";
 /** The job slot this worker's entity was given a home at. */
 export const P_WORKPLACE = "bannerforge:workplace";
 
+/**
+ * Version of the workplace home: workers sent before 2026-11-19 (v1) got no home spot saved and are sent again.
+ */
+const HOME_VERSION = 2;
+const workplaceKey = (job: string) => `${job}@${HOME_VERSION}`;
+
 /** Does this worker's entity still need a home at his workplace? */
-export const needsWorkplace = (e: Entity, p: Person): boolean => !!p.job && e.getDynamicProperty(P_WORKPLACE) !== p.job;
+export const needsWorkplace = (e: Entity, p: Person): boolean => !!p.job && e.getDynamicProperty(P_WORKPLACE) !== workplaceKey(p.job);
 
 /**
  * Makes a citizen a worker living at his workplace: a worker entity with the same look, name, tags and data is
@@ -43,7 +49,7 @@ export function sendToWork(s: Settlement, p: Person, old: Entity): Entity {
   e.nameTag = old.nameTag;
   for (const tag of old.getTags()) e.addTag(tag);
   for (const id of old.getDynamicPropertyIds()) e.setDynamicProperty(id, old.getDynamicProperty(id));
-  e.setDynamicProperty(P_WORKPLACE, p.job);
+  e.setDynamicProperty(P_WORKPLACE, workplaceKey(p.job));
   e.setRotation(old.getRotation());
   walkFrom(e, from, door);
   old.remove();
