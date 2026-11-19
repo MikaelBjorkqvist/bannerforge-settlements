@@ -80,21 +80,19 @@
         "body": {
           "rotation": [
             0,
-            "math.sin(math.sqrt(variable.attack_time) * 360) * 12 - this",
+            "math.sin(math.sqrt(variable.attack_time) * 360) * 8 - this",
             0
           ]
-        },
+        }
+      }
+    },
+    "animation.bannerforge_settlements.soldier.engage": {
+      "loop": true,
+      "bones": {
         "rightArm": {
           "rotation": [
-            "-math.sin(variable.attack_time * 180) * 100 - 15 * math.sin(variable.attack_time * 360)",
-            "math.sin(variable.attack_time * 180) * -25",
-            0
-          ]
-        },
-        "leftArm": {
-          "rotation": [
-            "math.sin(variable.attack_time * 180) * 12",
-            0,
+            "-110 + math.sin(math.sqrt(variable.attack_time) * 180) * 70",
+            "-10",
             0
           ]
         }

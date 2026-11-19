@@ -38,7 +38,10 @@
           {
             "block": "query.property('bannerforge_settlements:blocking')"
           },
-          "ctrl_drink"
+          "ctrl_drink",
+          {
+            "engage": "query.has_target && !query.property('bannerforge_settlements:drinking') && !query.is_item_name_any('slot.weapon.mainhand', 0, 'minecraft:bow', 'minecraft:crossbow')"
+          }
         ]
       },
       "animations": {
@@ -68,7 +71,8 @@
         "use_item_progress": "animation.humanoid.use_item_progress",
         "block": "animation.bannerforge_settlements.soldier.block",
         "drink": "animation.bannerforge_settlements.soldier.drink",
-        "ctrl_drink": "controller.animation.bannerforge_settlements.soldier.drink"
+        "ctrl_drink": "controller.animation.bannerforge_settlements.soldier.drink",
+        "engage": "animation.bannerforge_settlements.soldier.engage"
       },
       "render_controllers": [
         "controller.render.bannerforge_settlements.npc",
