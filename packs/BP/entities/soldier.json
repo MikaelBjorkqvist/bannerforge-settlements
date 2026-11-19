@@ -575,6 +575,40 @@
             }
           ]
         }
+      },
+      "raid": {
+        "minecraft:behavior.nearest_prioritized_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "reselect_targets": true,
+          "within_radius": 64,
+          "persist_time": 2,
+          "entity_types": [
+            {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "illager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "ravager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "witch"
+                  }
+                ]
+              },
+              "max_dist": 64,
+              "priority": 0
+            }
+          ]
+        }
       }
     },
     "components": {
@@ -621,7 +655,7 @@
       "minecraft:nameable": {},
       "minecraft:persistent": {},
       "minecraft:follow_range": {
-        "value": 32
+        "value": 64
       },
       "minecraft:home": {
         "restriction_radius": 12,
@@ -959,7 +993,21 @@
           ]
         }
       },
-      "bannerforge:talked": {}
+      "bannerforge:talked": {},
+      "bannerforge:raid_start": {
+        "add": {
+          "component_groups": [
+            "raid"
+          ]
+        }
+      },
+      "bannerforge:raid_end": {
+        "remove": {
+          "component_groups": [
+            "raid"
+          ]
+        }
+      }
     }
   }
 }

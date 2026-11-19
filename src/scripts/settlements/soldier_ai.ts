@@ -9,13 +9,14 @@
 //  - healing: out of combat for 8 s he heals (regeneration, which shows its swirls) and hearts rise over his head;
 //    faster at his post when he came back to heal, or at a barracks, tower or the Keep
 //
-// Performance (CLAUDE.md rule 6): every 2 seconds, only soldiers within 80 blocks of a player, constant work each.
+// Performance (CLAUDE.md rule 6): every 2 seconds, one entity query per town and per player, constant work per soldier.
 
-import { type Entity, system, type Vector3, world } from "@minecraft/server";
+import { type Dimension, type Entity, system, type Vector3, world } from "@minecraft/server";
 import { LEASH, WANDER } from "./duties.js";
 import { P_ROLE, postAt } from "./garrison.js";
 import { BORDER_RADIUS } from "./plots.js";
-import { settlementNear } from "./registry.js";
+import { allSettlements, settlementNear } from "./registry.js";
+import { isUnderAttack } from "./raid.js";
 import { tier } from "./rules.js";
 import { SOLDIER_ID } from "./soldier.js";
 import type { Role } from "./types.js";
@@ -60,8 +61,15 @@ export function registerSoldierAi(): void {
 function pass(): void {
   const now = system.currentTick;
   const seen = new Set<string>();
-  for (const player of world.getAllPlayers()) {
-    for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: NEAR_PLAYER })) {
+  // Every town's soldiers (they heal and keep their leash wherever they are loaded), plus any near a player.
+  const areas: { dim: Dimension; at: Vector3; r: number }[] = allSettlements().map((s) => ({
+    dim: world.getDimension(s.dimension),
+    at: s.center,
+    r: BORDER_RADIUS[tier(s)] + 40,
+  }));
+  for (const p of world.getAllPlayers()) areas.push({ dim: p.dimension, at: p.location, r: NEAR_PLAYER });
+  for (const a of areas) {
+    for (const e of a.dim.getEntities({ type: SOLDIER_ID, location: a.at, maxDistance: a.r })) {
       if (seen.has(e.id)) continue;
       seen.add(e.id);
       try {
@@ -127,7 +135,9 @@ function think(e: Entity, now: number): void {
 
 /** Past the chase distance for his duty? The town patrol is measured from the bell: up to the border + 8. */
 function overLeash(e: Entity, role: Role, post: Vector3, loc: Vector3): boolean {
-  if (role === "patrol") {
+  // During a raid every soldier may fight anywhere in town (up to the border + 8, like the patrol).
+  const raid = role !== "patrol" && allSettlements().some((x) => isUnderAttack(x.id) && dist(x.center, loc) < 200);
+  if (role === "patrol" || raid) {
     const s = settlementNear(e.dimension.id, loc, 200);
     if (!s) return false;
     const r = BORDER_RADIUS[tier(s)] + LEASH.patrol;

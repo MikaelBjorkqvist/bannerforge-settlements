@@ -13,7 +13,8 @@ import { buildingById } from "./buildings.js";
 import { devPlaceNow } from "./placement.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
-import { maintain } from "./garrison.js";
+import { captainTag, maintain } from "./garrison.js";
+import { talk as talkToCaptain } from "./captain.js";
 import { BOOK_ID, showOverview, showSection, useBook } from "./ledger.js";
 import { onBellRung, onTalk, STEWARD_ID } from "./steward.js";
 import { talk } from "./growth.js";
@@ -117,6 +118,14 @@ export function registerDevMenu(): void {
       const s = nearest(p);
       if (s && e.message === "economy") showSection(p, s, "economy");
       else if (s) showOverview(p, s);
+    }
+    // The nearest settlement's duty board without walking to the Captain: "/scriptevent bannerforge:captain".
+    if (e.id === "bannerforge:captain") {
+      const p = e.sourceEntity as Player;
+      const s = nearest(p);
+      const c = s && p.dimension.getEntities({ type: SOLDIER_ID, tags: [captainTag(s)] })[0];
+      if (c) talkToCaptain(p, c);
+      else p.sendMessage("captain: none here");
     }
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
     if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
@@ -295,7 +304,7 @@ function census(player: Player): void {
     const hp = e.getComponent("minecraft:health");
     lines.push(
       `SOL ${e.nameTag || "?"} ${String(e.getProperty("bannerforge_settlements:kind"))} r${String(e.getProperty("bannerforge_settlements:rank"))}` +
-        ` hp=${hp ? Math.round(hp.currentValue) : "?"} duty=${String(e.getDynamicProperty("bannerforge:duty") ?? "-")} @${p.x | 0},${p.z | 0}`,
+        ` hp=${hp ? Math.round(hp.currentValue) : "?"} duty=${String(e.getDynamicProperty("bannerforge:duty") ?? "-")}/${String(e.getDynamicProperty("bannerforge:role") ?? "-")}${e.getDynamicProperty("bannerforge:retreat") ? " RETREAT:" + String(e.getDynamicProperty("bannerforge:retreat")) : ""} @${p.x | 0},${p.z | 0}`,
     );
   }
   for (const type of [CITIZEN_ID, VILLAGER_ID]) {

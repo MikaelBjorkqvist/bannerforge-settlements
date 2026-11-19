@@ -10,6 +10,7 @@ import { registerLedgerBook } from "./settlements/ledger.js";
 import { registerPeople } from "./settlements/people.js";
 import { registerPlacement } from "./settlements/placement.js";
 import { registerSoldierAi } from "./settlements/soldier_ai.js";
+import { registerRaids } from "./settlements/raid.js";
 import { registerSteward } from "./settlements/steward.js";
 import { registerImageTest } from "./settlements/ui_images.js";
 
@@ -19,6 +20,7 @@ registerConstruction();
 registerGarrisons();
 registerSoldierAi();
 registerCaptain();
+registerRaids();
 registerPlacement();
 registerBanners();
 registerImageTest();

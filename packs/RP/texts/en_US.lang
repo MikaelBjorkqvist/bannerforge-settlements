@@ -384,3 +384,5 @@ bannerforge.duty.role.barracks=Barracks
 bannerforge.duty.role.tower=Tower
 bannerforge.duty.role.bell=Bell
 bannerforge.duty.role.captain=Captain
+bannerforge.raid.start=%s is under attack! The garrison is hunting the raiders.
+bannerforge.raid.over=The raid on %s is over. The soldiers go back to their duties.

@@ -33,6 +33,12 @@ export function talk(player: Player, captain: Entity): void {
   board(player, s, captain.nameTag);
 }
 
+/** Closes the current screen and opens the next one on the following tick (as the Ledger does). */
+function go(form: CustomForm, next: () => void): void {
+  form.close();
+  system.run(next);
+}
+
 const roleName = (r: Role) => t(`bannerforge.duty.role.${r}`);
 
 function soldierOf(s: Settlement, slot: Slot): Entity | undefined {
@@ -51,9 +57,9 @@ function board(player: Player, s: Settlement, title: string): void {
   for (const slot of all) {
     const e = soldierOf(s, slot);
     const who = e ? txt(shortName(e)) : t("bannerforge.duty.vacant");
-    form.button(raw(who, txt(": "), roleName(slot.role)), () => choose(player, s.id, slot.key, title));
+    form.button(raw(who, txt(": "), roleName(slot.role)), () => go(form, () => choose(player, s.id, slot.key, title)));
   }
-  form.button(t("bannerforge.duty.close"), () => undefined);
+  form.button(t("bannerforge.duty.close"), () => form.close());
   form.show().catch((err) => console.warn(`[BannerForge] duty board: ${err}`));
 }
 
@@ -69,10 +75,10 @@ function choose(player: Player, id: string, key: string, title: string): void {
   if (s.gates !== undefined && s.gates.length === 0) form.label(t("bannerforge.duty.no_gates"));
   for (const role of rolesFor(slot.post)) {
     if (role === "gate" && !(s.gates?.length)) continue;
-    form.button(roleName(role), () => apply(player, id, key, role === own ? undefined : role, title));
+    form.button(roleName(role), () => go(form, () => apply(player, id, key, role === own ? undefined : role, title)));
   }
-  form.button(raw(t("bannerforge.duty.captains_choice"), txt(" ("), roleName(own), txt(")")), () => apply(player, id, key, undefined, title));
-  form.button(t("bannerforge.duty.back"), () => board(player, s, title));
+  form.button(raw(t("bannerforge.duty.captains_choice"), txt(" ("), roleName(own), txt(")")), () => go(form, () => apply(player, id, key, undefined, title)));
+  form.button(t("bannerforge.duty.back"), () => go(form, () => board(player, s, title)));
   form.show().catch((err) => console.warn(`[BannerForge] duty: ${err}`));
 }
 

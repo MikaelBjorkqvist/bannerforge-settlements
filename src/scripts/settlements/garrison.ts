@@ -61,10 +61,14 @@ export function maintain(s: Settlement, forceDawn = false): void {
     for (const e of soldiers) {
       syncRank(e, post, rank);
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
+      // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
-      if (slot && e.getDynamicProperty(P_ROLE) !== slot.role && fixes < 2) {
+      if (!slot || fixes >= 2 || e.getDynamicProperty("bannerforge:retreat")) continue;
+      const at = placeOf(dim, s, all, slot, door);
+      const home = postAt(e);
+      const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
+      if (e.getDynamicProperty(P_ROLE) !== slot.role || moved) {
         fixes++;
-        const at = placeOf(dim, s, all, slot, door);
         reassign(e, at, slot.role);
       }
     }
@@ -104,6 +108,8 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
+/** Longest walk to a new duty (the soldier's follow range is 64). */
+const WALK_MAX = 40;
 /** The soldier's duty (Role) and the spot he serves at (his home: where he was spawned), as "x,y,z". */
 export const P_ROLE = "bannerforge:role";
 export const P_POST_AT = "bannerforge:post_at";
@@ -149,7 +155,21 @@ export function reassign(old: Entity, at: Vector3, role: Role): Entity {
   const hpOld = old.getComponent("minecraft:health");
   const hpNew = e.getComponent("minecraft:health");
   if (hpOld && hpNew) hpNew.setCurrentValue(Math.max(1, Math.min(hpOld.currentValue, hpNew.effectiveMax)));
-  e.teleport(from);
+  // Walks at most WALK_MAX blocks (pathfinding gives up on longer trips): from further away he starts part of the way.
+  const d = Math.hypot(from.x - at.x, from.z - at.z);
+  if (d <= WALK_MAX) e.teleport(from);
+  else {
+    const k = WALK_MAX / d;
+    const x = at.x + (from.x - at.x) * k;
+    const z = at.z + (from.z - at.z) * k;
+    let y = from.y;
+    try {
+      y = (dim.getTopmostBlock({ x, z })?.location.y ?? from.y - 1) + 1;
+    } catch {
+      // not loaded: stays where he is
+    }
+    e.teleport({ x, y, z });
+  }
   old.remove();
   return e;
 }
