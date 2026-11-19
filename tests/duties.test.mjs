@@ -23,3 +23,11 @@ const all = [
 ];
 assert.equal(D.placeIndex(all, "a:3"), 1);
 assert.equal(D.placeIndex(all, "b:2"), 2);
+
+// Training (owner 2026-11-19): rank 1 until trained, never above what the town allows.
+const t = { buildings: {} };
+assert.equal(D.slotRank(t, "a:0", 3), 1);
+D.setRank(t, "a:0", 3);
+assert.equal(D.slotRank(t, "a:0", 2), 2, "a Town caps a trained Knight at Soldier");
+assert.equal(D.slotRank(t, "a:0", 3), 3);
+assert.ok(D.TRAIN_COST[2] < D.TRAIN_COST[3]);

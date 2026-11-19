@@ -63,6 +63,11 @@ export interface Settlement {
   /** Town entrances: where paths cross the border (gates.ts, looked for once a day). */
   gates?: { x: number; z: number }[];
   gatesDay?: number;
+  /**
+   * Ranks the Captain trained, by soldier slot (owner 2026-11-19: the Captain trains; the town's tier caps the rank).
+   * Missing = rank 1. A replacement takes the slot's rank.
+   */
+  ranks?: Record<string, 1 | 2 | 3>;
   /** The Captain came with the first barracks (later ones are replaced at dawn). */
   captainSent?: boolean;
 }

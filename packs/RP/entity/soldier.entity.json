@@ -32,7 +32,10 @@
           "ctrl_attack",
           "ctrl_bob",
           "ctrl_bow_and_arrow",
-          "ctrl_use_item_progress"
+          "ctrl_use_item_progress",
+          {
+            "block": "query.property('bannerforge_settlements:blocking')"
+          }
         ]
       },
       "animations": {
@@ -59,7 +62,8 @@
         "charging": "animation.humanoid.charging",
         "bob": "animation.humanoid.bob",
         "bow_and_arrow": "animation.humanoid.bow_and_arrow",
-        "use_item_progress": "animation.humanoid.use_item_progress"
+        "use_item_progress": "animation.humanoid.use_item_progress",
+        "block": "animation.bannerforge_settlements.soldier.block"
       },
       "render_controllers": [
         "controller.render.bannerforge_settlements.npc"

@@ -58,6 +58,18 @@ export function placeIndex(all: Slot[], key: string): number {
   return all.filter((x) => x.role === me.role).findIndex((x) => x.key === key);
 }
 
+/** A slot's trained rank (1 until the Captain trains it), never above what the town allows. */
+export function slotRank(s: Settlement, key: string, max: 1 | 2 | 3): 1 | 2 | 3 {
+  return Math.min(s.ranks?.[key] ?? 1, max) as 1 | 2 | 3;
+}
+
+/** Emeralds the Captain asks to train a soldier to the next rank (rank 2 and rank 3). */
+export const TRAIN_COST: Record<2 | 3, number> = { 2: 6, 3: 12 };
+
+export function setRank(s: Settlement, key: string, rank: 1 | 2 | 3): void {
+  s.ranks = { ...(s.ranks ?? {}), [key]: rank };
+}
+
 /** The player's choice for a slot; choosing the Captain's default again clears it. */
 export function setDuty(s: Settlement, key: string, role: Role | undefined): void {
   const duties = { ...(s.duties ?? {}) };

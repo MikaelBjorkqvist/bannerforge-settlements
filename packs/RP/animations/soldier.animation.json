@@ -1,0 +1,17 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.bannerforge_settlements.soldier.block": {
+      "loop": true,
+      "bones": {
+        "leftArm": {
+          "rotation": [
+            -60,
+            35,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

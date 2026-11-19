@@ -52,6 +52,11 @@
           "type": "bool",
           "default": false,
           "client_sync": false
+        },
+        "bannerforge_settlements:blocking": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },
@@ -441,6 +446,12 @@
         },
         "minecraft:attack": {
           "damage": 5
+        },
+        "minecraft:behavior.charge_held_item": {
+          "priority": 3,
+          "items": [
+            "minecraft:arrow"
+          ]
         }
       },
       "patrol": {},
@@ -734,6 +745,36 @@
             "deals_damage": "no"
           },
           {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "has_equipment",
+                    "subject": "self",
+                    "domain": "hand",
+                    "value": "minecraft:shield"
+                  },
+                  {
+                    "any_of": [
+                      {
+                        "test": "has_damage",
+                        "value": "entity_attack"
+                      },
+                      {
+                        "test": "has_damage",
+                        "value": "projectile"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "event": "bannerforge:block",
+              "target": "self"
+            },
+            "deals_damage": "yes",
+            "damage_multiplier": 0.5
+          },
+          {
             "cause": "fall",
             "deals_damage": "yes",
             "damage_modifier": -5
@@ -784,6 +825,58 @@
         "search_range": 16,
         "search_height": 5,
         "speed_multiplier": 1.0
+      },
+      "minecraft:healable": {
+        "force_use": false,
+        "items": [
+          {
+            "item": "minecraft:bread",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:baked_potato",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:cooked_beef",
+            "heal_amount": 8
+          },
+          {
+            "item": "minecraft:cooked_porkchop",
+            "heal_amount": 8
+          },
+          {
+            "item": "minecraft:cooked_mutton",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:cooked_chicken",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:cooked_cod",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:cooked_salmon",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:golden_carrot",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:golden_apple",
+            "heal_amount": 4,
+            "effects": [
+              {
+                "name": "regeneration",
+                "duration": 5,
+                "amplifier": 1
+              }
+            ]
+          }
+        ]
       }
     },
     "events": {
@@ -1170,6 +1263,16 @@
       },
       "bannerforge:hp_check": {
         "sequence": [
+          {
+            "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:blocking",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:blocking": false
+            }
+          },
           {
             "filters": {
               "all_of": [
@@ -1641,6 +1744,11 @@
             }
           }
         ]
+      },
+      "bannerforge:block": {
+        "set_property": {
+          "bannerforge_settlements:blocking": true
+        }
       }
     }
   }
