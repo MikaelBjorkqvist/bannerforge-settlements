@@ -127,6 +127,9 @@ export function registerDevMenu(): void {
       if (c) talkToCaptain(p, c);
       else p.sendMessage("captain: none here");
     }
+    // Door test (owner 2026-11-19: "check if AI can go through doors"): the nearest wooden door within 24 blocks is
+    // closed, a soldier gets his post 3 blocks in front of it and is put 2 blocks behind it; he has to walk out.
+    if (e.id === "bannerforge:doortest") doorTest(e.sourceEntity as Player, e.message === "citizen");
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
     if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
     if (e.id === "bannerforge:dawn") {
@@ -373,3 +376,28 @@ function roster(player: Player): void {
   player.sendMessage(`${s.name}: day=${c?.day} now=${world.getDay()} free=${c?.free ?? 0} staffed=${JSON.stringify(c?.staffed ?? {})}\n${lines.join("\n")}`);
 }
 const dist = (s: Settlement, p: Player) => Math.hypot(s.center.x - p.location.x, s.center.z - p.location.z);
+
+function doorTest(p: Player, citizen: boolean): void {
+  const { x, y, z } = p.location;
+  const vol = new BlockVolume({ x: x - 24, y: y - 6, z: z - 24 }, { x: x + 24, y: y + 6, z: z + 24 });
+  const doors = [...p.dimension.getBlocks(vol, { includeTypes: ["minecraft:wooden_door", "minecraft:spruce_door", "minecraft:birch_door", "minecraft:jungle_door", "minecraft:acacia_door", "minecraft:dark_oak_door"] }, true).getBlockLocationIterator()];
+  const lower = doors.map((l) => p.dimension.getBlock(l)).filter((b) => b && b.permutation.getState("upper_block_bit") === false);
+  lower.sort((a, b) => Math.hypot(a!.x - x, a!.z - z) - Math.hypot(b!.x - x, b!.z - z));
+  const door = lower[0];
+  if (!door) return p.sendMessage("doortest: no wooden door within 24");
+  const free = (dx: number, dz: number) => {
+    const f = p.dimension.getBlock({ x: door.x + dx, y: door.y, z: door.z + dz });
+    const h = p.dimension.getBlock({ x: door.x + dx, y: door.y + 1, z: door.z + dz });
+    return !!f && !!h && f.isAir && h.isAir;
+  };
+  const axis = free(1, 0) && free(-1, 0) ? [1, 0] : free(0, 1) && free(0, -1) ? [0, 1] : undefined;
+  if (!axis) return p.sendMessage(`doortest: door at ${door.x},${door.y},${door.z} has no free sides`);
+  door.setPermutation(door.permutation.withState("open_bit", false));
+  const out = { x: door.x + axis[0] * 3 + 0.5, y: door.y, z: door.z + axis[1] * 3 + 0.5 };
+  const inside = { x: door.x - axis[0] * 2 + 0.5, y: door.y, z: door.z - axis[1] * 2 + 0.5 };
+  const e = citizen ? spawnCitizen(p.dimension, out, "worker", "blue", "doortest") : spawnSoldier(p.dimension, out, "melee", "blue", "doortest", 1);
+  if (citizen) e.triggerEvent("bannerforge:worker_shift");
+  e.addTag("bannerforge:doortest");
+  e.teleport(inside);
+  p.sendMessage(`doortest: door ${door.x},${door.y},${door.z} closed; ${e.nameTag} must walk from ${inside.x | 0},${inside.z | 0} to ${out.x | 0},${out.z | 0}`);
+}

@@ -55,10 +55,6 @@
       },
       "minecraft:persistent": {},
       "minecraft:physics": {},
-      "minecraft:pushable": {
-        "is_pushable": true,
-        "is_pushable_by_piston": true
-      },
       "minecraft:nameable": {
         "always_show": true,
         "allow_name_tag_renaming": false
@@ -114,7 +110,9 @@
       "minecraft:behavior.open_door": {
         "priority": 6,
         "close_door_after": true
-      }
+      },
+      "minecraft:pushable_by_block": {},
+      "minecraft:pushable_by_entity": {}
     },
     "events": {
       "bannerforge:talked": {},

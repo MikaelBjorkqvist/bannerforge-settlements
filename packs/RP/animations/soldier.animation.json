@@ -3,7 +3,7 @@
   "animations": {
     "animation.bannerforge_settlements.soldier.heal_hearts": {
       "loop": true,
-      "animation_length": 1.5,
+      "animation_length": 1.0,
       "particle_effects": {
         "0.0": {
           "effect": "hearts",

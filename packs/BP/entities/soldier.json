@@ -738,10 +738,6 @@
       "minecraft:jump.static": {},
       "minecraft:can_climb": {},
       "minecraft:physics": {},
-      "minecraft:pushable": {
-        "is_pushable": true,
-        "is_pushable_by_piston": true
-      },
       "minecraft:breathable": {
         "total_supply": 15,
         "suffocate_time": 0
@@ -829,7 +825,9 @@
           "event": "bannerforge:heal_check",
           "target": "self"
         }
-      }
+      },
+      "minecraft:pushable_by_block": {},
+      "minecraft:pushable_by_entity": {}
     },
     "events": {
       "minecraft:entity_spawned": {
