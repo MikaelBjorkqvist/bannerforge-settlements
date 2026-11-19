@@ -91,7 +91,7 @@
       "bones": {
         "rightArm": {
           "rotation": [
-            "-75 + math.sin(math.sqrt(variable.attack_time) * 180) * 100",
+            "-50 + math.sin(math.sqrt(variable.attack_time) * 180) * 85",
             "-10",
             0
           ]
