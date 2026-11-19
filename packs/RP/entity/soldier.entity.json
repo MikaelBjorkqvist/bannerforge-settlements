@@ -32,10 +32,7 @@
           "ctrl_attack",
           "ctrl_bob",
           "ctrl_bow_and_arrow",
-          "ctrl_use_item_progress",
-          {
-            "heal_hearts": "query.property('bannerforge_settlements:healing')"
-          }
+          "ctrl_use_item_progress"
         ]
       },
       "animations": {
@@ -46,7 +43,6 @@
         "riding.legs": "animation.humanoid.riding.legs",
         "riding.body": "animation.humanoid.riding.body",
         "attack.rotations": "animation.humanoid.attack.rotations",
-        "heal_hearts": "animation.bannerforge_settlements.soldier.heal_hearts",
         "ctrl_look_at_target": "controller.animation.humanoid.look_at_target",
         "ctrl_move": "controller.animation.humanoid.move",
         "ctrl_riding": "controller.animation.humanoid.riding",
@@ -67,10 +63,7 @@
       },
       "render_controllers": [
         "controller.render.bannerforge_settlements.npc"
-      ],
-      "particle_effects": {
-        "hearts": "bannerforge_settlements:heal_heart"
-      }
+      ]
     }
   }
 }

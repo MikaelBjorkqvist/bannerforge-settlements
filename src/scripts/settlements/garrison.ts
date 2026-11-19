@@ -64,7 +64,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
       // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
-      if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:retreating")) continue;
+      if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:falling_back")) continue;
       const at = placeOf(dim, s, all, slot, door);
       const home = postAt(e);
       const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
@@ -109,6 +109,8 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
+/** Longest walk to a new duty: within the soldier's follow range (32, soldier.json). */
+const SOLDIER_WALK = 28;
 /** The spot a soldier serves at (his home: where he was spawned), as "x,y,z". His duty is an entity property. */
 export const P_POST_AT = "bannerforge:post_at";
 export const captainTag = (s: Settlement) => `bannerforge:captain:${s.id}`;
@@ -154,7 +156,7 @@ export function reassign(old: Entity, at: Vector3, role: Role): Entity {
   const hpOld = old.getComponent("minecraft:health");
   const hpNew = e.getComponent("minecraft:health");
   if (hpOld && hpNew) hpNew.setCurrentValue(Math.max(1, Math.min(hpOld.currentValue, hpNew.effectiveMax)));
-  walkFrom(e, from, at);
+  walkFrom(e, from, at, SOLDIER_WALK);
   old.remove();
   return e;
 }
