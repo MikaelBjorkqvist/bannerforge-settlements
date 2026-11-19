@@ -10,10 +10,12 @@
         "outfit_neutral": "textures/bannerforge/settlements/entity/npc/steward_neutral",
         "outfit_green": "textures/bannerforge/settlements/entity/npc/steward_green",
         "outfit_blue": "textures/bannerforge/settlements/entity/npc/steward_blue",
-        "outfit_red": "textures/bannerforge/settlements/entity/npc/steward_red"
+        "outfit_red": "textures/bannerforge/settlements/entity/npc/steward_red",
+        "potion": "textures/bannerforge/settlements/entity/soldier_potion"
       },
       "geometry": {
-        "default": "geometry.bannerforge_settlements.soldier"
+        "default": "geometry.bannerforge_settlements.soldier",
+        "potion": "geometry.bannerforge_settlements.soldier_potion"
       },
       "enable_attachables": true,
       "scripts": {
@@ -46,7 +48,7 @@
         "riding.arms": "animation.humanoid.riding.arms",
         "riding.legs": "animation.humanoid.riding.legs",
         "riding.body": "animation.humanoid.riding.body",
-        "attack.rotations": "animation.humanoid.attack.rotations",
+        "attack.rotations": "animation.bannerforge_settlements.soldier.swing",
         "ctrl_look_at_target": "controller.animation.humanoid.look_at_target",
         "ctrl_move": "controller.animation.humanoid.move",
         "ctrl_riding": "controller.animation.humanoid.riding",
@@ -69,7 +71,10 @@
         "ctrl_drink": "controller.animation.bannerforge_settlements.soldier.drink"
       },
       "render_controllers": [
-        "controller.render.bannerforge_settlements.npc"
+        "controller.render.bannerforge_settlements.npc",
+        {
+          "controller.render.bannerforge_settlements.soldier_potion": "query.property('bannerforge_settlements:drinking')"
+        }
       ],
       "sound_effects": {
         "drink": "random.drink"

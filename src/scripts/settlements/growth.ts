@@ -12,7 +12,7 @@ import { CITIZEN_ID } from "./citizen_npc.js";
 import { gameTime } from "./clock.js";
 import { copyLook } from "./convert.js";
 import { doorOfSite } from "./garrison.js";
-import { news, ofTag, safeBorderSpot } from "./people.js";
+import { news, ofTag, safeBorderSpot, safeWalkInSpot } from "./people.js";
 import { BORDER_RADIUS } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { acceptApplicant, addApplicant, applicantsOf, childrenOf, dropApplicant } from "./roster.js";
@@ -30,6 +30,12 @@ const WAIT_TICKS = 2 * 24000;
 /** Within this distance of the Town Hall door a newcomer counts as waiting there. */
 const AT_DOOR = 4;
 const COOLDOWN_TICKS = 20;
+/** Longest walk to the Town Hall door before a newcomer is simply put there. */
+const WALK_TICKS = 900;
+/** How many ways a newcomer asks and says thanks (lang: bannerforge.newcomer.asks.N / thanks.N). */
+const LINES = 5;
+/** The same newcomer always says the same line. */
+const lineOf = (p: Person, salt: number) => ([...p.seed].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7 + salt) % LINES) + 1;
 /** A turned-away newcomer walks off for at most this long before they are gone. */
 const LEAVE_TICKS = 600;
 const LEAVING = "bannerforge:leaving";
@@ -138,6 +144,8 @@ function tick(s: Settlement): boolean {
     }
     if (p.state === "walking" && e && hall) {
       const door = doorOfSite(dim, hall);
+      // Taking too long (stuck, lost): he is put at the door, so the town is never told about someone who isn't there.
+      if (door && gameTime() - (p.since ?? 0) >= WALK_TICKS) e.teleport(door);
       if (door && Math.abs(e.location.x - door.x) <= AT_DOOR && Math.abs(e.location.z - door.z) <= AT_DOOR) {
         p.state = "here";
         changed = true;
@@ -161,7 +169,8 @@ function tick(s: Settlement): boolean {
   const tod = gameTime() % 24000;
   if (hall && c && c.applicantDay !== day && tod >= DAWN && tod < MORNING_END) {
     const door = doorOfSite(dim, hall);
-    const start = door && safeBorderSpot(s);
+    // A short walk up to the door (play-test 2026-11-19: from the border it took far too long).
+    const start = door && (safeWalkInSpot(s.dimension, door, 28, 12) ?? safeBorderSpot(s));
     if (door && start) {
       const p = addApplicant(s);
       const e = dim.spawnEntity(CITIZEN_ID, door, { spawnEvent: "bannerforge:spawn_applicant" });
@@ -174,11 +183,33 @@ function tick(s: Settlement): boolean {
       c.applicantDay = day;
       changed = true;
       // Spawned at the door so the door is their home, and moved out in the same tick (no flash at the door).
+      // The town hears of him when he stands at the door (play-test 2026-11-19: "on the way" read as "is there").
       e.teleport(start);
-      news(s, raw(txt("§e"), t("bannerforge.newcomer.coming", p.name)));
     }
   }
   return changed;
+}
+
+/**
+ * A welcomed newcomer walks off to a house (owner 2026-11-19): a settler with the same look is spawned in a house and
+ * walks there from the Town Hall door (citizen.json moving_in). No house loaded right now: he becomes a settler on
+ * the spot.
+ */
+function moveIn(s: Settlement, p: Person, old: Entity): void {
+  const at = houseSpot(s);
+  if (!at) {
+    old.triggerEvent("bannerforge:become_settler");
+    old.nameTag = p.name;
+    return;
+  }
+  const e = old.dimension.spawnEntity(CITIZEN_ID, at, { spawnEvent: "bannerforge:spawn_moving_in" });
+  copyLook(old, e);
+  setOutfit(e, s);
+  e.nameTag = p.name;
+  e.addTag(ofTag(s));
+  walkFrom(e, old.location, at, 80);
+  old.remove();
+  p.eid = e.id;
 }
 
 /** The standing Town Hall's site, if any. */
@@ -189,11 +220,17 @@ function townHall(s: Settlement): Site | undefined {
 
 /** A house to be born in: an adopted vanilla house's bed, or the middle of one of our houses, else the bell. */
 function birthSpot(s: Settlement): Vector3 | undefined {
+  return houseSpot(s, true);
+}
+
+/** A loaded spot in one of the town's houses (with `orBell`, the bell when the town has no house). */
+function houseSpot(s: Settlement, orBell = false): Vector3 | undefined {
   const spots: Vector3[] = [];
   for (const h of s.adopted ?? []) spots.push({ x: h.x + 0.5, y: h.y + 1, z: h.z + 0.5 });
   for (const site of s.sites?.house ?? []) {
     if (site && site.built > 0) spots.push({ x: site.x + site.w / 2, y: site.y + 1, z: site.z + (site.d ?? site.w) / 2 });
   }
+  if (!spots.length && !orBell) return undefined;
   const pick = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: s.center.x + 0.5, y: s.center.y + 1, z: s.center.z + 1.5 };
   try {
     return world.getDimension(s.dimension).getBlock(pick) ? pick : undefined;
@@ -218,29 +255,27 @@ export function talk(player: Player, e: Entity): void {
   if (!s || !p) return;
   const beds = freeBeds(s);
   const form = new CustomForm(player, raw(txt(p.name)));
-  form.label(raw(t("bannerforge.newcomer.asks", p.name, s.name), ...(beds > 0 ? [] : [txt("\n\n§c"), t("bannerforge.newcomer.no_bed")])));
+  form.label(raw(t(`bannerforge.newcomer.asks.${lineOf(p, 0)}`, s.name), ...(beds > 0 ? [] : [txt("\n\n§c"), t("bannerforge.newcomer.no_bed")])));
   form.button(t("bannerforge.newcomer.welcome"), () => {
     form.close();
-    system.run(() => decide(s.id, p.seed, true));
+    system.run(() => decide(player, s.id, p.seed, true));
   }, { disabled: new ObservableBoolean(beds <= 0) });
   form.button(t("bannerforge.newcomer.not_now"), () => {
     form.close();
-    system.run(() => decide(s.id, p.seed, false));
+    system.run(() => decide(player, s.id, p.seed, false));
   });
   form.show().catch((err) => console.warn(`[BannerForge] newcomer: ${err}`));
 }
 
-function decide(sid: string, seed: string, welcome: boolean): void {
+function decide(player: Player, sid: string, seed: string, welcome: boolean): void {
   const s = settlementById(sid);
   const p = s && applicantsOf(s).find((q) => q.seed === seed);
   if (!s || !p) return;
   const e = p.eid ? world.getEntity(p.eid) : undefined;
   if (welcome) {
     if (!acceptApplicant(s, p, freeBeds(s))) return;
-    if (e) {
-      e.triggerEvent("bannerforge:become_settler");
-      e.nameTag = p.name;
-    }
+    player.sendMessage(raw(txt(`§e${p.name}§r: `), t(`bannerforge.newcomer.thanks.${lineOf(p, 1)}`)));
+    if (e) moveIn(s, p, e);
     news(s, raw(txt("§a"), t("bannerforge.newcomer.settled", p.name, s.name)));
   } else {
     dropApplicant(s, p);

@@ -54,11 +54,17 @@ export function maintain(s: Settlement, forceDawn = false): void {
 
   const live = new Set<string>();
   let fixes = 0;
+  // A post whose chunk isn't loaded waits: the day's refill stays open until every post was seen (play-test
+  // 2026-11-19: dead archers never came back because dawn passed while their tower was unloaded).
+  let skipped = false;
   for (const post of posts(s)) {
     const tag = postTag(s, post);
     live.add(tag);
     const door = doorOf(dim, post);
-    if (!door) continue; // chunk not loaded
+    if (!door) {
+      skipped = true; // chunk not loaded
+      continue;
+    }
     const soldiers = dim.getEntities({ type: SOLDIER_ID, tags: [tag] });
     for (const e of soldiers) {
       const key = slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1));
@@ -110,7 +116,7 @@ export function maintain(s: Settlement, forceDawn = false): void {
     }
   }
   if (keepCaptain(dim, s, dawn)) changed = true;
-  if (dawn && s.garrisonDay !== day) {
+  if (dawn && !skipped && s.garrisonDay !== day) {
     // Each soldier carries two healing potions; the barracks restocks them every morning (soldier.json potions).
     const r = BORDER_RADIUS[tier(s)] + 40;
     for (const e of dim.getEntities({ type: SOLDIER_ID, location: s.center, maxDistance: r })) e.triggerEvent("bannerforge:restock");
@@ -308,6 +314,8 @@ function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
       try {
         const top = dim.getTopmostBlock({ x: x + dx, z: z + dz });
         if (!top || top.isLiquid || top.typeId.includes("leaves")) continue;
+        // Not inside a pen: soldiers can't open fence gates (play-test 2026-11-19).
+        if (fenced(dim, top.location.x, top.location.y + 1, top.location.z)) continue;
         return { x: x + dx + 0.5, y: top.location.y + 1, z: z + dz + 0.5 };
       } catch {
         return undefined; // not loaded
@@ -315,6 +323,17 @@ function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
     }
   }
   return undefined;
+}
+
+/** Is there a fence, wall or gate within 4 blocks at standing height (an animal pen, a fenced yard)? */
+function fenced(dim: Dimension, x: number, y: number, z: number): boolean {
+  for (let dx = -4; dx <= 4; dx++) {
+    for (let dz = -4; dz <= 4; dz++) {
+      const id = dim.getBlock({ x: x + dx, y, z: z + dz })?.typeId ?? "";
+      if (id.includes("fence") || id.endsWith("_wall")) return true;
+    }
+  }
+  return false;
 }
 
 /** Rank, gear and title follow the slot's trained rank. */

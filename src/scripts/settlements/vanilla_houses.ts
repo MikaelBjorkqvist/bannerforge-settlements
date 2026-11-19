@@ -7,7 +7,7 @@
 // (their beds count as housing) and get one faction banner by the door; an adopted house that is loaded and no
 // longer matches is dropped; one in an unloaded chunk is kept. Dev report: `/scriptevent bannerforge:houses`.
 
-import { BlockPermutation, BlockVolume, type Dimension, system, type Vector3, world } from "@minecraft/server";
+import { type Block, BlockPermutation, BlockVolume, type Dimension, system, type Vector3, world } from "@minecraft/server";
 import { gameTime } from "./clock.js";
 import { VANILLA_HOUSES, type VanillaHouse } from "./generated/vanilla_houses.js";
 
@@ -181,7 +181,21 @@ export function adoptHousesDaily(s: Settlement, tell: (s: Settlement, msg: Retur
     const fresh = r.houses
       .filter((h) => !have.has(keyOf(h.at)))
       .map((h): AdoptedHouse => ({ design: h.id, x: h.at.x, y: h.at.y, z: h.at.z, rot: h.rot, beds: h.beds }));
-    for (const h of fresh) h.banner = putUpBanner(dim, h, now.faction);
+    for (const h of fresh) {
+      h.banner = putUpBanner(dim, h, now.faction);
+      h.bannerV = BANNER_VERSION;
+    }
+    // Banners hung by the old rule are hung again by the new one, once, when the house is loaded.
+    for (const h of kept) {
+      if (h.bannerV === BANNER_VERSION || !h.banner) continue;
+      try {
+        if (!dim.getBlock({ x: h.x, y: h.y, z: h.z })) continue;
+      } catch {
+        continue;
+      }
+      h.banner = putUpBanner(dim, h, now.faction);
+      h.bannerV = BANNER_VERSION;
+    }
     now.adopted = [...kept, ...fresh];
     now.housesDay = day;
     if (r.complete) retryAt.delete(s.id);
@@ -278,6 +292,9 @@ function verify(dim: Dimension, h: AdoptedHouse): "ok" | "gone" | "unloaded" {
  * One faction banner beside the front door, on the outside wall (2 blocks: top at door height + 1).
  * Returns false if there is no room (the house still counts).
  */
+/** Placement rule version: 2 = beside the door, one block up, never by another door (owner 2026-11-19). */
+const BANNER_VERSION = 2;
+
 function putUpBanner(dim: Dimension, h: AdoptedHouse, faction: string): boolean {
   const fp = VANILLA_HOUSES.find((f) => f.id === h.design);
   if (!fp?.entrance) return false;
@@ -288,19 +305,33 @@ function putUpBanner(dim: Dimension, h: AdoptedHouse, faction: string): boolean 
   const facing = DIR_NAME[`${ox},${oz}`];
   if (!facing) return false;
   const id = `bannerforge_settlements:banner_${faction}`;
+  const isDoor = (b: Block | undefined) => !!b && b.typeId.includes("door");
+  const solid = (b: Block | undefined) => !!b && !b.isAir && !b.isLiquid && !isDoor(b);
   try {
+    // An older banner of ours beside this door comes down first (placement rules changed 2026-11-19).
     for (const side of [1, -1]) {
-      const lx = -oz * side;
-      const lz = ox * side;
-      const wall = dim.getBlock({ x: door.x + lx, y: door.y, z: door.z + lz });
-      const wallUp = dim.getBlock({ x: door.x + lx, y: door.y + 1, z: door.z + lz });
-      const bottom = dim.getBlock({ x: door.x + lx + ox, y: door.y, z: door.z + lz + oz });
-      const top = dim.getBlock({ x: door.x + lx + ox, y: door.y + 1, z: door.z + lz + oz });
-      if (!wall || !wallUp || !bottom || !top) continue;
-      if (wall.isAir || wall.isLiquid || wallUp.isAir || !bottom.isAir || !top.isAir) continue;
-      top.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "top", "minecraft:cardinal_direction": facing }));
-      bottom.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "bottom", "minecraft:cardinal_direction": facing }));
-      return true;
+      for (let dy = 0; dy <= 2; dy++) {
+        const b = dim.getBlock({ x: door.x - oz * side + ox, y: door.y + dy, z: door.z + ox * side + oz });
+        if (b?.typeId.startsWith("bannerforge_settlements:banner_")) b.setType("minecraft:air");
+      }
+    }
+    // Owner 2026-11-19: beside the door and one block up; never on or over another door. `up` 1 first, then on the
+    // ground as before when the wall is too low.
+    for (const up of [1, 0]) {
+      for (const side of [1, -1]) {
+        const wx = door.x - oz * side;
+        const wz = door.z + ox * side;
+        const at = (dy: number, out: boolean) => dim.getBlock({ x: wx + (out ? ox : 0), y: door.y + dy, z: wz + (out ? oz : 0) });
+        // The wall behind both halves, and no door in this column (a double door, a second entrance).
+        if (!solid(at(up, false)) || !solid(at(up + 1, false))) continue;
+        if (isDoor(at(0, false)) || isDoor(at(1, false)) || isDoor(at(0, true)) || isDoor(at(1, true))) continue;
+        const bottom = at(up, true);
+        const top = at(up + 1, true);
+        if (!bottom?.isAir || !top?.isAir) continue;
+        top.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "top", "minecraft:cardinal_direction": facing }));
+        bottom.setPermutation(BlockPermutation.resolve(id, { "bannerforge_settlements:part": "bottom", "minecraft:cardinal_direction": facing }));
+        return true;
+      }
     }
   } catch (err) {
     console.warn(`[BannerForge] banner at ${h.design}: ${String(err)}`);

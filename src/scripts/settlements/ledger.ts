@@ -30,7 +30,7 @@ const CAT_COLOUR: Record<Category | "prosperity", string> = { prosperity: "§6",
 const BAR_MAX = 10;
 
 const SECTION_ICON: Record<Category, string> = {
-  housing: "section_population",
+  housing: "house",
   economy: "section_trade",
   military: "section_defence",
   civic: "section_centre",
@@ -178,7 +178,7 @@ export function showOverview(player: Player, s: Settlement): void {
     ...grey("bannerforge.steward.garrison", garrison(s), false),
   );
   // Alerts, one short line each.
-  const waitingNew = applicantsOf(s).length;
+  const waitingNew = applicantsOf(s).filter((p) => p.state === "here").length;
   if (waitingNew) info.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
   if (waiting > 0) info.push(txt("\n§6⚠ "), t("bannerforge.citizens.buildings_waiting", String(waiting)));
   form.label(raw(...info));
@@ -342,7 +342,7 @@ export function showPeople(player: Player, s: Settlement): void {
   form.label(raw(txt("§f"), t(`bannerforge.folk.${tier(s)}`), txt(` ${population(s)}`), ...kinds));
   form.divider();
   const growth: RawMessage[] = [txt("§7"), t("bannerforge.citizens.free_beds", String(freeBeds(s))), txt("\n"), t("bannerforge.citizens.births", String(staffedFood(s)))];
-  const waitingNew = applicantsOf(s).length;
+  const waitingNew = applicantsOf(s).filter((p) => p.state === "here").length;
   if (waitingNew) growth.push(txt("\n§e"), t("bannerforge.citizens.newcomers_waiting", String(waitingNew)));
   form.label(raw(...growth));
   // Buildings waiting for a worker: Recruit right here (owner 2026-11-18: hard to find on each building's page).

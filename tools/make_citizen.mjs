@@ -81,7 +81,7 @@ const PLANS = ["basic_schedule", "work_schedule", "jobless_schedule", "farmer_sc
   "fisher_schedule", "child_schedule"];
 const CLEAR = [...PROFESSIONS, ...PLANS, "behavior_peasant", "behavior_non_peasant", "baby", "job_specific_goals",
   "trade_components", "bannerforge_settlements:worker", "bannerforge_settlements:applicant",
-  "bannerforge_settlements:worker_schedule", "bannerforge_settlements:at_work"];
+  "bannerforge_settlements:worker_schedule", "bannerforge_settlements:at_work", "bannerforge_settlements:moving_in"];
 /** Daily state groups the scheduler adds; only a guard (who leaves the village routine) drops them. */
 const DAILY = Object.keys(groups).filter((g) => /_schedule_villager$|^work_schedule_/.test(g));
 for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P) && !g.startsWith("bannerforge_settlements:"))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
@@ -205,6 +205,15 @@ events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}ar
 events["bannerforge:spawn_arriving_worker"] = spawnAs("worker", [...worker, `${P}arriving`]);
 events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
 events["bannerforge:spawn_applicant"] = spawnAs("applicant", applicant);
+// An accepted newcomer walks to a house (owner 2026-11-19: "they just stand there"): spawned at the house (his home,
+// the walk-in trick), go_home takes him there and ends the walk itself.
+groups[`${P}moving_in`] = {
+  "minecraft:home": { restriction_radius: 16, restriction_type: "random_movement" },
+  "minecraft:behavior.go_home": { priority: 2, speed_multiplier: 0.7, interval: 1, goal_radius: 3, on_home: [{ event: "bannerforge:moved_in", target: "self" }] },
+  "minecraft:follow_range": { value: 96, max: 96 },
+};
+events["bannerforge:moved_in"] = { remove: { component_groups: [`${P}moving_in`] } };
+events["bannerforge:spawn_moving_in"] = spawnAs("settler", [...unskilled, `${P}moving_in`]);
 events["bannerforge:spawn_leaving"] = spawnAs("villager", ["adult", `${P}leaving`]);
 events["bannerforge:leave"] = role("villager", CLEAR, ["adult", `${P}leaving`]);
 // A child born in town (owner 2026-11-18): a vanilla baby that grows up as a settler.

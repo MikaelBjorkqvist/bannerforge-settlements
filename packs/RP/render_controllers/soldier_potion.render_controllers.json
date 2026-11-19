@@ -1,0 +1,16 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.bannerforge_settlements.soldier_potion": {
+      "geometry": "Geometry.potion",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.potion"
+      ]
+    }
+  }
+}

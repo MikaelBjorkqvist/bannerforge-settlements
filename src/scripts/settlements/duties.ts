@@ -70,6 +70,30 @@ export function setRank(s: Settlement, key: string, rank: 1 | 2 | 3): void {
   s.ranks = { ...(s.ranks ?? {}), [key]: rank };
 }
 
+/** Duties the player moves soldiers between on the Captain's board; "barracks" is where the others wait. */
+export const TASKS: Role[] = ["gate", "border", "patrol"];
+
+/**
+ * One more or one fewer soldier on a task (owner 2026-11-19: "add more or less to X task"): a soldier moves between
+ * that task and barracks duty. Only barracks soldiers (melee, not the Keep's) are moved. Returns false when nobody
+ * can be moved.
+ */
+export function shiftTask(s: Settlement, all: Slot[], task: Role, by: 1 | -1): boolean {
+  const from = by === 1 ? "barracks" : task;
+  const movable = all.filter((x) => x.post.id === "barracks" && x.role === from);
+  const slot = movable[movable.length - 1];
+  if (!slot) return false;
+  s.duties = { ...(s.duties ?? {}), [slot.key]: by === 1 ? task : "barracks" };
+  return true;
+}
+
+/** How many barracks soldiers each duty has. */
+export function taskCounts(all: Slot[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const x of all) if (x.post.id === "barracks") out[x.role] = (out[x.role] ?? 0) + 1;
+  return out;
+}
+
 /** The player's choice for a slot; choosing the Captain's default again clears it. */
 export function setDuty(s: Settlement, key: string, role: Role | undefined): void {
   const duties = { ...(s.duties ?? {}) };

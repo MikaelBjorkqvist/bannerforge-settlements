@@ -88,6 +88,8 @@ export interface AdoptedHouse {
   beds: number;
   /** The faction banner by its door has been put up (once; a player may take it down). */
   banner?: boolean;
+  /** Placement rule the banner was hung by (vanilla_houses.ts BANNER_VERSION). */
+  bannerV?: number;
 }
 
 /** A building's plot in the world and its construction state. */

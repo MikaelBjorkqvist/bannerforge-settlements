@@ -73,6 +73,32 @@
           "effect": "drink"
         }
       }
+    },
+    "animation.bannerforge_settlements.soldier.swing": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            0,
+            "math.sin(math.sqrt(variable.attack_time) * 360) * 12 - this",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-math.sin(variable.attack_time * 180) * 100 - 15 * math.sin(variable.attack_time * 360)",
+            "math.sin(variable.attack_time * 180) * -25",
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.sin(variable.attack_time * 180) * 12",
+            0,
+            0
+          ]
+        }
+      }
     }
   }
 }
