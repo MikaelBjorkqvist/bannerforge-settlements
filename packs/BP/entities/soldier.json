@@ -57,6 +57,20 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "bannerforge_settlements:rest": {
+          "type": "int",
+          "range": [
+            0,
+            10
+          ],
+          "default": 0,
+          "client_sync": false
+        },
+        "bannerforge_settlements:drinking": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },
@@ -147,11 +161,6 @@
             }
           ],
           "alert_same_type": true
-        },
-        "minecraft:combat_regeneration": {
-          "regeneration_duration": 5,
-          "apply_to_self": true,
-          "apply_to_family": false
         }
       },
       "ranged": {
@@ -237,11 +246,6 @@
             }
           ],
           "alert_same_type": true
-        },
-        "minecraft:combat_regeneration": {
-          "regeneration_duration": 5,
-          "apply_to_self": true,
-          "apply_to_family": false
         }
       },
       "melee_1": {
@@ -645,7 +649,7 @@
           "add_effects": [
             {
               "effect": "regeneration",
-              "duration": 6,
+              "duration": 10,
               "amplifier": 0,
               "visible": true
             }
@@ -657,7 +661,7 @@
           "add_effects": [
             {
               "effect": "regeneration",
-              "duration": 6,
+              "duration": 8,
               "amplifier": 1,
               "visible": true
             }
@@ -779,6 +783,13 @@
             "cause": "fall",
             "deals_damage": "yes",
             "damage_modifier": -5
+          },
+          {
+            "on_damage": {
+              "event": "bannerforge:hurt",
+              "target": "self"
+            },
+            "deals_damage": "yes"
           }
         ]
       },
@@ -1276,6 +1287,36 @@
           },
           {
             "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:drinking",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": false
+            }
+          },
+          {
+            "filters": {
+              "test": "has_target",
+              "subject": "self",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:rest": 0
+            }
+          },
+          {
+            "filters": {
+              "test": "has_target",
+              "subject": "self",
+              "value": false
+            },
+            "set_property": {
+              "bannerforge_settlements:rest": "math.min(query.property('bannerforge_settlements:rest') + 1, 10)"
+            }
+          },
+          {
+            "filters": {
               "all_of": [
                 {
                   "test": "is_missing_health",
@@ -1291,6 +1332,12 @@
                   "test": "has_target",
                   "subject": "self",
                   "value": false
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rest",
+                  "operator": ">=",
+                  "value": 5
                 },
                 {
                   "test": "has_mob_effect",
@@ -1324,6 +1371,12 @@
                   "test": "has_target",
                   "subject": "self",
                   "value": false
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rest",
+                  "operator": ">=",
+                  "value": 5
                 },
                 {
                   "test": "has_mob_effect",
@@ -1337,6 +1390,9 @@
               "component_groups": [
                 "healing"
               ]
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": true
             }
           },
           {
@@ -1392,6 +1448,9 @@
               "component_groups": [
                 "healing_fast"
               ]
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": true
             }
           },
           {
@@ -1748,7 +1807,13 @@
       },
       "bannerforge:block": {
         "set_property": {
-          "bannerforge_settlements:blocking": true
+          "bannerforge_settlements:blocking": true,
+          "bannerforge_settlements:rest": 0
+        }
+      },
+      "bannerforge:hurt": {
+        "set_property": {
+          "bannerforge_settlements:rest": 0
         }
       }
     }

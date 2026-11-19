@@ -12,6 +12,67 @@
           ]
         }
       }
+    },
+    "animation.bannerforge_settlements.soldier.drink": {
+      "animation_length": 1.6,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -105,
+              -25,
+              0
+            ],
+            "1.35": [
+              -105,
+              -25,
+              0
+            ],
+            "1.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.25": [
+              0,
+              0,
+              0
+            ],
+            "0.5": [
+              -15,
+              0,
+              0
+            ],
+            "1.35": [
+              -15,
+              0,
+              0
+            ],
+            "1.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "sound_effects": {
+        "0.3": {
+          "effect": "drink"
+        },
+        "0.8": {
+          "effect": "drink"
+        }
+      }
     }
   }
 }

@@ -10,13 +10,16 @@ import { type Entity, type Player, system, type Vector3, world } from "@minecraf
 import { CustomForm, ObservableBoolean } from "@minecraft/server-ui";
 import { CITIZEN_ID } from "./citizen_npc.js";
 import { gameTime } from "./clock.js";
+import { copyLook } from "./convert.js";
 import { doorOfSite } from "./garrison.js";
 import { news, ofTag, safeBorderSpot } from "./people.js";
+import { BORDER_RADIUS } from "./plots.js";
 import { allSettlements, saveSettlement, settlementById } from "./registry.js";
 import { acceptApplicant, addApplicant, applicantsOf, childrenOf, dropApplicant } from "./roster.js";
-import { freeBeds, instances } from "./rules.js";
+import { freeBeds, instances, tier } from "./rules.js";
 import { raw, t, txt } from "./text.js";
 import { OUTFIT_INDEX, type Person, type Settlement, type Site } from "./types.js";
+import { walkFrom } from "./walk.js";
 
 const INTERVAL = 100;
 const DAWN = 1000;
@@ -31,10 +34,42 @@ const COOLDOWN_TICKS = 20;
 const LEAVE_TICKS = 600;
 const LEAVING = "bannerforge:leaving";
 const P_LEFT = "bannerforge:left";
+/** Where a turned-away newcomer leaves town ("x,z"); he goes for good when he gets there. */
+const P_EXIT = "bannerforge:exit";
+/** Longest walk out (the leaving group's follow range is 128). */
+const LEAVE_WALK = 100;
 
 /** Out of the town's lists: they walk off with their own name, no longer a newcomer (no talk, no yellow). */
-function sendAway(e: Entity, p: Person): void {
-  e.triggerEvent("bannerforge:leave");
+/**
+ * A turned-away newcomer walks straight out of town (play-test 2026-11-19: running from the player went in circles).
+ * The behaviour file walks him home (citizen.json leaving: go_home), so he is spawned at the nearest spot just
+ * outside the border and moved back to where he stood (walk.ts). Falls back to leaving on the spot's line while that
+ * spot isn't loaded.
+ */
+function sendAway(s: Settlement, old: Entity, p: Person): void {
+  const r = BORDER_RADIUS[tier(s)] + 6;
+  const dx = old.location.x - s.center.x;
+  const dz = old.location.z - s.center.z;
+  // Out through the nearest side of the (square) border.
+  const exit =
+    Math.abs(dx) >= Math.abs(dz)
+      ? { x: s.center.x + Math.sign(dx || 1) * r, z: old.location.z }
+      : { x: old.location.x, z: s.center.z + Math.sign(dz || 1) * r };
+  let e = old;
+  try {
+    const top = old.dimension.getTopmostBlock({ x: exit.x, z: exit.z });
+    if (top) {
+      const at = { x: Math.floor(exit.x) + 0.5, y: top.location.y + 1, z: Math.floor(exit.z) + 0.5 };
+      e = old.dimension.spawnEntity(CITIZEN_ID, at, { spawnEvent: "bannerforge:spawn_leaving" });
+      copyLook(old, e);
+      walkFrom(e, old.location, at, LEAVE_WALK);
+      old.remove();
+      e.setDynamicProperty(P_EXIT, `${at.x},${at.z}`);
+    }
+  } catch {
+    // exit not loaded: leave from here
+  }
+  if (e === old) old.triggerEvent("bannerforge:leave");
   e.nameTag = p.name;
   for (const tag of e.getTags()) if (tag.startsWith("bannerforge:of:")) e.removeTag(tag);
   e.addTag(LEAVING);
@@ -95,7 +130,7 @@ function tick(s: Settlement): boolean {
   for (const p of [...applicantsOf(s)]) {
     const e = p.eid ? world.getEntity(p.eid) : undefined;
     if (gameTime() - (p.since ?? 0) >= WAIT_TICKS) {
-      if (e) sendAway(e, p);
+      if (e) sendAway(s, e, p);
       dropApplicant(s, p);
       changed = true;
       news(s, raw(txt("§7"), t("bannerforge.newcomer.moved_on", p.name)));
@@ -115,7 +150,9 @@ function tick(s: Settlement): boolean {
   for (const e of dim.getEntities({ type: CITIZEN_ID, tags: [LEAVING], location: s.center, maxDistance: 256 })) {
     const since = e.getDynamicProperty(P_LEFT);
     const near = dim.getPlayers({ location: e.location, maxDistance: 20 }).length > 0;
-    if (!near || gameTime() - (typeof since === "number" ? since : 0) >= LEAVE_TICKS) e.remove();
+    const exit = String(e.getDynamicProperty(P_EXIT) ?? "").split(",").map(Number);
+    const out = exit.length === 2 && Math.hypot(e.location.x - exit[0], e.location.z - exit[1]) < 4;
+    if (out || !near || gameTime() - (typeof since === "number" ? since : 0) >= LEAVE_TICKS) e.remove();
   }
 
   // One newcomer a day, by day, once the Town Hall stands.
@@ -207,7 +244,7 @@ function decide(sid: string, seed: string, welcome: boolean): void {
     news(s, raw(txt("§a"), t("bannerforge.newcomer.settled", p.name, s.name)));
   } else {
     dropApplicant(s, p);
-    if (e) sendAway(e, p);
+    if (e) sendAway(s, e, p);
     news(s, raw(txt("§7"), t("bannerforge.newcomer.moved_on", p.name)));
   }
   saveSettlement(s);

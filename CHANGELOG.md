@@ -7,9 +7,11 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 ### Changed
 - **Soldiers have duties instead of crowding the door:** Gate (where a path crosses the border), Border, Town patrol, Barracks, Tower (archers) and Bell (Keep). The Captain gives everyone a duty; a fallen soldier's replacement takes the same duty.
 - **The Captain** comes with the first barracks and walks around inside it. Talk to him for the **duty board**: pick any soldier and give him another duty (or the Captain's choice). The soldier walks to his new spot.
+- Turned-away newcomers walk straight out of town through the nearest side of the border.
+- Hired workers now really go to their workplace (they used to stay where they were hired).
 - **Town patrol** roams the whole town from the bell instead of waiting at the barracks door.
 - **Soldiers fight like guards** (modelled on the iron golem and the Guard Villagers mod): they walk at a golem's pace, chase what attacks them or comes within reach, give up on targets more than about 30 blocks away and walk back to their post; a soldier who is hit calls the soldiers near him for help; they only chase monsters they can reach and climb out of water onto land. A soldier stuck far from his post is put back when nobody is looking.
-- **Healing:** a hurt soldier with nothing to fight drinks a potion of regeneration; a kill gives him a few seconds of regeneration. Below half health he falls back: keeps away from monsters and drinks, but still hits back when cornered, and rejoins the fight when healed.
+- **Healing, one clear rule:** a hurt soldier with nothing to fight rests; after 10 calm seconds he takes a drink (raises his hand to his mouth, you hear him drink) and gets 10 seconds of regeneration, again until he is whole. Below half health he falls back and drinks straight away (stronger regeneration), still hitting back when cornered. Feeding him heals at once, so you can see it work.
 - **Shields:** every melee fighter (Militia, Soldier, Knight and the Captain) carries a shield; when hit by a blow or an arrow they raise it and take half the damage.
 - **Feed to heal:** use bread or cooked food on a hurt soldier to heal him (a golden apple also gives regeneration).
 - **Captain training:** on the duty board, pay the Captain to train a soldier to the next rank (Soldier 6, Knight 12 emeralds; archers become Marksman and Ranger). The town's tier caps the rank (Village: rank 1, Town: rank 2, City: rank 3). A fallen soldier's replacement keeps the trained rank. Rangers use crossbows.

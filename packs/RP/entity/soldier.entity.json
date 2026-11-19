@@ -35,7 +35,8 @@
           "ctrl_use_item_progress",
           {
             "block": "query.property('bannerforge_settlements:blocking')"
-          }
+          },
+          "ctrl_drink"
         ]
       },
       "animations": {
@@ -63,11 +64,16 @@
         "bob": "animation.humanoid.bob",
         "bow_and_arrow": "animation.humanoid.bow_and_arrow",
         "use_item_progress": "animation.humanoid.use_item_progress",
-        "block": "animation.bannerforge_settlements.soldier.block"
+        "block": "animation.bannerforge_settlements.soldier.block",
+        "drink": "animation.bannerforge_settlements.soldier.drink",
+        "ctrl_drink": "controller.animation.bannerforge_settlements.soldier.drink"
       },
       "render_controllers": [
         "controller.render.bannerforge_settlements.npc"
-      ]
+      ],
+      "sound_effects": {
+        "drink": "random.drink"
+      }
     }
   }
 }
