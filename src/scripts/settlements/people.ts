@@ -17,6 +17,7 @@ import { adoptHousesDaily } from "./vanilla_houses.js";
 import { tier } from "./rules.js";
 import { SOLDIER_ID } from "./soldier.js";
 import { townsTag } from "./npc.js";
+import { needsWorkplace, sendToWork } from "./work.js";
 import { buildingName, raw, t, txt } from "./text.js";
 import { OUTFIT_INDEX, type Person, type Settlement } from "./types.js";
 
@@ -93,7 +94,7 @@ function apply(s: Settlement, c: Change): void {
   const e = c.person.eid ? world.getEntity(c.person.eid) : undefined;
   switch (c.kind) {
     case "hired":
-      e?.triggerEvent("bannerforge:become_worker");
+      if (e) sendToWork(s, c.person, e);
       if (c.person.state === "here") news(s, raw(txt("§7"), t("bannerforge.people.hired", c.person.name), txt(" "), buildingName(jobBuilding(c.job))));
       break;
     case "fired":
@@ -123,7 +124,7 @@ function tickPeople(s: Settlement): void {
     const border = BORDER_RADIUS[tier(s)];
     if (d <= border / 2 || (d <= border && gameTime() - (p.since ?? 0) >= WALK_TICKS)) {
       e.triggerEvent("bannerforge:arrived");
-      if (p.job && e.getProperty("bannerforge_settlements:role") !== "worker") e.triggerEvent("bannerforge:become_worker");
+      if (p.job) sendToWork(s, p, e);
       p.state = "here";
       changed = true;
       news(s, raw(txt("§a"), t("bannerforge.people.arrived", p.name, s.name)));
@@ -132,6 +133,7 @@ function tickPeople(s: Settlement): void {
   }
 
   // Townsfolk in town: a worker's entity is a worker with their title; the others keep their vanilla job current.
+  let moved = false;
   for (const p of people) {
     if (p.state !== "here" || !p.eid) continue;
     const e = world.getEntity(p.eid);
@@ -146,9 +148,13 @@ function tickPeople(s: Settlement): void {
       }
       continue;
     }
-    if (e.getProperty("bannerforge_settlements:role") === "worker") continue;
-    e.triggerEvent("bannerforge:become_worker");
-    news(s, raw(txt("§7"), t("bannerforge.people.hired", p.name), txt(" "), buildingName(jobBuilding(p.job))));
+    // A worker lives at his workplace (work.ts); one move per pass, also for workers hired before that.
+    if (!needsWorkplace(e, p) || moved) continue;
+    const wasWorker = e.getProperty("bannerforge_settlements:role") === "worker";
+    sendToWork(s, p, e);
+    moved = true;
+    changed = true;
+    if (!wasWorker) news(s, raw(txt("§7"), t("bannerforge.people.hired", p.name), txt(" "), buildingName(jobBuilding(p.job))));
   }
   // Converted villagers take and lose vanilla jobs by themselves: keep their job current (Economy bonus, hiring, Recruit).
   for (const v of villagersOf(s)) {

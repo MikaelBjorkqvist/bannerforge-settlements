@@ -2391,6 +2391,84 @@
           "value": 14
         }
       },
+      "bannerforge_settlements:at_work": {
+        "minecraft:home": {
+          "restriction_radius": 8,
+          "restriction_type": "random_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 9,
+          "speed_multiplier": 0.5,
+          "xz_dist": 4,
+          "y_dist": 2,
+          "interval": 120
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 8,
+          "speed_multiplier": 0.6,
+          "interval": 60,
+          "goal_radius": 3
+        }
+      },
+      "bannerforge_settlements:worker_schedule": {
+        "minecraft:scheduler": {
+          "min_delay_secs": 0,
+          "max_delay_secs": 10,
+          "scheduled_events": [
+            {
+              "event": "bannerforge:worker_shift",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 0
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 11000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:worker_home",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 11000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 12000
+                  }
+                ]
+              }
+            },
+            {
+              "event": "bannerforge:worker_off",
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": ">=",
+                    "value": 12000
+                  },
+                  {
+                    "test": "hourly_clock_time",
+                    "operator": "<",
+                    "value": 24000
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
       "bannerforge_settlements:applicant": {
         "minecraft:type_family": {
           "family": [
@@ -4513,6 +4591,62 @@
           }
         ]
       },
+      "bannerforge:worker_shift": {
+        "remove": {
+          "component_groups": [
+            "home_schedule_villager",
+            "bed_schedule_villager",
+            "wander_schedule_villager",
+            "gather_schedule_villager",
+            "job_specific_goals",
+            "play_schedule_villager",
+            "trade_resupply_component_group"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "make_and_receive_love",
+            "bannerforge_settlements:at_work"
+          ]
+        }
+      },
+      "bannerforge:worker_home": {
+        "remove": {
+          "component_groups": [
+            "bed_schedule_villager",
+            "wander_schedule_villager",
+            "gather_schedule_villager",
+            "job_specific_goals",
+            "play_schedule_villager",
+            "trade_resupply_component_group",
+            "bannerforge_settlements:at_work"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "home_schedule_villager"
+          ]
+        }
+      },
+      "bannerforge:worker_off": {
+        "remove": {
+          "component_groups": [
+            "home_schedule_villager",
+            "wander_schedule_villager",
+            "gather_schedule_villager",
+            "job_specific_goals",
+            "play_schedule_villager",
+            "trade_resupply_component_group",
+            "make_and_receive_love",
+            "bannerforge_settlements:at_work"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "bed_schedule_villager"
+          ]
+        }
+      },
       "bannerforge:become_settler": {
         "remove": {
           "component_groups": [
@@ -4542,6 +4676,8 @@
             "trade_components",
             "bannerforge_settlements:worker",
             "bannerforge_settlements:applicant",
+            "bannerforge_settlements:worker_schedule",
+            "bannerforge_settlements:at_work",
             "bannerforge_settlements:guard"
           ]
         },
@@ -4576,6 +4712,7 @@
             "weaponsmith",
             "nitwit",
             "unskilled",
+            "basic_schedule",
             "work_schedule",
             "jobless_schedule",
             "farmer_schedule",
@@ -4587,6 +4724,7 @@
             "job_specific_goals",
             "trade_components",
             "bannerforge_settlements:applicant",
+            "bannerforge_settlements:at_work",
             "bannerforge_settlements:guard"
           ]
         },
@@ -4594,7 +4732,7 @@
           "component_groups": [
             "adult",
             "behavior_peasant",
-            "basic_schedule",
+            "bannerforge_settlements:worker_schedule",
             "bannerforge_settlements:worker"
           ]
         },
@@ -4634,6 +4772,8 @@
             "trade_components",
             "bannerforge_settlements:worker",
             "bannerforge_settlements:applicant",
+            "bannerforge_settlements:worker_schedule",
+            "bannerforge_settlements:at_work",
             "bed_schedule_villager",
             "work_schedule_farmer",
             "gather_schedule_villager",
@@ -4911,7 +5051,7 @@
               "component_groups": [
                 "adult",
                 "behavior_peasant",
-                "basic_schedule",
+                "bannerforge_settlements:worker_schedule",
                 "bannerforge_settlements:worker"
               ]
             },
@@ -5481,7 +5621,7 @@
               "component_groups": [
                 "adult",
                 "behavior_peasant",
-                "basic_schedule",
+                "bannerforge_settlements:worker_schedule",
                 "bannerforge_settlements:worker",
                 "bannerforge_settlements:arriving"
               ]
@@ -5837,6 +5977,8 @@
             "trade_components",
             "bannerforge_settlements:worker",
             "bannerforge_settlements:applicant",
+            "bannerforge_settlements:worker_schedule",
+            "bannerforge_settlements:at_work",
             "bannerforge_settlements:guard"
           ]
         },
@@ -6259,6 +6401,8 @@
             "trade_components",
             "bannerforge_settlements:worker",
             "bannerforge_settlements:applicant",
+            "bannerforge_settlements:worker_schedule",
+            "bannerforge_settlements:at_work",
             "bannerforge_settlements:guard"
           ]
         },

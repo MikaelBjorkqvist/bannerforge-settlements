@@ -1,5 +1,5 @@
 {
-  "format_version": "1.21.0",
+  "format_version": "1.26.20",
   "minecraft:entity": {
     "description": {
       "identifier": "bannerforge_settlements:soldier",
@@ -31,6 +31,31 @@
             3
           ],
           "default": 1,
+          "client_sync": true
+        },
+        "bannerforge_settlements:duty": {
+          "type": "enum",
+          "values": [
+            "none",
+            "gate",
+            "border",
+            "patrol",
+            "barracks",
+            "tower",
+            "bell",
+            "captain"
+          ],
+          "default": "none",
+          "client_sync": false
+        },
+        "bannerforge_settlements:retreating": {
+          "type": "bool",
+          "default": false,
+          "client_sync": false
+        },
+        "bannerforge_settlements:healing": {
+          "type": "bool",
+          "default": false,
           "client_sync": true
         }
       }
@@ -64,12 +89,6 @@
                     "subject": "other",
                     "operator": "!=",
                     "value": "creeper"
-                  },
-                  {
-                    "test": "has_tag",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge:ignored"
                   }
                 ]
               },
@@ -164,15 +183,31 @@
                     "subject": "other",
                     "operator": "!=",
                     "value": "bannerforge_npc"
-                  },
-                  {
-                    "test": "has_tag",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge:ignored"
                   }
                 ]
               }
+            }
+          ],
+          "attack_chance": 1.0
+        },
+        "minecraft:environment_sensor": {
+          "triggers": [
+            {
+              "filters": {
+                "test": "actor_health",
+                "subject": "self",
+                "operator": "<",
+                "value": 9
+              },
+              "event": "bannerforge:retreat"
+            },
+            {
+              "filters": {
+                "test": "in_water",
+                "subject": "self",
+                "value": true
+              },
+              "event": "bannerforge:retreat"
             }
           ]
         }
@@ -260,45 +295,24 @@
             }
           ]
         },
-        "minecraft:behavior.defend_village_target": {
-          "priority": 2,
-          "must_reach": true,
-          "entity_types": [
+        "minecraft:environment_sensor": {
+          "triggers": [
             {
               "filters": {
-                "all_of": [
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "==",
-                    "value": "mob"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge_soldier"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "villager"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "player"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge_npc"
-                  }
-                ]
-              }
+                "test": "actor_health",
+                "subject": "self",
+                "operator": "<",
+                "value": 9
+              },
+              "event": "bannerforge:retreat"
+            },
+            {
+              "filters": {
+                "test": "in_water",
+                "subject": "self",
+                "value": true
+              },
+              "event": "bannerforge:retreat"
             }
           ]
         }
@@ -507,29 +521,7 @@
           "damage": 5
         }
       },
-      "patrol": {
-        "minecraft:home": {
-          "restriction_radius": 40,
-          "restriction_type": "random_movement"
-        },
-        "minecraft:behavior.move_through_village": {
-          "priority": 5,
-          "speed_multiplier": 0.6,
-          "only_at_night": false
-        },
-        "minecraft:behavior.random_stroll": {
-          "priority": 7,
-          "speed_multiplier": 0.6,
-          "interval": 60,
-          "xz_dist": 16
-        },
-        "minecraft:behavior.go_home": {
-          "priority": 9,
-          "speed_multiplier": 0.6,
-          "interval": 400,
-          "goal_radius": 4
-        }
-      },
+      "patrol": {},
       "retreat": {
         "minecraft:behavior.go_home": {
           "priority": 1,
@@ -541,47 +533,13 @@
           "value": 0.55
         }
       },
-      "border": {
-        "minecraft:home": {
-          "restriction_radius": 20,
-          "restriction_type": "random_movement"
-        },
-        "minecraft:behavior.random_stroll": {
-          "priority": 7,
-          "speed_multiplier": 0.6,
-          "interval": 80,
-          "xz_dist": 12
-        }
-      },
-      "captain": {
-        "minecraft:home": {
-          "restriction_radius": 4,
-          "restriction_type": "random_movement"
-        },
-        "minecraft:behavior.random_stroll": {
-          "priority": 7,
-          "speed_multiplier": 0.5,
-          "interval": 60,
-          "xz_dist": 3,
-          "y_dist": 1
-        },
-        "minecraft:interact": {
-          "interactions": [
-            {
-              "interact_text": "bannerforge.captain.talk",
-              "on_interact": {
-                "event": "bannerforge:talked"
-              }
-            }
-          ]
-        }
-      },
+      "border": {},
       "raid": {
         "minecraft:behavior.nearest_prioritized_attackable_target": {
           "priority": 2,
           "must_see": false,
           "reselect_targets": true,
-          "within_radius": 64,
+          "within_radius": 48,
           "persist_time": 2,
           "entity_types": [
             {
@@ -604,12 +562,147 @@
                   }
                 ]
               },
-              "max_dist": 64,
+              "max_dist": 48,
               "priority": 0
             }
           ]
+        },
+        "minecraft:home": {
+          "restriction_radius": 96,
+          "restriction_type": "all_movement"
         }
-      }
+      },
+      "healing": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "regeneration",
+              "duration": 4,
+              "amplifier": 0,
+              "visible": true
+            }
+          ]
+        }
+      },
+      "healing_fast": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "regeneration",
+              "duration": 4,
+              "amplifier": 1,
+              "visible": true
+            }
+          ]
+        }
+      },
+      "duty_gate": {
+        "minecraft:home": {
+          "restriction_radius": 16,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 120,
+          "xz_dist": 6,
+          "y_dist": 3
+        }
+      },
+      "duty_border": {
+        "minecraft:home": {
+          "restriction_radius": 24,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 80,
+          "xz_dist": 12,
+          "y_dist": 3
+        }
+      },
+      "duty_barracks": {
+        "minecraft:home": {
+          "restriction_radius": 16,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 120,
+          "xz_dist": 6,
+          "y_dist": 3
+        }
+      },
+      "duty_bell": {
+        "minecraft:home": {
+          "restriction_radius": 16,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 120,
+          "xz_dist": 6,
+          "y_dist": 3
+        }
+      },
+      "duty_tower": {
+        "minecraft:home": {
+          "restriction_radius": 14,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 400,
+          "xz_dist": 1,
+          "y_dist": 3
+        }
+      },
+      "duty_patrol": {
+        "minecraft:home": {
+          "restriction_radius": 64,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 60,
+          "xz_dist": 16,
+          "y_dist": 3
+        },
+        "minecraft:behavior.move_through_village": {
+          "priority": 5,
+          "speed_multiplier": 0.6,
+          "only_at_night": false
+        }
+      },
+      "duty_captain": {
+        "minecraft:home": {
+          "restriction_radius": 5,
+          "restriction_type": "all_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 60,
+          "xz_dist": 3,
+          "y_dist": 3
+        },
+        "minecraft:interact": {
+          "interactions": [
+            {
+              "interact_text": "bannerforge.captain.talk",
+              "on_interact": {
+                "event": "bannerforge:talked"
+              }
+            }
+          ]
+        }
+      },
+      "captain": {}
     },
     "components": {
       "minecraft:type_family": {
@@ -635,10 +728,11 @@
       },
       "minecraft:movement.basic": {},
       "minecraft:navigation.walk": {
-        "can_path_over_water": false,
-        "avoid_water": true,
         "can_open_doors": true,
-        "can_pass_doors": true
+        "can_pass_doors": true,
+        "avoid_water": true,
+        "can_path_over_water": false,
+        "avoid_damage_blocks": true
       },
       "minecraft:annotation.open_door": {},
       "minecraft:jump.static": {},
@@ -659,7 +753,7 @@
       },
       "minecraft:home": {
         "restriction_radius": 12,
-        "restriction_type": "random_movement"
+        "restriction_type": "all_movement"
       },
       "minecraft:dweller": {
         "dwelling_type": "village",
@@ -723,6 +817,18 @@
       },
       "minecraft:behavior.random_look_around": {
         "priority": 9
+      },
+      "minecraft:behavior.open_door": {
+        "priority": 6,
+        "close_door_after": true
+      },
+      "minecraft:timer": {
+        "looping": true,
+        "time": 3,
+        "time_down_event": {
+          "event": "bannerforge:heal_check",
+          "target": "self"
+        }
       }
     },
     "events": {
@@ -924,13 +1030,6 @@
           }
         ]
       },
-      "bannerforge:patrol": {
-        "add": {
-          "component_groups": [
-            "patrol"
-          ]
-        }
-      },
       "bannerforge:retreat": {
         "remove": {
           "component_groups": [
@@ -942,6 +1041,9 @@
           "component_groups": [
             "retreat"
           ]
+        },
+        "set_property": {
+          "bannerforge_settlements:retreating": true
         }
       },
       "bannerforge:resume": {
@@ -951,6 +1053,9 @@
               "component_groups": [
                 "retreat"
               ]
+            },
+            "set_property": {
+              "bannerforge_settlements:retreating": false
             }
           },
           {
@@ -979,20 +1084,6 @@
           }
         ]
       },
-      "bannerforge:border": {
-        "add": {
-          "component_groups": [
-            "border"
-          ]
-        }
-      },
-      "bannerforge:captain": {
-        "add": {
-          "component_groups": [
-            "captain"
-          ]
-        }
-      },
       "bannerforge:talked": {},
       "bannerforge:raid_start": {
         "add": {
@@ -1002,11 +1093,395 @@
         }
       },
       "bannerforge:raid_end": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "raid"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "gate"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_gate"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_gate"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "border"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_border"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_border"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "patrol"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_patrol"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_patrol"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "barracks"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_barracks"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_barracks"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "tower"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_tower"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_tower"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "bell"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_bell"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_bell"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:duty",
+              "value": "captain"
+            },
+            "remove": {
+              "component_groups": [
+                "duty_captain"
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "duty_captain"
+              ]
+            }
+          }
+        ]
+      },
+      "bannerforge:duty_gate": {
         "remove": {
           "component_groups": [
-            "raid"
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
           ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_gate"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "gate"
         }
+      },
+      "bannerforge:duty_border": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_border"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "border"
+        }
+      },
+      "bannerforge:duty_patrol": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_patrol"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "patrol"
+        }
+      },
+      "bannerforge:duty_barracks": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_barracks"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "barracks"
+        }
+      },
+      "bannerforge:duty_tower": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_tower"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "tower"
+        }
+      },
+      "bannerforge:duty_bell": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_bell"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "bell"
+        }
+      },
+      "bannerforge:duty_captain": {
+        "remove": {
+          "component_groups": [
+            "duty_gate",
+            "duty_border",
+            "duty_patrol",
+            "duty_barracks",
+            "duty_tower",
+            "duty_bell",
+            "duty_captain",
+            "patrol",
+            "border",
+            "captain"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "duty_captain"
+          ]
+        },
+        "set_property": {
+          "bannerforge_settlements:duty": "captain"
+        }
+      },
+      "bannerforge:heal_check": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "healing",
+                "healing_fast"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:healing": false
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:retreating",
+                  "value": false
+                },
+                {
+                  "test": "has_target",
+                  "subject": "self",
+                  "value": false
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:healing": true
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:retreating",
+                  "value": true
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing_fast"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:healing": true
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:retreating",
+                  "value": true
+                },
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": false
+                },
+                {
+                  "test": "in_water",
+                  "subject": "self",
+                  "value": false
+                }
+              ]
+            },
+            "trigger": {
+              "event": "bannerforge:resume",
+              "target": "self"
+            }
+          }
+        ]
       }
     }
   }

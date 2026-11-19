@@ -6,7 +6,7 @@
 //
 // Roles (owner decisions 2026-11-18, docs/DESIGN.md):
 //   settler  - arrives jobless (never a nitwit), then lives the vanilla life: takes a vanilla job block, trades, breeds.
-//   worker   - staff of one of our buildings. For now the vanilla routine like a settler; our workplaces come later.
+//   worker   - staff of one of our buildings: by day within 8 blocks of its door, at night home in bed.
 //   guard    - garrison of a military building: no trading, no breeding, no fleeing; fights monsters near its post.
 import fs from "node:fs";
 import path from "node:path";
@@ -80,10 +80,11 @@ const PROFESSIONS = ["armorer", "butcher", "cartographer", "cleric", "farmer", "
 const PLANS = ["basic_schedule", "work_schedule", "jobless_schedule", "farmer_schedule", "librarian_schedule",
   "fisher_schedule", "child_schedule"];
 const CLEAR = [...PROFESSIONS, ...PLANS, "behavior_peasant", "behavior_non_peasant", "baby", "job_specific_goals",
-  "trade_components", "bannerforge_settlements:worker", "bannerforge_settlements:applicant"];
+  "trade_components", "bannerforge_settlements:worker", "bannerforge_settlements:applicant",
+  "bannerforge_settlements:worker_schedule", "bannerforge_settlements:at_work"];
 /** Daily state groups the scheduler adds; only a guard (who leaves the village routine) drops them. */
 const DAILY = Object.keys(groups).filter((g) => /_schedule_villager$|^work_schedule_/.test(g));
-for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
+for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P) && !g.startsWith("bannerforge_settlements:"))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
 
 const unskilled = events["minecraft:become_unskilled"].add.component_groups; // adult, love, unskilled, peasant, schedule
 
@@ -127,7 +128,33 @@ groups[`${P}worker`] = {
   "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_worker", "mob"] },
   "minecraft:variant": { value: 14 },
 };
-const worker = ["adult", "behavior_peasant", "basic_schedule", `${P}worker`];
+// Owner 2026-11-19: a worker stays within 8 blocks of his workplace by day. The script spawns him at the building's
+// door when he is hired (his home: the walk-in trick), so vanilla's home + go_home keep him there. His own day plan
+// replaces the villager's (no exploring the outskirts or gathering at the bell): at work from morning to evening,
+// then home and to bed like any villager.
+groups[`${P}at_work`] = {
+  "minecraft:home": { restriction_radius: 8, restriction_type: "random_movement" },
+  "minecraft:behavior.random_stroll": { priority: 9, speed_multiplier: 0.5, xz_dist: 4, y_dist: 2, interval: 120 },
+  "minecraft:behavior.go_home": { priority: 8, speed_multiplier: 0.6, interval: 60, goal_radius: 3 },
+};
+const window = (from, to) => ({ all_of: [{ test: "hourly_clock_time", operator: ">=", value: from }, { test: "hourly_clock_time", operator: "<", value: to }] });
+groups[`${P}worker_schedule`] = {
+  "minecraft:scheduler": {
+    min_delay_secs: 0,
+    max_delay_secs: 10,
+    scheduled_events: [
+      { event: "bannerforge:worker_shift", filters: window(0, 11000) },
+      { event: "bannerforge:worker_home", filters: window(11000, 12000) },
+      { event: "bannerforge:worker_off", filters: window(12000, 24000) },
+    ],
+  },
+};
+const DAY_GROUPS = ["home_schedule_villager", "bed_schedule_villager", "wander_schedule_villager", "gather_schedule_villager",
+  "job_specific_goals", "play_schedule_villager", "trade_resupply_component_group"];
+events["bannerforge:worker_shift"] = { remove: { component_groups: DAY_GROUPS }, add: { component_groups: ["make_and_receive_love", `${P}at_work`] } };
+events["bannerforge:worker_home"] = { remove: { component_groups: [...DAY_GROUPS.filter((g) => g !== "home_schedule_villager"), `${P}at_work`] }, add: { component_groups: ["home_schedule_villager"] } };
+events["bannerforge:worker_off"] = { remove: { component_groups: [...DAY_GROUPS.filter((g) => g !== "bed_schedule_villager"), "make_and_receive_love", `${P}at_work`] }, add: { component_groups: ["bed_schedule_villager"] } };
+const worker = ["adult", "behavior_peasant", `${P}worker_schedule`, `${P}worker`];
 
 // --- applicant: a newcomer waiting at the Town Hall for the player's word (owner 2026-11-18) ------------------------
 // Like the steward's walk-in: the script spawns them at the Town Hall door (their home), moves them out to a safe spot

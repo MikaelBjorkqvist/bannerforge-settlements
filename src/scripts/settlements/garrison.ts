@@ -14,6 +14,7 @@ import { news } from "./people.js";
 import { CAPTAIN_TITLE, SOLDIER_ID, type SoldierKind, spawnSoldier, soldierTitle } from "./soldier.js";
 import { placeIndex, slotKey, slots, type Slot } from "./duties.js";
 import { updateGates } from "./gates.js";
+import { walkFrom } from "./walk.js";
 import { buildingName, raw, t, txt } from "./text.js";
 import type { Role, Settlement, Site } from "./types.js";
 
@@ -63,7 +64,11 @@ export function maintain(s: Settlement, forceDawn = false): void {
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
       // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
-      if (!slot || fixes >= 2 || e.getDynamicProperty("bannerforge:retreat")) continue;
+      // Soldiers from before duties lived in the behaviour file: same spot, now with the duty's behaviour.
+      if (slot && e.getProperty("bannerforge_settlements:duty") === "none" && e.getDynamicProperty(P_ROLE) === slot.role) {
+        e.triggerEvent(`bannerforge:duty_${slot.role}`);
+      }
+      if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:retreating")) continue;
       const at = placeOf(dim, s, all, slot, door);
       const home = postAt(e);
       const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
@@ -108,20 +113,17 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
-/** Longest walk to a new duty (the soldier's follow range is 64). */
-const WALK_MAX = 40;
 /** The soldier's duty (Role) and the spot he serves at (his home: where he was spawned), as "x,y,z". */
 export const P_ROLE = "bannerforge:role";
 export const P_POST_AT = "bannerforge:post_at";
 export const captainTag = (s: Settlement) => `bannerforge:captain:${s.id}`;
 
-/** Stores a soldier's duty and gives him the wander range for it. */
+/** Stores a soldier's duty (for the duty board and reassigning) and gives him that duty's behaviour. */
 function setRole(e: Entity, role: Role, at: Vector3): void {
   e.setDynamicProperty(P_ROLE, role);
   e.setDynamicProperty(P_POST_AT, `${Math.floor(at.x)},${Math.floor(at.y)},${Math.floor(at.z)}`);
-  if (role === "patrol") e.triggerEvent("bannerforge:patrol");
-  if (role === "border") e.triggerEvent("bannerforge:border");
-  if (role === "captain") e.triggerEvent("bannerforge:captain");
+  // The behaviour file does the rest (soldier.json duty_<role>): his home area is how far he may chase.
+  e.triggerEvent(`bannerforge:duty_${role}`);
 }
 
 /** Where a soldier post's spot is (his home radius comes from the duty). */
@@ -155,21 +157,7 @@ export function reassign(old: Entity, at: Vector3, role: Role): Entity {
   const hpOld = old.getComponent("minecraft:health");
   const hpNew = e.getComponent("minecraft:health");
   if (hpOld && hpNew) hpNew.setCurrentValue(Math.max(1, Math.min(hpOld.currentValue, hpNew.effectiveMax)));
-  // Walks at most WALK_MAX blocks (pathfinding gives up on longer trips): from further away he starts part of the way.
-  const d = Math.hypot(from.x - at.x, from.z - at.z);
-  if (d <= WALK_MAX) e.teleport(from);
-  else {
-    const k = WALK_MAX / d;
-    const x = at.x + (from.x - at.x) * k;
-    const z = at.z + (from.z - at.z) * k;
-    let y = from.y;
-    try {
-      y = (dim.getTopmostBlock({ x, z })?.location.y ?? from.y - 1) + 1;
-    } catch {
-      // not loaded: stays where he is
-    }
-    e.teleport({ x, y, z });
-  }
+  walkFrom(e, from, at);
   old.remove();
   return e;
 }
@@ -215,7 +203,10 @@ function keepCaptain(dim: Dimension, s: Settlement, dawn: boolean): boolean {
     for (const e of alive) e.remove();
     return false;
   }
-  if (alive.length) return false;
+  if (alive.length) {
+    for (const e of alive) if (e.getProperty("bannerforge_settlements:duty") === "none") e.triggerEvent("bannerforge:duty_captain");
+    return false;
+  }
   const first = !s.captainSent;
   if (!first && !dawn) return false;
   const at = floorInside(dim, barracks.site) ?? doorOf(dim, barracks);
