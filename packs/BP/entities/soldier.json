@@ -627,6 +627,30 @@
             }
           ]
         }
+      },
+      "healing": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "regeneration",
+              "duration": 6,
+              "amplifier": 0,
+              "visible": true
+            }
+          ]
+        }
+      },
+      "healing_fast": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "regeneration",
+              "duration": 6,
+              "amplifier": 1,
+              "visible": true
+            }
+          ]
+        }
       }
     },
     "components": {
@@ -754,47 +778,6 @@
       },
       "minecraft:pushable_by_block": {},
       "minecraft:pushable_by_entity": {},
-      "minecraft:behavior.drink_potion": {
-        "speed_modifier": -0.15,
-        "potions": [
-          {
-            "id": 28,
-            "chance": 1.0,
-            "filters": {
-              "all_of": [
-                {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "has_target",
-                  "subject": "self",
-                  "value": false
-                }
-              ]
-            }
-          },
-          {
-            "id": 28,
-            "chance": 1.0,
-            "filters": {
-              "all_of": [
-                {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
-                }
-              ]
-            }
-          }
-        ]
-      },
       "minecraft:behavior.move_to_land": {
         "priority": 5,
         "goal_radius": 0.5,
@@ -1187,6 +1170,126 @@
       },
       "bannerforge:hp_check": {
         "sequence": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": false
+                },
+                {
+                  "test": "has_target",
+                  "subject": "self",
+                  "value": false
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing",
+                "healing_fast"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": false
+                },
+                {
+                  "test": "has_target",
+                  "subject": "self",
+                  "value": false
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": true
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing",
+                "healing_fast"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_missing_health",
+                  "subject": "self",
+                  "value": true
+                },
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": true
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing_fast"
+              ]
+            }
+          },
           {
             "filters": {
               "all_of": [

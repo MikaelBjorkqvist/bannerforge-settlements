@@ -61,6 +61,11 @@ export function maintain(s: Settlement, forceDawn = false): void {
     const soldiers = dim.getEntities({ type: SOLDIER_ID, tags: [tag] });
     for (const e of soldiers) {
       syncRank(e, post, rank);
+      // 2026-11-19: drinking potions took soldiers' weapons; re-issue their rank's gear once.
+      if (e.getDynamicProperty(P_GEAR) !== GEAR_VERSION) {
+        e.triggerEvent(`bannerforge:rank_${Number(e.getProperty(RANK_PROP)) || rank}`);
+        e.setDynamicProperty(P_GEAR, GEAR_VERSION);
+      }
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
       // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
@@ -109,6 +114,8 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
+const P_GEAR = "bannerforge:gear";
+const GEAR_VERSION = 2;
 /** Longest walk to a new duty: within the soldier's follow range (32, soldier.json). */
 const SOLDIER_WALK = 28;
 /** The spot a soldier serves at (his home: where he was spawned), as "x,y,z". His duty is an entity property. */
