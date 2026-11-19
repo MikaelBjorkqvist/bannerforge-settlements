@@ -26,14 +26,7 @@ export function rolesFor(post: Pick<Post, "id" | "kind">): Role[] {
   return ["barracks", "gate", "border", "patrol"];
 }
 
-/**
- * How far a soldier may chase from his post before he gives up and goes back (owner 2026-11-19: per role). The town
- * patrol is measured from the bell instead: up to the border + 8.
- */
-export const LEASH: Record<Role, number> = { gate: 16, border: 24, patrol: 8, barracks: 16, tower: 14, bell: 16, captain: 10 };
-
-/** How far a soldier wanders from his post when nothing is going on (the entity's home radius for that duty). */
-export const WANDER: Record<Role, number> = { gate: 12, border: 20, patrol: 40, barracks: 12, tower: 12, bell: 12, captain: 4 };
+// How far each duty may chase (and wander) is the duty's home area in BP/entities/soldier.json (duty_<role>).
 
 export interface Slot {
   key: string;
@@ -63,6 +56,42 @@ export function placeIndex(all: Slot[], key: string): number {
   const me = all.find((x) => x.key === key);
   if (!me) return 0;
   return all.filter((x) => x.role === me.role).findIndex((x) => x.key === key);
+}
+
+/** A slot's trained rank (1 until the Captain trains it), never above what the town allows. */
+export function slotRank(s: Settlement, key: string, max: 1 | 2 | 3): 1 | 2 | 3 {
+  return Math.min(s.ranks?.[key] ?? 1, max) as 1 | 2 | 3;
+}
+
+/** Emeralds the Captain asks to train a soldier to the next rank (rank 2 and rank 3). */
+export const TRAIN_COST: Record<2 | 3, number> = { 2: 6, 3: 12 };
+
+export function setRank(s: Settlement, key: string, rank: 1 | 2 | 3): void {
+  s.ranks = { ...(s.ranks ?? {}), [key]: rank };
+}
+
+/** Duties the player moves soldiers between on the Captain's board; "barracks" is where the others wait. */
+export const TASKS: Role[] = ["gate", "border", "patrol"];
+
+/**
+ * One more or one fewer soldier on a task (owner 2026-11-19: "add more or less to X task"): a soldier moves between
+ * that task and barracks duty. Only barracks soldiers (melee, not the Keep's) are moved. Returns false when nobody
+ * can be moved.
+ */
+export function shiftTask(s: Settlement, all: Slot[], task: Role, by: 1 | -1): boolean {
+  const from = by === 1 ? "barracks" : task;
+  const movable = all.filter((x) => x.post.id === "barracks" && x.role === from);
+  const slot = movable[movable.length - 1];
+  if (!slot) return false;
+  s.duties = { ...(s.duties ?? {}), [slot.key]: by === 1 ? task : "barracks" };
+  return true;
+}
+
+/** How many barracks soldiers each duty has. */
+export function taskCounts(all: Slot[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const x of all) if (x.post.id === "barracks") out[x.role] = (out[x.role] ?? 0) + 1;
+  return out;
 }
 
 /** The player's choice for a slot; choosing the Captain's default again clears it. */

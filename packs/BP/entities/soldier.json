@@ -48,15 +48,47 @@
           "default": "none",
           "client_sync": false
         },
-        "bannerforge_settlements:retreating": {
+        "bannerforge_settlements:falling_back": {
           "type": "bool",
           "default": false,
           "client_sync": false
         },
-        "bannerforge_settlements:healing": {
+        "bannerforge_settlements:blocking": {
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "bannerforge_settlements:rest": {
+          "type": "int",
+          "range": [
+            0,
+            10
+          ],
+          "default": 0,
+          "client_sync": false
+        },
+        "bannerforge_settlements:drinking": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        },
+        "bannerforge_settlements:potions": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 2,
+          "client_sync": false
+        },
+        "bannerforge_settlements:fb_time": {
+          "type": "int",
+          "range": [
+            0,
+            10
+          ],
+          "default": 0,
+          "client_sync": false
         }
       }
     },
@@ -64,16 +96,16 @@
       "melee": {
         "minecraft:behavior.melee_box_attack": {
           "priority": 3,
-          "speed_multiplier": 1.1,
+          "speed_multiplier": 1.0,
           "track_target": true,
           "cooldown_time": 0.6
         },
         "minecraft:behavior.nearest_attackable_target": {
           "priority": 3,
-          "must_see": true,
+          "must_see": false,
           "reselect_targets": true,
           "within_radius": 16,
-          "persist_time": 0.5,
+          "persist_time": 1.0,
           "entity_types": [
             {
               "filters": {
@@ -145,28 +177,8 @@
                 ]
               }
             }
-          ]
-        },
-        "minecraft:environment_sensor": {
-          "triggers": [
-            {
-              "filters": {
-                "test": "actor_health",
-                "subject": "self",
-                "operator": "<",
-                "value": 9
-              },
-              "event": "bannerforge:retreat"
-            },
-            {
-              "filters": {
-                "test": "in_water",
-                "subject": "self",
-                "value": true
-              },
-              "event": "bannerforge:retreat"
-            }
-          ]
+          ],
+          "alert_same_type": true
         }
       },
       "ranged": {
@@ -185,7 +197,7 @@
           "must_see": true,
           "reselect_targets": true,
           "within_radius": 20,
-          "persist_time": 0.5,
+          "persist_time": 1.0,
           "entity_types": [
             {
               "filters": {
@@ -214,6 +226,32 @@
               "max_dist": 6,
               "walk_speed_multiplier": 1.0,
               "sprint_speed_multiplier": 1.2
+            },
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "monster"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "skeleton"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "pillager"
+                  }
+                ]
+              },
+              "max_dist": 7,
+              "walk_speed_multiplier": 1.0,
+              "sprint_speed_multiplier": 1.25
             }
           ]
         },
@@ -250,28 +288,8 @@
                 ]
               }
             }
-          ]
-        },
-        "minecraft:environment_sensor": {
-          "triggers": [
-            {
-              "filters": {
-                "test": "actor_health",
-                "subject": "self",
-                "operator": "<",
-                "value": 9
-              },
-              "event": "bannerforge:retreat"
-            },
-            {
-              "filters": {
-                "test": "in_water",
-                "subject": "self",
-                "value": true
-              },
-              "event": "bannerforge:retreat"
-            }
-          ]
+          ],
+          "alert_same_type": true
         }
       },
       "melee_1": {
@@ -476,20 +494,15 @@
         },
         "minecraft:attack": {
           "damage": 5
+        },
+        "minecraft:behavior.charge_held_item": {
+          "priority": 3,
+          "items": [
+            "minecraft:arrow"
+          ]
         }
       },
       "patrol": {},
-      "retreat": {
-        "minecraft:behavior.go_home": {
-          "priority": 1,
-          "speed_multiplier": 1.0,
-          "interval": 1,
-          "goal_radius": 2.5
-        },
-        "minecraft:movement": {
-          "value": 0.55
-        }
-      },
       "border": {},
       "raid": {
         "minecraft:behavior.nearest_prioritized_attackable_target": {
@@ -524,39 +537,16 @@
             }
           ]
         },
-        "minecraft:home": {
-          "restriction_radius": 96,
-          "restriction_type": "all_movement"
-        }
-      },
-      "healing": {
-        "minecraft:spell_effects": {
-          "add_effects": [
-            {
-              "effect": "regeneration",
-              "duration": 4,
-              "amplifier": 0,
-              "visible": true
-            }
-          ]
-        }
-      },
-      "healing_fast": {
-        "minecraft:spell_effects": {
-          "add_effects": [
-            {
-              "effect": "regeneration",
-              "duration": 4,
-              "amplifier": 1,
-              "visible": true
-            }
-          ]
+        "minecraft:behavior.move_through_village": {
+          "priority": 5,
+          "speed_multiplier": 0.7,
+          "only_at_night": false
         }
       },
       "duty_gate": {
         "minecraft:home": {
-          "restriction_radius": 16,
-          "restriction_type": "all_movement"
+          "restriction_radius": 12,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -568,8 +558,8 @@
       },
       "duty_border": {
         "minecraft:home": {
-          "restriction_radius": 24,
-          "restriction_type": "all_movement"
+          "restriction_radius": 20,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -581,8 +571,8 @@
       },
       "duty_barracks": {
         "minecraft:home": {
-          "restriction_radius": 16,
-          "restriction_type": "all_movement"
+          "restriction_radius": 12,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -594,8 +584,8 @@
       },
       "duty_bell": {
         "minecraft:home": {
-          "restriction_radius": 16,
-          "restriction_type": "all_movement"
+          "restriction_radius": 12,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -607,8 +597,8 @@
       },
       "duty_tower": {
         "minecraft:home": {
-          "restriction_radius": 14,
-          "restriction_type": "all_movement"
+          "restriction_radius": 3,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -620,26 +610,27 @@
       },
       "duty_patrol": {
         "minecraft:home": {
-          "restriction_radius": 64,
-          "restriction_type": "all_movement"
+          "restriction_radius": 44,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
-          "priority": 7,
-          "speed_multiplier": 0.6,
-          "interval": 60,
-          "xz_dist": 16,
-          "y_dist": 3
-        },
-        "minecraft:behavior.move_through_village": {
           "priority": 5,
           "speed_multiplier": 0.6,
-          "only_at_night": false
+          "interval": 20,
+          "xz_dist": 24,
+          "y_dist": 4
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 8,
+          "speed_multiplier": 0.7,
+          "interval": 600,
+          "goal_radius": 6
         }
       },
       "duty_captain": {
         "minecraft:home": {
-          "restriction_radius": 5,
-          "restriction_type": "all_movement"
+          "restriction_radius": 4,
+          "restriction_type": "random_movement"
         },
         "minecraft:behavior.random_stroll": {
           "priority": 7,
@@ -659,7 +650,56 @@
           ]
         }
       },
-      "captain": {}
+      "captain": {},
+      "fall_back": {
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 2,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "monster"
+              },
+              "max_dist": 8,
+              "walk_speed_multiplier": 1.0,
+              "sprint_speed_multiplier": 1.2
+            }
+          ]
+        },
+        "minecraft:behavior.go_home": {
+          "priority": 4,
+          "speed_multiplier": 0.9,
+          "interval": 1,
+          "goal_radius": 3
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "within_radius": 1,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "bannerforge_none"
+              },
+              "max_dist": 1
+            }
+          ]
+        }
+      },
+      "healing": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "regeneration",
+              "duration": 10,
+              "amplifier": 1,
+              "visible": true
+            }
+          ]
+        }
+      }
     },
     "components": {
       "minecraft:type_family": {
@@ -681,7 +721,7 @@
         "damage": 3
       },
       "minecraft:movement": {
-        "value": 0.5
+        "value": 0.3
       },
       "minecraft:movement.basic": {},
       "minecraft:navigation.walk": {
@@ -702,11 +742,12 @@
       "minecraft:nameable": {},
       "minecraft:persistent": {},
       "minecraft:follow_range": {
-        "value": 64
+        "value": 32,
+        "max": 32
       },
       "minecraft:home": {
         "restriction_radius": 12,
-        "restriction_type": "all_movement"
+        "restriction_type": "random_movement"
       },
       "minecraft:dweller": {
         "dwelling_type": "village",
@@ -741,9 +782,46 @@
             "deals_damage": "no"
           },
           {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "has_equipment",
+                    "subject": "self",
+                    "domain": "hand",
+                    "value": "minecraft:shield"
+                  },
+                  {
+                    "any_of": [
+                      {
+                        "test": "has_damage",
+                        "value": "attack"
+                      },
+                      {
+                        "test": "has_damage",
+                        "value": "projectile"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "event": "bannerforge:block",
+              "target": "self"
+            },
+            "deals_damage": "yes",
+            "damage_multiplier": 0.5
+          },
+          {
             "cause": "fall",
             "deals_damage": "yes",
             "damage_modifier": -5
+          },
+          {
+            "on_damage": {
+              "event": "bannerforge:hurt",
+              "target": "self"
+            },
+            "deals_damage": "yes"
           }
         ]
       },
@@ -751,10 +829,10 @@
         "priority": 0
       },
       "minecraft:behavior.go_home": {
-        "priority": 5,
+        "priority": 6,
         "speed_multiplier": 0.8,
-        "interval": 1,
-        "goal_radius": 2.5
+        "interval": 80,
+        "goal_radius": 3
       },
       "minecraft:behavior.random_stroll": {
         "priority": 7,
@@ -777,14 +855,73 @@
       },
       "minecraft:timer": {
         "looping": true,
-        "time": 3,
+        "time": 2,
         "time_down_event": {
-          "event": "bannerforge:heal_check",
+          "event": "bannerforge:hp_check",
           "target": "self"
         }
       },
       "minecraft:pushable_by_block": {},
-      "minecraft:pushable_by_entity": {}
+      "minecraft:pushable_by_entity": {},
+      "minecraft:behavior.move_to_land": {
+        "priority": 5,
+        "goal_radius": 0.5,
+        "search_range": 16,
+        "search_height": 5,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:healable": {
+        "force_use": false,
+        "items": [
+          {
+            "item": "minecraft:bread",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:baked_potato",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:cooked_beef",
+            "heal_amount": 8
+          },
+          {
+            "item": "minecraft:cooked_porkchop",
+            "heal_amount": 8
+          },
+          {
+            "item": "minecraft:cooked_mutton",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:cooked_chicken",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:cooked_cod",
+            "heal_amount": 5
+          },
+          {
+            "item": "minecraft:cooked_salmon",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:golden_carrot",
+            "heal_amount": 6
+          },
+          {
+            "item": "minecraft:golden_apple",
+            "heal_amount": 4,
+            "effects": [
+              {
+                "name": "regeneration",
+                "duration": 5,
+                "amplifier": 1
+              }
+            ]
+          }
+        ]
+      }
     },
     "events": {
       "minecraft:entity_spawned": {
@@ -985,60 +1122,6 @@
           }
         ]
       },
-      "bannerforge:retreat": {
-        "remove": {
-          "component_groups": [
-            "melee",
-            "ranged"
-          ]
-        },
-        "add": {
-          "component_groups": [
-            "retreat"
-          ]
-        },
-        "set_property": {
-          "bannerforge_settlements:retreating": true
-        }
-      },
-      "bannerforge:resume": {
-        "sequence": [
-          {
-            "remove": {
-              "component_groups": [
-                "retreat"
-              ]
-            },
-            "set_property": {
-              "bannerforge_settlements:retreating": false
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:kind",
-              "value": "melee"
-            },
-            "add": {
-              "component_groups": [
-                "melee"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:kind",
-              "value": "ranged"
-            },
-            "add": {
-              "component_groups": [
-                "ranged"
-              ]
-            }
-          }
-        ]
-      },
       "bannerforge:talked": {},
       "bannerforge:raid_start": {
         "add": {
@@ -1048,134 +1131,11 @@
         }
       },
       "bannerforge:raid_end": {
-        "sequence": [
-          {
-            "remove": {
-              "component_groups": [
-                "raid"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "gate"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_gate"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_gate"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "border"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_border"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_border"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "patrol"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_patrol"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_patrol"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "barracks"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_barracks"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_barracks"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "tower"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_tower"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_tower"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "bell"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_bell"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_bell"
-              ]
-            }
-          },
-          {
-            "filters": {
-              "test": "enum_property",
-              "domain": "bannerforge_settlements:duty",
-              "value": "captain"
-            },
-            "remove": {
-              "component_groups": [
-                "duty_captain"
-              ]
-            },
-            "add": {
-              "component_groups": [
-                "duty_captain"
-              ]
-            }
-          }
-        ]
+        "remove": {
+          "component_groups": [
+            "raid"
+          ]
+        }
       },
       "bannerforge:duty_gate": {
         "remove": {
@@ -1345,36 +1305,155 @@
           "bannerforge_settlements:duty": "captain"
         }
       },
-      "bannerforge:heal_check": {
+      "bannerforge:hp_check": {
         "sequence": [
           {
-            "remove": {
-              "component_groups": [
-                "healing",
-                "healing_fast"
-              ]
+            "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:blocking",
+              "value": true
             },
             "set_property": {
-              "bannerforge_settlements:healing": false
+              "bannerforge_settlements:blocking": false
+            }
+          },
+          {
+            "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:drinking",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": false
+            }
+          },
+          {
+            "filters": {
+              "test": "has_target",
+              "subject": "self",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:rest": 0
+            }
+          },
+          {
+            "filters": {
+              "test": "has_target",
+              "subject": "self",
+              "value": false
+            },
+            "set_property": {
+              "bannerforge_settlements:rest": "math.min(query.property('bannerforge_settlements:rest') + 1, 10)"
             }
           },
           {
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:retreating",
-                  "value": false
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
                 },
                 {
-                  "test": "has_target",
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 1
+                },
+                {
+                  "test": "actor_health",
                   "subject": "self",
-                  "value": false
+                  "operator": "<",
+                  "value": 15
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 1
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 15
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
@@ -1384,31 +1463,258 @@
               ]
             },
             "set_property": {
-              "bannerforge_settlements:healing": true
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
             }
           },
           {
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:retreating",
-                  "value": true
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 2
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 18
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 2
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 18
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
             "add": {
               "component_groups": [
-                "healing_fast"
+                "healing"
               ]
             },
             "set_property": {
-              "bannerforge_settlements:healing": true
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 3
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 24
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 3
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 24
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
+            }
+          },
+          {
+            "filters": {
+              "test": "bool_property",
+              "domain": "bannerforge_settlements:falling_back",
+              "value": true
+            },
+            "set_property": {
+              "bannerforge_settlements:fb_time": "math.min(query.property('bannerforge_settlements:fb_time') + 1, 10)"
             }
           },
           {
@@ -1416,27 +1722,237 @@
               "all_of": [
                 {
                   "test": "bool_property",
-                  "domain": "bannerforge_settlements:retreating",
+                  "domain": "bannerforge_settlements:falling_back",
                   "value": true
                 },
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": false
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:fb_time",
+                  "operator": ">=",
+                  "value": 6
                 },
                 {
-                  "test": "in_water",
-                  "subject": "self",
-                  "value": false
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "ranged"
                 }
               ]
             },
-            "trigger": {
-              "event": "bannerforge:resume",
-              "target": "self"
+            "remove": {
+              "component_groups": [
+                "fall_back",
+                "ranged"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": false,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": true
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:fb_time",
+                  "operator": ">=",
+                  "value": 6
+                },
+                {
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "melee"
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "fall_back",
+                "melee"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": false,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": false
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 1
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 12
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "fall_back"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": false
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 2
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 15
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "fall_back"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "bool_property",
+                  "domain": "bannerforge_settlements:falling_back",
+                  "value": false
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 3
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 20
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "fall_back"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:falling_back": true,
+              "bannerforge_settlements:fb_time": 0
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "melee"
+                },
+                {
+                  "test": "has_component",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "minecraft:behavior.melee_box_attack"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "melee"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "enum_property",
+                  "domain": "bannerforge_settlements:kind",
+                  "value": "ranged"
+                },
+                {
+                  "test": "has_component",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "minecraft:behavior.ranged_attack"
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "ranged"
+              ]
             }
           }
         ]
+      },
+      "bannerforge:block": {
+        "set_property": {
+          "bannerforge_settlements:blocking": true,
+          "bannerforge_settlements:rest": 0
+        }
+      },
+      "bannerforge:hurt": {
+        "set_property": {
+          "bannerforge_settlements:rest": 0
+        }
+      },
+      "bannerforge:restock": {
+        "set_property": {
+          "bannerforge_settlements:potions": 2
+        }
       }
     }
   }

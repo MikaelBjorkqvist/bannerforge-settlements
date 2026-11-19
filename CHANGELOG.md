@@ -7,8 +7,17 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 ### Changed
 - **Soldiers have duties instead of crowding the door:** Gate (where a path crosses the border), Border, Town patrol, Barracks, Tower (archers) and Bell (Keep). The Captain gives everyone a duty; a fallen soldier's replacement takes the same duty.
 - **The Captain** comes with the first barracks and walks around inside it. Talk to him for the **duty board**: pick any soldier and give him another duty (or the Captain's choice). The soldier walks to his new spot.
-- **Smarter soldiers:** each duty has an area he won't chase out of (Gate/Barracks/Bell 16, Border 24, Tower 14, Town patrol 64 blocks around his post); they don't chase into water and come back if they end up there; they only chase monsters they can reach; soldiers never attack players, so never the town's owner (they fight monsters, whoever hurts them that isn't a player, and raiders). A soldier stuck on his way back is put back at his post when nobody is looking.
-- **Healing:** below 9 health a soldier goes back to his post and heals faster there; out of combat he heals slowly anywhere. You can see it: regeneration swirls and red hearts over his head.
+- The town keeps going while you are away: fallen soldiers are back as soon as a dawn has passed (at any hour you return), and a newcomer whose morning you missed is waiting at the Town Hall door.
+- Newcomers ask to move in in their own words, thank you when welcomed and answer when turned away.
+- Turned-away newcomers walk straight out of town through the nearest side of the border.
+- Hired workers now really go to their workplace (they used to stay where they were hired).
+- **Town patrol** roams the whole town from the bell instead of waiting at the barracks door.
+- **Soldiers fight like guards** (modelled on the iron golem and the Guard Villagers mod): they walk at a golem's pace, chase what attacks them or comes within reach, give up on targets more than about 30 blocks away and walk back to their post; a soldier who is hit calls the soldiers near him for help; they only chase monsters they can reach and climb out of water onto land. A soldier stuck far from his post is put back when nobody is looking.
+- **Healing, one clear rule:** each soldier carries two healing potions, restocked every morning. Below half health in a fight he steps back for about 12 seconds to drink one (hand to mouth, drinking sound; about 8 health), then goes straight back into the fight. Out of combat he drinks after 10 calm seconds if he is below about 60 % health. No potions left: he fights on, and only food heals him until morning. Feeding works any time, even mid-battle, and heals at once.
+- **Archers keep their distance:** when a melee monster gets within 5 blocks they back away, then shoot again.
+- **Shields:** every melee fighter (Militia, Soldier, Knight and the Captain) carries a shield; when hit by a blow or an arrow they raise it and take half the damage.
+- **Feed to heal:** use bread or cooked food on a hurt soldier to heal him (a golden apple also gives regeneration).
+- **Captain training:** on the duty board, pay the Captain to train a soldier to the next rank (Soldier 6, Knight 12 emeralds; archers become Marksman and Ranger). The town's tier caps the rank (Village: rank 1, Town: rank 2, City: rank 3). A fallen soldier's replacement keeps the trained rank. Rangers use crossbows.
 - **Doors:** soldiers, workers and the steward open and walk through wooden doors (and close them behind them).
 - **Workers live at their workplace:** a hired worker walks to his building and stays within 8 blocks of its door by day; in the evening he goes home to bed like any villager.
 - **Raids:** when 3 or more raiders (illagers, ravagers, witches) are inside the border the town is under attack: every soldier hunts raiders anywhere in town, and you hear when it starts and ends.

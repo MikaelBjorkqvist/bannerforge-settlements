@@ -28,7 +28,6 @@ export function spawnCitizen(dim: Dimension, at: Vector3, role: CitizenRole, fac
   e.addTag("bannerforge:citizen");
   // Name tags are plain text (like the steward's "Steward, Edric"); titles follow the owner's NPC naming rule.
   e.nameTag = `${ROLE_TITLE[role]}, ${pickName(seed + role)}`;
-  e.setDynamicProperty("bannerforge:role", role);
   return e;
 }
 

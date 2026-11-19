@@ -1,0 +1,27 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.bannerforge_settlements.soldier.drink": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "drinking": "query.property('bannerforge_settlements:drinking')"
+            }
+          ]
+        },
+        "drinking": {
+          "animations": [
+            "drink"
+          ],
+          "transitions": [
+            {
+              "default": "!query.property('bannerforge_settlements:drinking') && query.all_animations_finished"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

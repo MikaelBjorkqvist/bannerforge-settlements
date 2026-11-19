@@ -81,7 +81,7 @@ const PLANS = ["basic_schedule", "work_schedule", "jobless_schedule", "farmer_sc
   "fisher_schedule", "child_schedule"];
 const CLEAR = [...PROFESSIONS, ...PLANS, "behavior_peasant", "behavior_non_peasant", "baby", "job_specific_goals",
   "trade_components", "bannerforge_settlements:worker", "bannerforge_settlements:applicant",
-  "bannerforge_settlements:worker_schedule", "bannerforge_settlements:at_work"];
+  "bannerforge_settlements:worker_schedule", "bannerforge_settlements:at_work", "bannerforge_settlements:moving_in"];
 /** Daily state groups the scheduler adds; only a guard (who leaves the village routine) drops them. */
 const DAILY = Object.keys(groups).filter((g) => /_schedule_villager$|^work_schedule_/.test(g));
 for (const g of [...CLEAR, ...DAILY].filter((g) => !g.startsWith(P) && !g.startsWith("bannerforge_settlements:"))) if (!groups[g]) throw new Error(`villager_v2 has no group ${g}: update tools/make_citizen.mjs`);
@@ -127,13 +127,16 @@ groups[`${P}guard`] = {
 groups[`${P}worker`] = {
   "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_worker", "mob"] },
   "minecraft:variant": { value: 14 },
+  // The home spot is saved when the component is first added, so it must be there from the spawn at the workplace
+  // door and never be removed (play-test 2026-11-19: added each morning, it saved wherever he stood, and a hired
+  // tavern keeper never went to the tavern).
+  "minecraft:home": { restriction_radius: 8, restriction_type: "random_movement" },
 };
 // Owner 2026-11-19: a worker stays within 8 blocks of his workplace by day. The script spawns him at the building's
 // door when he is hired (his home: the walk-in trick), so vanilla's home + go_home keep him there. His own day plan
 // replaces the villager's (no exploring the outskirts or gathering at the bell): at work from morning to evening,
 // then home and to bed like any villager.
 groups[`${P}at_work`] = {
-  "minecraft:home": { restriction_radius: 8, restriction_type: "random_movement" },
   "minecraft:behavior.random_stroll": { priority: 9, speed_multiplier: 0.5, xz_dist: 4, y_dist: 2, interval: 120 },
   "minecraft:behavior.go_home": { priority: 8, speed_multiplier: 0.6, interval: 60, goal_radius: 3 },
 };
@@ -167,16 +170,15 @@ groups[`${P}applicant`] = {
   "minecraft:follow_range": { value: 64, max: 64 },
 };
 const applicant = ["adult", "behavior_peasant", "basic_schedule", `${P}applicant`];
-// Turned away (play-test 2026-11-18: vanishing on the spot looked odd): they walk off, no job, no bed; the script
-// removes them once no player is near or after half a minute.
+// Turned away (play-test 2026-11-18: vanishing on the spot looked odd): they walk straight out of town. The script
+// spawns them at the nearest spot outside the border (their home, the walk-in trick) and go_home takes them there
+// (play-test 2026-11-19: running from the player went in circles); it removes them on arrival, out of sight or after
+// half a minute.
 groups[`${P}leaving`] = {
   "minecraft:type_family": { family: ["villager", "peasant", "nitwit", "bannerforge_leaving", "mob"] },
-  // Away from the player who turned them down (play-test 2026-11-18: strolling went in circles).
-  "minecraft:behavior.avoid_mob_type": {
-    priority: 2,
-    entity_types: [{ filters: { test: "is_family", subject: "other", value: "player" }, max_dist: 32, walk_speed_multiplier: 0.8, sprint_speed_multiplier: 0.9 }],
-  },
-  "minecraft:behavior.random_stroll": { priority: 4, speed_multiplier: 0.8, interval: 1, xz_dist: 24, y_dist: 4 },
+  "minecraft:home": { restriction_radius: 2, restriction_type: "random_movement" },
+  "minecraft:behavior.go_home": { priority: 1, speed_multiplier: 0.75, interval: 1, goal_radius: 2 },
+  "minecraft:follow_range": { value: 128, max: 128 },
 };
 
 // --- role events (scripts trigger these right after spawning) --------------------------------------------------------
@@ -203,6 +205,16 @@ events["bannerforge:spawn_arriving"] = spawnAs("settler", [...unskilled, `${P}ar
 events["bannerforge:spawn_arriving_worker"] = spawnAs("worker", [...worker, `${P}arriving`]);
 events["bannerforge:arrived"] = { remove: { component_groups: [`${P}arriving`] } };
 events["bannerforge:spawn_applicant"] = spawnAs("applicant", applicant);
+// An accepted newcomer walks to a house (owner 2026-11-19: "they just stand there"): spawned at the house (his home,
+// the walk-in trick), go_home takes him there and ends the walk itself.
+groups[`${P}moving_in`] = {
+  "minecraft:home": { restriction_radius: 16, restriction_type: "random_movement" },
+  "minecraft:behavior.go_home": { priority: 2, speed_multiplier: 0.7, interval: 1, goal_radius: 3, on_home: [{ event: "bannerforge:moved_in", target: "self" }] },
+  "minecraft:follow_range": { value: 96, max: 96 },
+};
+events["bannerforge:moved_in"] = { remove: { component_groups: [`${P}moving_in`] } };
+events["bannerforge:spawn_moving_in"] = spawnAs("settler", [...unskilled, `${P}moving_in`]);
+events["bannerforge:spawn_leaving"] = spawnAs("villager", ["adult", `${P}leaving`]);
 events["bannerforge:leave"] = role("villager", CLEAR, ["adult", `${P}leaving`]);
 // A child born in town (owner 2026-11-18): a vanilla baby that grows up as a settler.
 events["bannerforge:spawn_child"] = spawnAs("settler", ["baby", "child_schedule"]);

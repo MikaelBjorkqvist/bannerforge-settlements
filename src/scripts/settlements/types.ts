@@ -63,6 +63,11 @@ export interface Settlement {
   /** Town entrances: where paths cross the border (gates.ts, looked for once a day). */
   gates?: { x: number; z: number }[];
   gatesDay?: number;
+  /**
+   * Ranks the Captain trained, by soldier slot (owner 2026-11-19: the Captain trains; the town's tier caps the rank).
+   * Missing = rank 1. A replacement takes the slot's rank.
+   */
+  ranks?: Record<string, 1 | 2 | 3>;
   /** The Captain came with the first barracks (later ones are replaced at dawn). */
   captainSent?: boolean;
 }
@@ -83,6 +88,8 @@ export interface AdoptedHouse {
   beds: number;
   /** The faction banner by its door has been put up (once; a player may take it down). */
   banner?: boolean;
+  /** Placement rule the banner was hung by (vanilla_houses.ts BANNER_VERSION). */
+  bannerV?: number;
 }
 
 /** A building's plot in the world and its construction state. */
@@ -162,6 +169,8 @@ export interface Citizens {
   applicants?: Person[];
   /** Day the last newcomer set off (one a day). */
   applicantDay?: number;
+  /** Day whose morning newcomer couldn't come because the Town Hall wasn't loaded (made up later that day). */
+  applicantMissed?: number;
 }
 
 /**

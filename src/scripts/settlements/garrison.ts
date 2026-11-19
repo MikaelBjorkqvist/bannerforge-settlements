@@ -1,5 +1,5 @@
 // Garrisons in the world (owner 2026-11-18): soldiers come with a finished military building and stand at its door;
-// a fallen soldier is replaced at the next dawn; their rank follows the tier. Soldiers belong to a post through a tag
+// a fallen soldier is replaced at the next dawn; the Captain trains their rank, up to what the tier allows. Soldiers belong to a post through a tag
 // (bannerforge:post:<settlement>:<building>:<instance>), so the world itself is the record of who is alive.
 //
 // Performance (CLAUDE.md rule 6): one pass every 5 seconds, a few tag queries per settlement, and only posts whose
@@ -12,7 +12,7 @@ import { allSettlements, saveSettlement } from "./registry.js";
 import { garrisonRank, posts, tier, type Post } from "./rules.js";
 import { news } from "./people.js";
 import { CAPTAIN_TITLE, SOLDIER_ID, type SoldierKind, spawnSoldier, soldierTitle } from "./soldier.js";
-import { placeIndex, slotKey, slots, type Slot } from "./duties.js";
+import { placeIndex, setRank, slotKey, slotRank, slots, type Slot } from "./duties.js";
 import { updateGates } from "./gates.js";
 import { walkFrom } from "./walk.js";
 import { buildingName, raw, t, txt } from "./text.js";
@@ -21,7 +21,6 @@ import type { Role, Settlement, Site } from "./types.js";
 const INTERVAL = 100;
 /** Same morning window as the settlers (citizens.ts): from 7:00 to dusk. */
 const DAWN = 1000;
-const DUSK = 12000;
 const RANK_PROP = "bannerforge_settlements:rank";
 
 export const postTag = (s: Settlement, p: Pick<Post, "id" | "index">) => `bannerforge:post:${s.id}:${p.id}:${p.index}`;
@@ -39,40 +38,57 @@ export function registerGarrisons(): void {
   }, INTERVAL);
 }
 
-/** Sends new garrisons, refills at dawn, keeps ranks in step with the tier and dismisses soldiers of lost posts. */
+/** Sends new garrisons, refills at dawn, keeps trained ranks and gear and dismisses soldiers of lost posts. */
 export function maintain(s: Settlement, forceDawn = false): void {
   const dim = world.getDimension(s.dimension);
   const now = gameTime();
-  const day = Math.floor(now / 24000);
-  const tod = now % 24000;
-  const dawn = forceDawn || ((s.garrisonDay ?? -1) < day && tod >= DAWN && tod < DUSK);
-  const rank = garrisonRank(s);
+  // The town keeps going while nobody is there (owner 2026-11-19): a refill is due as soon as a dawn has passed since
+  // the last one, at any hour, so the fallen are back whenever the player returns.
+  const day = Math.floor((now - DAWN) / 24000);
+  const dawn = forceDawn || (s.garrisonDay ?? -1) < day;
+  // The town's tier caps the rank; the Captain trains each slot up to it (duties.ts slotRank).
+  const maxRank = garrisonRank(s);
   let changed = false;
   if (posts(s).some((p) => p.kind === "melee")) updateGates(s);
   const all = slots(s, (p) => postTag(s, p));
 
   const live = new Set<string>();
   let fixes = 0;
+  // A post whose chunk isn't loaded waits: the day's refill stays open until every post was seen (play-test
+  // 2026-11-19: dead archers never came back because dawn passed while their tower was unloaded).
+  let skipped = false;
   for (const post of posts(s)) {
     const tag = postTag(s, post);
     live.add(tag);
     const door = doorOf(dim, post);
-    if (!door) continue; // chunk not loaded
+    if (!door) {
+      skipped = true; // chunk not loaded
+      continue;
+    }
     const soldiers = dim.getEntities({ type: SOLDIER_ID, tags: [tag] });
     for (const e of soldiers) {
-      syncRank(e, post, rank);
+      const key = slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1));
+      // Soldiers from before training keep the rank they had.
+      if (s.ranks?.[key] === undefined && Number(e.getProperty(RANK_PROP)) > 1) {
+        setRank(s, key, Math.min(Number(e.getProperty(RANK_PROP)), maxRank) as 1 | 2 | 3);
+        changed = true;
+      }
+      syncRank(e, post, slotRank(s, key, maxRank));
+      // 2026-11-19: drinking potions took soldiers' weapons; re-issue their rank's gear once.
+      if (e.getDynamicProperty(P_GEAR) !== GEAR_VERSION) {
+        const r = Number(e.getProperty(RANK_PROP)) || 1;
+        e.triggerEvent(`bannerforge:rank_${r}`);
+        equipGear(e);
+        e.setDynamicProperty(P_GEAR, GEAR_VERSION);
+      }
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
       // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
-      // Soldiers from before duties lived in the behaviour file: same spot, now with the duty's behaviour.
-      if (slot && e.getProperty("bannerforge_settlements:duty") === "none" && e.getDynamicProperty(P_ROLE) === slot.role) {
-        e.triggerEvent(`bannerforge:duty_${slot.role}`);
-      }
-      if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:retreating")) continue;
+      if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:falling_back")) continue;
       const at = placeOf(dim, s, all, slot, door);
       const home = postAt(e);
-      const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
-      if (e.getDynamicProperty(P_ROLE) !== slot.role || moved) {
+      const moved = at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
+      if (dutyOf(e) !== slot.role || moved) {
         fixes++;
         reassign(e, at, slot.role);
       }
@@ -85,7 +101,9 @@ export function maintain(s: Settlement, forceDawn = false): void {
         missing--;
         const slot = all.find((x) => x.key === slotKey(tag, n)) ?? { key: slotKey(tag, n), post, n, role: "barracks" as Role };
         const at = placeOf(dim, s, all, slot, door);
+        const rank = slotRank(s, slot.key, maxRank);
         const e = spawnSoldier(dim, at, post.kind, s.faction, `${tag}:${now}:${n}`, rank);
+        equipGear(e);
         e.addTag(tag);
         e.setDynamicProperty(P_DUTY, n);
         setRole(e, slot.role, at);
@@ -98,7 +116,10 @@ export function maintain(s: Settlement, forceDawn = false): void {
     }
   }
   if (keepCaptain(dim, s, dawn)) changed = true;
-  if (dawn && s.garrisonDay !== day) {
+  if (dawn && !skipped && s.garrisonDay !== day) {
+    // Each soldier carries two healing potions; the barracks restocks them every morning (soldier.json potions).
+    const r = BORDER_RADIUS[tier(s)] + 40;
+    for (const e of dim.getEntities({ type: SOLDIER_ID, location: s.center, maxDistance: r })) e.triggerEvent("bannerforge:restock");
     s.garrisonDay = day;
     changed = true;
   }
@@ -113,14 +134,33 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
-/** The soldier's duty (Role) and the spot he serves at (his home: where he was spawned), as "x,y,z". */
-export const P_ROLE = "bannerforge:role";
+const P_GEAR = "bannerforge:gear";
+const GEAR_VERSION = 4;
+/** Longest walk to a new duty: within the soldier's follow range (32, soldier.json). */
+const SOLDIER_WALK = 28;
+/** The spot a soldier serves at (his home: where he was spawned), as "x,y,z". His duty is an entity property. */
 export const P_POST_AT = "bannerforge:post_at";
 export const captainTag = (s: Settlement) => `bannerforge:captain:${s.id}`;
 
-/** Stores a soldier's duty (for the duty board and reassigning) and gives him that duty's behaviour. */
+/** The soldier's duty, kept by the behaviour file ("none" before he got one). */
+/**
+ * Gear the rank's loot table can't place: every melee fighter carries a shield in the off hand (the behaviour file
+ * blocks with it). Run after spawning and after every rank change.
+ */
+export function equipGear(e: Entity): void {
+  // Owner 2026-11-19: every melee fighter carries a shield (militia too).
+  const shield = e.getProperty("bannerforge_settlements:kind") === "melee";
+  try {
+    e.runCommand(`replaceitem entity @s slot.weapon.offhand 0 ${shield ? "shield" : "air"}`);
+  } catch (err) {
+    console.warn(`[BannerForge] soldier gear: ${String(err)}`);
+  }
+}
+
+export const dutyOf = (e: Entity): string => String(e.getProperty("bannerforge_settlements:duty") ?? "none");
+
+/** Gives a soldier his duty's behaviour and remembers his spot. */
 function setRole(e: Entity, role: Role, at: Vector3): void {
-  e.setDynamicProperty(P_ROLE, role);
   e.setDynamicProperty(P_POST_AT, `${Math.floor(at.x)},${Math.floor(at.y)},${Math.floor(at.z)}`);
   // The behaviour file does the rest (soldier.json duty_<role>): his home area is how far he may chase.
   e.triggerEvent(`bannerforge:duty_${role}`);
@@ -154,10 +194,11 @@ export function reassign(old: Entity, at: Vector3, role: Role): Entity {
   for (const tag of old.getTags()) e.addTag(tag);
   e.setDynamicProperty(P_DUTY, old.getDynamicProperty(P_DUTY));
   setRole(e, role, at);
+  equipGear(e);
   const hpOld = old.getComponent("minecraft:health");
   const hpNew = e.getComponent("minecraft:health");
   if (hpOld && hpNew) hpNew.setCurrentValue(Math.max(1, Math.min(hpOld.currentValue, hpNew.effectiveMax)));
-  walkFrom(e, from, at);
+  walkFrom(e, from, at, SOLDIER_WALK);
   old.remove();
   return e;
 }
@@ -168,6 +209,9 @@ function placeOf(dim: Dimension, s: Settlement, all: Slot[], slot: Slot, door: V
   switch (slot.role) {
     case "tower":
       return towerTop(dim, slot.post.site) ?? door;
+    case "patrol":
+      // The town patrol's home is the bell: he roams the whole town from there (soldier.json duty_patrol).
+      return standOn(dim, s.center.x - 2, s.center.z + 2) ?? door;
     case "bell":
       return standOn(dim, s.center.x + 2, s.center.z) ?? door;
     case "gate": {
@@ -214,6 +258,7 @@ function keepCaptain(dim: Dimension, s: Settlement, dawn: boolean): boolean {
   const e = spawnSoldier(dim, at, "melee", s.faction, `${tag}:${gameTime()}`, 3);
   e.nameTag = `${CAPTAIN_TITLE}, ${e.nameTag.split(", ")[1] ?? ""}`;
   e.addTag(tag);
+  equipGear(e);
   setRole(e, "captain", at);
   if (first) {
     s.captainSent = true;
@@ -223,7 +268,7 @@ function keepCaptain(dim: Dimension, s: Settlement, dawn: boolean): boolean {
 }
 
 /** A standing spot on the floor in the middle of a building (the Captain walks around inside his barracks). */
-function floorInside(dim: Dimension, site: Site): Vector3 | undefined {
+export function floorInside(dim: Dimension, site: Site): Vector3 | undefined {
   const w = site.w;
   const d = site.d ?? site.w;
   const mid = toWorld({ x: site.x, z: site.z, w, d, rot: site.rot }, Math.floor((w - 1) / 2), Math.floor((d - 1) / 2));
@@ -269,6 +314,8 @@ function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
       try {
         const top = dim.getTopmostBlock({ x: x + dx, z: z + dz });
         if (!top || top.isLiquid || top.typeId.includes("leaves")) continue;
+        // Not inside a pen: soldiers can't open fence gates (play-test 2026-11-19).
+        if (fenced(dim, top.location.x, top.location.y + 1, top.location.z)) continue;
         return { x: x + dx + 0.5, y: top.location.y + 1, z: z + dz + 0.5 };
       } catch {
         return undefined; // not loaded
@@ -278,11 +325,23 @@ function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
   return undefined;
 }
 
-/** Rank and title follow the tier (the Captain's training takes over later). */
+/** Is there a fence, wall or gate within 4 blocks at standing height (an animal pen, a fenced yard)? */
+function fenced(dim: Dimension, x: number, y: number, z: number): boolean {
+  for (let dx = -4; dx <= 4; dx++) {
+    for (let dz = -4; dz <= 4; dz++) {
+      const id = dim.getBlock({ x: x + dx, y, z: z + dz })?.typeId ?? "";
+      if (id.includes("fence") || id.endsWith("_wall")) return true;
+    }
+  }
+  return false;
+}
+
+/** Rank, gear and title follow the slot's trained rank. */
 function syncRank(e: Entity, post: Post, rank: 1 | 2 | 3): void {
   if (e.getProperty(RANK_PROP) === rank) return;
-  if (e.getDynamicProperty(P_ROLE) === "captain") return;
+  if (dutyOf(e) === "captain") return;
   e.triggerEvent(`bannerforge:rank_${rank}`);
+  equipGear(e);
   const name = e.nameTag.split(", ")[1];
   if (name) e.nameTag = `${soldierTitle(post.kind, rank)}, ${name}`;
 }
