@@ -147,49 +147,6 @@
             }
           ]
         },
-        "minecraft:behavior.defend_village_target": {
-          "priority": 2,
-          "must_reach": true,
-          "entity_types": [
-            {
-              "filters": {
-                "all_of": [
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "==",
-                    "value": "mob"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge_soldier"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "villager"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "player"
-                  },
-                  {
-                    "test": "is_family",
-                    "subject": "other",
-                    "operator": "!=",
-                    "value": "bannerforge_npc"
-                  }
-                ]
-              }
-            }
-          ],
-          "attack_chance": 1.0
-        },
         "minecraft:environment_sensor": {
           "triggers": [
             {
