@@ -1,6 +1,6 @@
 // Raid mode (owner 2026-11-19: "what happens at raids"). A town is under attack while 3 or more raiders (illagers,
-// ravagers, witches) are inside its border. Then every soldier hunts raiders anywhere in town (the leash is lifted,
-// soldier_ai.ts), and the town hears about it. The raid is over when no raider has been inside for 30 seconds; the
+// ravagers, witches) are inside its border. Then every soldier hunts raiders anywhere in town (soldier.json raid
+// group: a wider home area and raiders as first targets), and the town hears about it. The raid is over when no raider has been inside for 30 seconds; the
 // soldiers walk back to their duties.
 //
 // Performance (CLAUDE.md rule 6): one pass every 5 seconds, one entity query per loaded town.
@@ -21,8 +21,6 @@ const RAIDERS = ["illager", "ravager", "witch"];
 
 /** Towns under attack: settlement id -> tick a raider was last seen inside. */
 const underAttack = new Map<string, number>();
-
-export const isUnderAttack = (id: string): boolean => underAttack.has(id);
 
 export function registerRaids(): void {
   system.runInterval(() => {
