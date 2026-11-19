@@ -268,7 +268,7 @@ function keepCaptain(dim: Dimension, s: Settlement, dawn: boolean): boolean {
 }
 
 /** A standing spot on the floor in the middle of a building (the Captain walks around inside his barracks). */
-function floorInside(dim: Dimension, site: Site): Vector3 | undefined {
+export function floorInside(dim: Dimension, site: Site): Vector3 | undefined {
   const w = site.w;
   const d = site.d ?? site.w;
   const mid = toWorld({ x: site.x, z: site.z, w, d, rot: site.rot }, Math.floor((w - 1) / 2), Math.floor((d - 1) / 2));

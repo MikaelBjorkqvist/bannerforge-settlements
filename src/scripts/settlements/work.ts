@@ -5,7 +5,7 @@
 import { type Entity, world } from "@minecraft/server";
 import { CITIZEN_ID } from "./citizen_npc.js";
 import { copyLook } from "./convert.js";
-import { doorOfSite } from "./garrison.js";
+import { doorOfSite, floorInside } from "./garrison.js";
 import { jobBuilding } from "./roster.js";
 import type { Person, Settlement } from "./types.js";
 import { walkFrom } from "./walk.js";
@@ -14,9 +14,9 @@ import { walkFrom } from "./walk.js";
 export const P_WORKPLACE = "bannerforge:workplace";
 
 /**
- * Version of the workplace home: workers sent before 2026-11-19 (v1) got no home spot saved and are sent again.
+ * Version of the workplace home: v1 saved no home spot, v2 was the door; workers from before are sent again.
  */
-const HOME_VERSION = 2;
+const HOME_VERSION = 3;
 const workplaceKey = (job: string) => `${job}@${HOME_VERSION}`;
 
 /** Does this worker's entity still need a home at his workplace? */
@@ -33,7 +33,9 @@ export function sendToWork(s: Settlement, p: Person, old: Entity): Entity {
   const index = Number(p.job.slice(p.job.lastIndexOf(":") + 1));
   const site = s.sites?.[building]?.[index];
   const dim = world.getDimension(s.dimension);
-  const door = site ? doorOfSite(dim, site) : undefined;
+  // Inside the building when it has a floor to stand on (play-test 2026-11-19: the innkeeper stood outside the
+  // door), else at its door.
+  const door = site ? (floorInside(dim, site) ?? doorOfSite(dim, site)) : undefined;
   if (!door) {
     if (old.getProperty("bannerforge_settlements:role") !== "worker") old.triggerEvent("bannerforge:become_worker");
     return old;
