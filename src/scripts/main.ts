@@ -1,5 +1,6 @@
 import { system } from "@minecraft/server";
 import { registerBanners } from "./settlements/banners.js";
+import { registerCaptain } from "./settlements/captain.js";
 import { registerCitizens } from "./settlements/citizens.js";
 import { registerConstruction } from "./settlements/construction.js";
 import { registerDevMenu } from "./settlements/dev.js";
@@ -8,6 +9,7 @@ import { registerGrowth } from "./settlements/growth.js";
 import { registerLedgerBook } from "./settlements/ledger.js";
 import { registerPeople } from "./settlements/people.js";
 import { registerPlacement } from "./settlements/placement.js";
+import { registerSoldierAi } from "./settlements/soldier_ai.js";
 import { registerSteward } from "./settlements/steward.js";
 import { registerImageTest } from "./settlements/ui_images.js";
 
@@ -15,6 +17,8 @@ import { registerImageTest } from "./settlements/ui_images.js";
 registerSteward();
 registerConstruction();
 registerGarrisons();
+registerSoldierAi();
+registerCaptain();
 registerPlacement();
 registerBanners();
 registerImageTest();

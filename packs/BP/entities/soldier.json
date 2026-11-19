@@ -64,12 +64,19 @@
                     "subject": "other",
                     "operator": "!=",
                     "value": "creeper"
+                  },
+                  {
+                    "test": "has_tag",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge:ignored"
                   }
                 ]
               },
               "max_dist": 16
             }
-          ]
+          ],
+          "must_reach": true
         },
         "minecraft:behavior.avoid_mob_type": {
           "priority": 1,
@@ -83,6 +90,89 @@
               "max_dist": 7,
               "walk_speed_multiplier": 1.0,
               "sprint_speed_multiplier": 1.2
+            }
+          ]
+        },
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_soldier"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "villager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "player"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_npc"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "minecraft:behavior.defend_village_target": {
+          "priority": 2,
+          "must_reach": true,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "mob"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_soldier"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "villager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "player"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_npc"
+                  },
+                  {
+                    "test": "has_tag",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge:ignored"
+                  }
+                ]
+              }
             }
           ]
         }
@@ -132,6 +222,83 @@
               "max_dist": 6,
               "walk_speed_multiplier": 1.0,
               "sprint_speed_multiplier": 1.2
+            }
+          ]
+        },
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_soldier"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "villager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "player"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_npc"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "minecraft:behavior.defend_village_target": {
+          "priority": 2,
+          "must_reach": true,
+          "entity_types": [
+            {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "==",
+                    "value": "mob"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_soldier"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "villager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "player"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "bannerforge_npc"
+                  }
+                ]
+              }
             }
           ]
         }
@@ -362,6 +529,52 @@
           "interval": 400,
           "goal_radius": 4
         }
+      },
+      "retreat": {
+        "minecraft:behavior.go_home": {
+          "priority": 1,
+          "speed_multiplier": 1.0,
+          "interval": 1,
+          "goal_radius": 2.5
+        },
+        "minecraft:movement": {
+          "value": 0.55
+        }
+      },
+      "border": {
+        "minecraft:home": {
+          "restriction_radius": 20,
+          "restriction_type": "random_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.6,
+          "interval": 80,
+          "xz_dist": 12
+        }
+      },
+      "captain": {
+        "minecraft:home": {
+          "restriction_radius": 4,
+          "restriction_type": "random_movement"
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.5,
+          "interval": 60,
+          "xz_dist": 3,
+          "y_dist": 1
+        },
+        "minecraft:interact": {
+          "interactions": [
+            {
+              "interact_text": "bannerforge.captain.talk",
+              "on_interact": {
+                "event": "bannerforge:talked"
+              }
+            }
+          ]
+        }
       }
     },
     "components": {
@@ -388,7 +601,7 @@
       },
       "minecraft:movement.basic": {},
       "minecraft:navigation.walk": {
-        "can_path_over_water": true,
+        "can_path_over_water": false,
         "avoid_water": true,
         "can_open_doors": true,
         "can_pass_doors": true
@@ -455,83 +668,6 @@
       },
       "minecraft:behavior.float": {
         "priority": 0
-      },
-      "minecraft:behavior.hurt_by_target": {
-        "priority": 1,
-        "entity_types": [
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "bannerforge_soldier"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "villager"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "player"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "bannerforge_npc"
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "minecraft:behavior.defend_village_target": {
-        "priority": 2,
-        "must_reach": true,
-        "entity_types": [
-          {
-            "filters": {
-              "all_of": [
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "==",
-                  "value": "mob"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "bannerforge_soldier"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "villager"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "player"
-                },
-                {
-                  "test": "is_family",
-                  "subject": "other",
-                  "operator": "!=",
-                  "value": "bannerforge_npc"
-                }
-              ]
-            }
-          }
-        ]
       },
       "minecraft:behavior.go_home": {
         "priority": 5,
@@ -760,7 +896,70 @@
             "patrol"
           ]
         }
-      }
+      },
+      "bannerforge:retreat": {
+        "remove": {
+          "component_groups": [
+            "melee",
+            "ranged"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "retreat"
+          ]
+        }
+      },
+      "bannerforge:resume": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "retreat"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "melee"
+            },
+            "add": {
+              "component_groups": [
+                "melee"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "test": "enum_property",
+              "domain": "bannerforge_settlements:kind",
+              "value": "ranged"
+            },
+            "add": {
+              "component_groups": [
+                "ranged"
+              ]
+            }
+          }
+        ]
+      },
+      "bannerforge:border": {
+        "add": {
+          "component_groups": [
+            "border"
+          ]
+        }
+      },
+      "bannerforge:captain": {
+        "add": {
+          "component_groups": [
+            "captain"
+          ]
+        }
+      },
+      "bannerforge:talked": {}
     }
   }
 }

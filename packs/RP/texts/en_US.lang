@@ -365,3 +365,22 @@ bannerforge.plural.watchtower=Watchtowers
 bannerforge.plural.barracks=Barracks
 bannerforge.plural.house=Houses
 
+
+## Captain and duty board (owner 2026-11-19)
+bannerforge.captain.talk=Duties
+bannerforge.duty.intro=The garrison of %s. Pick a soldier to change his duty.
+bannerforge.duty.none=No soldiers yet. Build a barracks or a watchtower.
+bannerforge.duty.vacant=(vacant until dawn)
+bannerforge.duty.close=Close
+bannerforge.duty.back=Back
+bannerforge.duty.from=From:
+bannerforge.duty.now=Duty:
+bannerforge.duty.no_gates=No paths cross the border yet, so there are no gates to guard.
+bannerforge.duty.captains_choice=Captain's choice
+bannerforge.duty.role.gate=Gate
+bannerforge.duty.role.border=Border
+bannerforge.duty.role.patrol=Town patrol
+bannerforge.duty.role.barracks=Barracks
+bannerforge.duty.role.tower=Tower
+bannerforge.duty.role.bell=Bell
+bannerforge.duty.role.captain=Captain

@@ -55,7 +55,20 @@ export interface Settlement {
   adopted?: AdoptedHouse[];
   /** Day the vanilla houses were last looked for (vanilla_houses.ts runs once a day). */
   housesDay?: number;
+  /**
+   * Duties the player gave on the Captain's duty board, by soldier slot (`<post tag>:<duty index>`). Slots not listed
+   * get the Captain's own choice (duties.ts). Kept here so a replacement takes the fallen soldier's duty.
+   */
+  duties?: Record<string, Role>;
+  /** Town entrances: where paths cross the border (gates.ts, looked for once a day). */
+  gates?: { x: number; z: number }[];
+  gatesDay?: number;
+  /** The Captain came with the first barracks (later ones are replaced at dawn). */
+  captainSent?: boolean;
 }
+
+/** A soldier's duty (owner 2026-11-19: the Captain and the player choose duties). */
+export type Role = "gate" | "border" | "patrol" | "barracks" | "tower" | "bell" | "captain";
 
 /** A recognised vanilla house (generated/vanilla_houses.ts): its beds count as housing. */
 export interface AdoptedHouse {

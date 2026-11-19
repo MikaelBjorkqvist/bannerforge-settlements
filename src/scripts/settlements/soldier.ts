@@ -15,6 +15,9 @@ const TITLES: Record<SoldierKind, string[]> = {
   ranged: ["Archer", "Marksman", "Ranger"],
 };
 
+/** The garrison's leader, who keeps the duty board (owner 2026-11-19). */
+export const CAPTAIN_TITLE = "Captain";
+
 export const soldierTitle = (kind: SoldierKind, rank: 1 | 2 | 3): string => TITLES[kind][rank - 1];
 
 /** Spawns a soldier of a kind and rank in the faction's colours, with a name ("Militiaman, Edric"). */
