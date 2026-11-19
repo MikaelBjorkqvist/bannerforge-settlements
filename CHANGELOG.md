@@ -4,6 +4,19 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Changed
+- **Soldiers have duties instead of crowding the door:** Gate (where a path crosses the border), Border, Town patrol, Barracks, Tower (archers) and Bell (Keep). The Captain gives everyone a duty; a fallen soldier's replacement takes the same duty.
+- **The Captain** comes with the first barracks and walks around inside it. Talk to him for the **duty board**: pick any soldier and give him another duty (or the Captain's choice). The soldier walks to his new spot.
+- **Smarter soldiers:** each duty has an area he won't chase out of (Gate/Barracks/Bell 16, Border 24, Tower 14, Town patrol 64 blocks around his post); they don't chase into water and come back if they end up there; they only chase monsters they can reach; soldiers never attack players, so never the town's owner (they fight monsters, whoever hurts them that isn't a player, and raiders). A soldier stuck on his way back is put back at his post when nobody is looking.
+- **Healing:** below 9 health a soldier goes back to his post and heals faster there; out of combat he heals slowly anywhere. You can see it: regeneration swirls and red hearts over his head.
+- **Doors:** soldiers, workers and the steward open and walk through wooden doors (and close them behind them).
+- **Workers live at their workplace:** a hired worker walks to his building and stays within 8 blocks of its door by day; in the evening he goes home to bed like any villager.
+- **Raids:** when 3 or more raiders (illagers, ravagers, witches) are inside the border the town is under attack: every soldier hunts raiders anywhere in town, and you hear when it starts and ends.
+- Monsters fight soldiers too (like they fight iron golems).
+- **The steward lives at the Town Hall** once it stands; ringing the bell still calls them over.
+- Creepers: archers shoot them and step back when one comes close; melee soldiers keep their distance.
+- The ledger is titled after its town ("Nightvale Ledger"), from the steward and from the book.
+
 ### Added — townsfolk, garrisons and growth (M2.5)
 - Dev menu: spawn a settler, worker or guard NPC where you stand, to try their daily life. Citizens are now full villagers underneath: settlers and workers claim a free bed, take a free vanilla job block (lectern, composter…), trade and follow the villager day; a guard stays at its post and fights monsters. For now they wear the vanilla villager look.
 - Dev: `/scriptevent bannerforge:census` lists soldiers, villagers and citizens nearby with role, job, health and whether they are in bed; `/scriptevent bannerforge:convert` turns vanilla villagers within 8 blocks into citizens (same job, skin, outfit, name).
@@ -30,6 +43,7 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 - **Town Ledger book:** a Town or City can buy its ledger as a book from the steward (3 emeralds). It opens that town's ledger anywhere inside its border, and only there; each town has its own book ("<Town> Ledger").
 - **Founding adopts every house at once:** the whole border is loaded for a moment (temporary ticking areas) before the town looks for vanilla houses and villagers, so houses at the edge are no longer missed. (Test: Nightvale, 7 houses and 7 beds adopted at founding, no loose beds.)
 - **Banners on vanilla workplaces too:** blacksmiths, libraries, temples and other vanilla workplaces in the town are recognised (by their job block) and get a faction banner by the door. They add no beds and stay vanilla workplaces.
+- Dev: `bannerforge:build <building>` places a building in front of you for free, `bannerforge:finish` finishes constructions nearby; `bannerforge:soldier melee|ranged [patrol]`.
 - Dev (remote testing): `bannerforge:use` talks to the steward or newcomer in view, or rings a bell in view or within 4 blocks; `bannerforge:gotobell` stands you next to the nearest bell.
 - Dev: `/scriptevent bannerforge:roster` lists the town's people; `/scriptevent bannerforge:dawn` runs the morning for the nearest settlement.
 

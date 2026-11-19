@@ -7,6 +7,7 @@ import { allSettlements, saveSettlement, settlementById, settlementNear } from "
 import { raw, say, t } from "./text.js";
 import { BORDER } from "./plots.js";
 import { safeWalkInSpot } from "./people.js";
+import { doorOfSite } from "./garrison.js";
 import { OUTFIT_INDEX, type Settlement, type Vec3 } from "./types.js";
 
 /**
@@ -194,6 +195,7 @@ function onStewardDied(dead: Entity): void {
 function returnStewardsNearPlayers(): void {
   const now = gameTime();
   for (const s of allSettlements()) {
+    moveToHall(s);
     if (s.steward?.diedAt === undefined || respawnTicksLeft(s.steward.diedAt, now) > 0) continue;
     const dim = world.getDimension(s.dimension);
     const players = dim.getPlayers({ location: s.center, maxDistance: 64 });
@@ -203,10 +205,36 @@ function returnStewardsNearPlayers(): void {
   }
 }
 
+/**
+ * Once the Town Hall stands, the steward lives at its door (owner 2026-11-19); ringing the bell still calls them over.
+ * A steward's home is where they were spawned, so they are replaced by the same steward at the door.
+ */
+function moveToHall(s: Settlement): void {
+  const st = s.steward;
+  if (!st?.entityId || st.home === "hall") return;
+  const site = (s.sites?.town_hall ?? []).find((x) => x && x.built > 0);
+  if (!site) return;
+  const old = world.getEntity(st.entityId);
+  if (!old?.isValid || old.hasTag(WALKING_TAG)) return;
+  const dim = old.dimension;
+  const door = doorOfSite(dim, site);
+  if (!door) return;
+  const e = dim.spawnEntity(STEWARD_ID, door);
+  e.triggerEvent("bannerforge:arrived");
+  for (const key of [P_BELL, P_NAME, P_SKIN, P_SETTLEMENT]) e.setDynamicProperty(key, old.getDynamicProperty(key));
+  e.nameTag = old.nameTag;
+  setOutfit(e, OUTFIT_INDEX[s.faction]);
+  old.remove();
+  st.entityId = e.id;
+  st.home = "hall";
+  saveSettlement(s);
+}
+
 function bringBack(dim: Dimension, s: Settlement): void {
   const st = s.steward!;
   const e = spawnSteward(dim, s.center, st.name, st.skin, OUTFIT_INDEX[s.faction], s.id);
   st.entityId = e.id;
+  delete st.home; // walks in to the bell; moves to the Town Hall again afterwards
   delete st.diedAt;
   saveSettlement(s);
 }

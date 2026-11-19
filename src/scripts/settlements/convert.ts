@@ -39,6 +39,14 @@ const LOOK_EVENT: Record<number, string> = {
   6: "bannerforge:look_taiga",
 };
 
+/** Gives citizen `to` the skin and biome outfit of `from` (villager or citizen). */
+export function copyLook(from: Entity, to: Entity): void {
+  const look = from.getComponent("minecraft:mark_variant")?.value ?? 0;
+  const skin = from.getComponent("minecraft:skin_id")?.value ?? 0;
+  to.triggerEvent(`bannerforge:skin_${skin}`);
+  if (LOOK_EVENT[look]) to.triggerEvent(LOOK_EVENT[look]);
+}
+
 /**
  * Replaces a vanilla villager with a citizen with the same job, skin, outfit, name and age. The citizen is spawned
  * before the villager goes, so a failure (e.g. a chunk that is loaded but not ticking) leaves the villager as it was.

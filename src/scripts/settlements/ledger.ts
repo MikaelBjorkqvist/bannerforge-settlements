@@ -3,6 +3,7 @@
 // Each screen is a DDUI CustomForm (stable in @minecraft/server-ui 2.3.0). The Building screen updates in place
 // after a purchase, and the result is shown right above its button, with a sound.
 
+import { sendToWork } from "./work.js";
 import { ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, SCORES, type BuildingDef, type Category } from "./buildings.js";
@@ -141,7 +142,7 @@ function buyBook(player: Player, s: Settlement): void {
 
 export function showOverview(player: Player, s: Settlement): void {
   s = latest(s);
-  const form = new CustomForm(player, t("bannerforge.ledger.title"));
+  const form = new CustomForm(player, t("bannerforge.ledger.title", s.name));
 
   // Faction above the town name, in one element. (No image rows: owner prefers icons on buttons only.)
   form.header(raw(txt(FACTION_COLOUR[s.faction] ?? ""), t(`bannerforge.faction.${s.faction}`), txt(`\n§f${s.name} · `), t(`bannerforge.tier.${tier(s)}`)));
@@ -388,7 +389,8 @@ function confirmRecruit(player: Player, s: Settlement, def: BuildingDef, seed: s
       saveSettlement(s);
       const e = now.eid ? world.getEntity(now.eid) : undefined;
       if (e) {
-        e.triggerEvent("bannerforge:become_worker");
+        sendToWork(s, now, e);
+        saveSettlement(s);
         news(s, raw(txt("§7"), t("bannerforge.people.hired", now.name), txt(" "), buildingName(def.id)));
       }
     }

@@ -9,9 +9,12 @@ import { celebrate } from "./celebration.js";
 import { addSettlerNow, update } from "./citizens.js";
 import { CITIZEN_ID, type CitizenRole, spawnCitizen } from "./citizen_npc.js";
 import { hurryConstruction } from "./construction.js";
+import { buildingById } from "./buildings.js";
+import { devPlaceNow } from "./placement.js";
 import { convertVillager, VILLAGER_ID } from "./convert.js";
 import { SOLDIER_ID, type SoldierKind, spawnSoldier } from "./soldier.js";
-import { maintain } from "./garrison.js";
+import { captainTag, maintain } from "./garrison.js";
+import { talk as talkToCaptain } from "./captain.js";
 import { BOOK_ID, showOverview, showSection, useBook } from "./ledger.js";
 import { onBellRung, onTalk, STEWARD_ID } from "./steward.js";
 import { talk } from "./growth.js";
@@ -60,6 +63,23 @@ export function registerDevMenu(): void {
     }
     // Remote play-testing (2026-11-19): injected mouse clicks don't reach the game world, so this does what a
     // right-click on the NPC in view would do (steward: ledger or founding; newcomer: Welcome / Not now).
+    // "/scriptevent bannerforge:build barracks": place a building in front of you, free; then "bannerforge:finish".
+    if (e.id === "bannerforge:build") {
+      const p = e.sourceEntity as Player;
+      const s = nearest(p);
+      const def = buildingById(e.message.trim());
+      if (s && def) devPlaceNow(p, s, def);
+      else p.sendMessage(`build: no settlement or no building "${e.message}"`);
+    }
+    if (e.id === "bannerforge:finish") (e.sourceEntity as Player).sendMessage(`finished ${hurryConstruction(e.sourceEntity as Player, "finish")} construction(s)`);
+    // "/scriptevent bannerforge:soldier melee patrol": a soldier of the nearest town where you stand (testing duties).
+    if (e.id === "bannerforge:soldier") {
+      const p = e.sourceEntity as Player;
+      const [kind, duty] = e.message.split(" ");
+      const s = nearest(p);
+      const sol = spawnSoldier(p.dimension, p.location, kind === "ranged" ? "ranged" : "melee", s?.faction ?? "blue", `dev:${system.currentTick}`, 1);
+      if (duty === "patrol") sol.triggerEvent("bannerforge:patrol");
+    }
     if (e.id === "bannerforge:promote") {
       const s = nearest(e.sourceEntity as Player);
       if (s) {
@@ -99,6 +119,17 @@ export function registerDevMenu(): void {
       if (s && e.message === "economy") showSection(p, s, "economy");
       else if (s) showOverview(p, s);
     }
+    // The nearest settlement's duty board without walking to the Captain: "/scriptevent bannerforge:captain".
+    if (e.id === "bannerforge:captain") {
+      const p = e.sourceEntity as Player;
+      const s = nearest(p);
+      const c = s && p.dimension.getEntities({ type: SOLDIER_ID, tags: [captainTag(s)] })[0];
+      if (c) talkToCaptain(p, c);
+      else p.sendMessage("captain: none here");
+    }
+    // Door test (owner 2026-11-19: "check if AI can go through doors"): the nearest wooden door within 24 blocks is
+    // closed, a soldier gets his post 3 blocks in front of it and is put 2 blocks behind it; he has to walk out.
+    if (e.id === "bannerforge:doortest") doorTest(e.sourceEntity as Player, e.message === "citizen");
     if (e.id === "bannerforge:convert") convertNearby(e.sourceEntity as Player);
     if (e.id === "bannerforge:roster") roster(e.sourceEntity as Player);
     if (e.id === "bannerforge:dawn") {
@@ -271,12 +302,12 @@ export function showDevMenu(player: Player): void {
  */
 function census(player: Player): void {
   const lines: string[] = [];
-  for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 48 })) {
+  for (const e of player.dimension.getEntities({ type: SOLDIER_ID, location: player.location, maxDistance: 96 })) {
     const p = e.location;
     const hp = e.getComponent("minecraft:health");
     lines.push(
       `SOL ${e.nameTag || "?"} ${String(e.getProperty("bannerforge_settlements:kind"))} r${String(e.getProperty("bannerforge_settlements:rank"))}` +
-        ` hp=${hp ? Math.round(hp.currentValue) : "?"} @${p.x | 0},${p.z | 0}`,
+        ` hp=${hp ? Math.round(hp.currentValue) : "?"} duty=${String(e.getDynamicProperty("bannerforge:duty") ?? "-")}/${String(e.getDynamicProperty("bannerforge:role") ?? "-")}${e.getDynamicProperty("bannerforge:retreat") ? " RETREAT:" + String(e.getDynamicProperty("bannerforge:retreat")) : ""} @${p.x | 0},${p.z | 0}`,
     );
   }
   for (const type of [CITIZEN_ID, VILLAGER_ID]) {
@@ -345,3 +376,28 @@ function roster(player: Player): void {
   player.sendMessage(`${s.name}: day=${c?.day} now=${world.getDay()} free=${c?.free ?? 0} staffed=${JSON.stringify(c?.staffed ?? {})}\n${lines.join("\n")}`);
 }
 const dist = (s: Settlement, p: Player) => Math.hypot(s.center.x - p.location.x, s.center.z - p.location.z);
+
+function doorTest(p: Player, citizen: boolean): void {
+  const { x, y, z } = p.location;
+  const vol = new BlockVolume({ x: x - 24, y: y - 6, z: z - 24 }, { x: x + 24, y: y + 6, z: z + 24 });
+  const doors = [...p.dimension.getBlocks(vol, { includeTypes: ["minecraft:wooden_door", "minecraft:spruce_door", "minecraft:birch_door", "minecraft:jungle_door", "minecraft:acacia_door", "minecraft:dark_oak_door"] }, true).getBlockLocationIterator()];
+  const lower = doors.map((l) => p.dimension.getBlock(l)).filter((b) => b && b.permutation.getState("upper_block_bit") === false);
+  lower.sort((a, b) => Math.hypot(a!.x - x, a!.z - z) - Math.hypot(b!.x - x, b!.z - z));
+  const door = lower[0];
+  if (!door) return p.sendMessage("doortest: no wooden door within 24");
+  const free = (dx: number, dz: number) => {
+    const f = p.dimension.getBlock({ x: door.x + dx, y: door.y, z: door.z + dz });
+    const h = p.dimension.getBlock({ x: door.x + dx, y: door.y + 1, z: door.z + dz });
+    return !!f && !!h && f.isAir && h.isAir;
+  };
+  const axis = free(1, 0) && free(-1, 0) ? [1, 0] : free(0, 1) && free(0, -1) ? [0, 1] : undefined;
+  if (!axis) return p.sendMessage(`doortest: door at ${door.x},${door.y},${door.z} has no free sides`);
+  door.setPermutation(door.permutation.withState("open_bit", false));
+  const out = { x: door.x + axis[0] * 3 + 0.5, y: door.y, z: door.z + axis[1] * 3 + 0.5 };
+  const inside = { x: door.x - axis[0] * 2 + 0.5, y: door.y, z: door.z - axis[1] * 2 + 0.5 };
+  const e = citizen ? spawnCitizen(p.dimension, out, "worker", "blue", "doortest") : spawnSoldier(p.dimension, out, "melee", "blue", "doortest", 1);
+  if (citizen) e.triggerEvent("bannerforge:worker_shift");
+  e.addTag("bannerforge:doortest");
+  e.teleport(inside);
+  p.sendMessage(`doortest: door ${door.x},${door.y},${door.z} closed; ${e.nameTag} must walk from ${inside.x | 0},${inside.z | 0} to ${out.x | 0},${out.z | 0}`);
+}

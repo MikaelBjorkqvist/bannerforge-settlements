@@ -40,7 +40,7 @@ bannerforge.claim.name_required=§cA settlement needs a name.
 bannerforge.claim.announce=§6%s has raised a banner over %s!
 
 ## Steward's ledger
-bannerforge.ledger.title=Steward's Ledger
+bannerforge.ledger.title=%s Ledger
 bannerforge.ledger.back=← Back
 bannerforge.ledger.legend_1=+ can build
 bannerforge.ledger.legend_2=✔ built     ✘ locked     ⚒ building
@@ -365,3 +365,24 @@ bannerforge.plural.watchtower=Watchtowers
 bannerforge.plural.barracks=Barracks
 bannerforge.plural.house=Houses
 
+
+## Captain and duty board (owner 2026-11-19)
+bannerforge.captain.talk=Duties
+bannerforge.duty.intro=The garrison of %s. Pick a soldier to change his duty.
+bannerforge.duty.none=No soldiers yet. Build a barracks or a watchtower.
+bannerforge.duty.vacant=(vacant until dawn)
+bannerforge.duty.close=Close
+bannerforge.duty.back=Back
+bannerforge.duty.from=From:
+bannerforge.duty.now=Duty:
+bannerforge.duty.no_gates=No paths cross the border yet, so there are no gates to guard.
+bannerforge.duty.captains_choice=Captain's choice
+bannerforge.duty.role.gate=Gate
+bannerforge.duty.role.border=Border
+bannerforge.duty.role.patrol=Town patrol
+bannerforge.duty.role.barracks=Barracks
+bannerforge.duty.role.tower=Tower
+bannerforge.duty.role.bell=Bell
+bannerforge.duty.role.captain=Captain
+bannerforge.raid.start=%s is under attack! The garrison is hunting the raiders.
+bannerforge.raid.over=The raid on %s is over. The soldiers go back to their duties.
