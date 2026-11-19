@@ -26,14 +26,7 @@ export function rolesFor(post: Pick<Post, "id" | "kind">): Role[] {
   return ["barracks", "gate", "border", "patrol"];
 }
 
-/**
- * How far a soldier may chase from his post before he gives up and goes back (owner 2026-11-19: per role). The town
- * patrol is measured from the bell instead: up to the border + 8.
- */
-export const LEASH: Record<Role, number> = { gate: 16, border: 24, patrol: 8, barracks: 16, tower: 14, bell: 16, captain: 10 };
-
-/** How far a soldier wanders from his post when nothing is going on (the entity's home radius for that duty). */
-export const WANDER: Record<Role, number> = { gate: 12, border: 20, patrol: 40, barracks: 12, tower: 12, bell: 12, captain: 4 };
+// How far each duty may chase (and wander) is the duty's home area in BP/entities/soldier.json (duty_<role>).
 
 export interface Slot {
   key: string;

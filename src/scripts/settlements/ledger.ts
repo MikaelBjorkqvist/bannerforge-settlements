@@ -3,7 +3,6 @@
 // Each screen is a DDUI CustomForm (stable in @minecraft/server-ui 2.3.0). The Building screen updates in place
 // after a purchase, and the result is shown right above its button, with a sound.
 
-import { sendToWork } from "./work.js";
 import { ItemStack, type Player, type RawMessage, system, world } from "@minecraft/server";
 import { CustomForm, ObservableBoolean, ObservableUIRawMessage } from "@minecraft/server-ui";
 import { BUILDINGS, CATEGORIES, PROMOTION, SCORES, type BuildingDef, type Category } from "./buildings.js";
@@ -21,6 +20,7 @@ import { built, check, checkPromotion, economyParts, staffedFood, freeBeds, hire
 import { uiIcon } from "./ui_images.js";
 import { FACTION_COLOUR, buildingName, costText, raw, reasonText, say, t, txt } from "./text.js";
 import type { Settlement } from "./types.js";
+import { sendToWork } from "./work.js";
 
 const icon = uiIcon;
 

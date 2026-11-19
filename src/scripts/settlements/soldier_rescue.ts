@@ -16,7 +16,7 @@ const INTERVAL = 100;
 const RESCUE_TICKS = 600;
 const last = new Map<string, { at: Vector3; since: number }>();
 
-export function registerSoldierAi(): void {
+export function registerSoldierRescue(): void {
   system.runInterval(() => {
     const now = system.currentTick;
     const seen = new Set<string>();

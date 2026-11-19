@@ -43,7 +43,6 @@ export function sendToWork(s: Settlement, p: Person, old: Entity): Entity {
   e.nameTag = old.nameTag;
   for (const tag of old.getTags()) e.addTag(tag);
   for (const id of old.getDynamicPropertyIds()) e.setDynamicProperty(id, old.getDynamicProperty(id));
-  e.setDynamicProperty("bannerforge:role", "worker");
   e.setDynamicProperty(P_WORKPLACE, p.job);
   e.setRotation(old.getRotation());
   walkFrom(e, from, door);

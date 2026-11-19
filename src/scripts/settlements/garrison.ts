@@ -64,15 +64,11 @@ export function maintain(s: Settlement, forceDawn = false): void {
       // A soldier whose duty changed (duty board, new gates) or who predates duties walks to his new spot.
       // Also when his spot moved: another soldier's duty change shifts who stands at which gate or border side.
       const slot = all.find((x) => x.key === slotKey(tag, Number(e.getDynamicProperty(P_DUTY) ?? -1)));
-      // Soldiers from before duties lived in the behaviour file: same spot, now with the duty's behaviour.
-      if (slot && e.getProperty("bannerforge_settlements:duty") === "none" && e.getDynamicProperty(P_ROLE) === slot.role) {
-        e.triggerEvent(`bannerforge:duty_${slot.role}`);
-      }
       if (!slot || fixes >= 2 || e.getProperty("bannerforge_settlements:retreating")) continue;
       const at = placeOf(dim, s, all, slot, door);
       const home = postAt(e);
       const moved = slot.role !== "patrol" && at !== door && home !== undefined && Math.hypot(at.x - home.x, at.z - home.z) > 6;
-      if (e.getDynamicProperty(P_ROLE) !== slot.role || moved) {
+      if (dutyOf(e) !== slot.role || moved) {
         fixes++;
         reassign(e, at, slot.role);
       }
@@ -113,14 +109,15 @@ export function maintain(s: Settlement, forceDawn = false): void {
 }
 
 export const P_DUTY = "bannerforge:duty";
-/** The soldier's duty (Role) and the spot he serves at (his home: where he was spawned), as "x,y,z". */
-export const P_ROLE = "bannerforge:role";
+/** The spot a soldier serves at (his home: where he was spawned), as "x,y,z". His duty is an entity property. */
 export const P_POST_AT = "bannerforge:post_at";
 export const captainTag = (s: Settlement) => `bannerforge:captain:${s.id}`;
 
-/** Stores a soldier's duty (for the duty board and reassigning) and gives him that duty's behaviour. */
+/** The soldier's duty, kept by the behaviour file ("none" before he got one). */
+export const dutyOf = (e: Entity): string => String(e.getProperty("bannerforge_settlements:duty") ?? "none");
+
+/** Gives a soldier his duty's behaviour and remembers his spot. */
 function setRole(e: Entity, role: Role, at: Vector3): void {
-  e.setDynamicProperty(P_ROLE, role);
   e.setDynamicProperty(P_POST_AT, `${Math.floor(at.x)},${Math.floor(at.y)},${Math.floor(at.z)}`);
   // The behaviour file does the rest (soldier.json duty_<role>): his home area is how far he may chase.
   e.triggerEvent(`bannerforge:duty_${role}`);
@@ -281,7 +278,7 @@ function standOn(dim: Dimension, x: number, z: number): Vector3 | undefined {
 /** Rank and title follow the tier (the Captain's training takes over later). */
 function syncRank(e: Entity, post: Post, rank: 1 | 2 | 3): void {
   if (e.getProperty(RANK_PROP) === rank) return;
-  if (e.getDynamicProperty(P_ROLE) === "captain") return;
+  if (dutyOf(e) === "captain") return;
   e.triggerEvent(`bannerforge:rank_${rank}`);
   const name = e.nameTag.split(", ")[1];
   if (name) e.nameTag = `${soldierTitle(post.kind, rank)}, ${name}`;
