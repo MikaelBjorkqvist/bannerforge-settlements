@@ -21,7 +21,6 @@ import type { Role, Settlement, Site } from "./types.js";
 const INTERVAL = 100;
 /** Same morning window as the settlers (citizens.ts): from 7:00 to dusk. */
 const DAWN = 1000;
-const DUSK = 12000;
 const RANK_PROP = "bannerforge_settlements:rank";
 
 export const postTag = (s: Settlement, p: Pick<Post, "id" | "index">) => `bannerforge:post:${s.id}:${p.id}:${p.index}`;
@@ -43,9 +42,10 @@ export function registerGarrisons(): void {
 export function maintain(s: Settlement, forceDawn = false): void {
   const dim = world.getDimension(s.dimension);
   const now = gameTime();
-  const day = Math.floor(now / 24000);
-  const tod = now % 24000;
-  const dawn = forceDawn || ((s.garrisonDay ?? -1) < day && tod >= DAWN && tod < DUSK);
+  // The town keeps going while nobody is there (owner 2026-11-19): a refill is due as soon as a dawn has passed since
+  // the last one, at any hour, so the fallen are back whenever the player returns.
+  const day = Math.floor((now - DAWN) / 24000);
+  const dawn = forceDawn || (s.garrisonDay ?? -1) < day;
   // The town's tier caps the rank; the Captain trains each slot up to it (duties.ts slotRank).
   const maxRank = garrisonRank(s);
   let changed = false;

@@ -167,10 +167,18 @@ function tick(s: Settlement): boolean {
   const c = s.citizens;
   const day = Math.floor(gameTime() / 24000);
   const tod = gameTime() % 24000;
-  if (hall && c && c.applicantDay !== day && tod >= DAWN && tod < MORNING_END) {
+  // The town keeps going while nobody is there (owner 2026-11-19): a morning missed because the Town Hall wasn't
+  // loaded is made up later that day, with the newcomer already waiting at the door.
+  const morning = tod >= DAWN && tod < MORNING_END;
+  const late = !morning && c?.applicantMissed === day;
+  if (hall && c && c.applicantDay !== day && (morning || late)) {
     const door = doorOfSite(dim, hall);
+    if (!door && morning && c.applicantMissed !== day) {
+      c.applicantMissed = day;
+      changed = true;
+    }
     // A short walk up to the door (play-test 2026-11-19: from the border it took far too long).
-    const start = door && (safeWalkInSpot(s.dimension, door, 28, 12) ?? safeBorderSpot(s));
+    const start = late ? door : door && (safeWalkInSpot(s.dimension, door, 28, 12) ?? safeBorderSpot(s));
     if (door && start) {
       const p = addApplicant(s);
       const e = dim.spawnEntity(CITIZEN_ID, door, { spawnEvent: "bannerforge:spawn_applicant" });
@@ -278,6 +286,7 @@ function decide(player: Player, sid: string, seed: string, welcome: boolean): vo
     if (e) moveIn(s, p, e);
     news(s, raw(txt("§a"), t("bannerforge.newcomer.settled", p.name, s.name)));
   } else {
+    player.sendMessage(raw(txt(`§e${p.name}§r: `), t(`bannerforge.newcomer.sorry.${lineOf(p, 2)}`)));
     dropApplicant(s, p);
     if (e) sendAway(s, e, p);
     news(s, raw(txt("§7"), t("bannerforge.newcomer.moved_on", p.name)));

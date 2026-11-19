@@ -169,6 +169,8 @@ export interface Citizens {
   applicants?: Person[];
   /** Day the last newcomer set off (one a day). */
   applicantDay?: number;
+  /** Day whose morning newcomer couldn't come because the Town Hall wasn't loaded (made up later that day). */
+  applicantMissed?: number;
 }
 
 /**

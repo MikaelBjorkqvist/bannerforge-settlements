@@ -7,6 +7,8 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 ### Changed
 - **Soldiers have duties instead of crowding the door:** Gate (where a path crosses the border), Border, Town patrol, Barracks, Tower (archers) and Bell (Keep). The Captain gives everyone a duty; a fallen soldier's replacement takes the same duty.
 - **The Captain** comes with the first barracks and walks around inside it. Talk to him for the **duty board**: pick any soldier and give him another duty (or the Captain's choice). The soldier walks to his new spot.
+- The town keeps going while you are away: fallen soldiers are back as soon as a dawn has passed (at any hour you return), and a newcomer whose morning you missed is waiting at the Town Hall door.
+- Newcomers ask to move in in their own words, thank you when welcomed and answer when turned away.
 - Turned-away newcomers walk straight out of town through the nearest side of the border.
 - Hired workers now really go to their workplace (they used to stay where they were hired).
 - **Town patrol** roams the whole town from the bell instead of waiting at the barracks door.
