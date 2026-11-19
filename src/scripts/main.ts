@@ -12,6 +12,7 @@ import { registerPlacement } from "./settlements/placement.js";
 import { registerSoldierAi } from "./settlements/soldier_ai.js";
 import { registerRaids } from "./settlements/raid.js";
 import { registerSteward } from "./settlements/steward.js";
+import { registerTownsfolkAi } from "./settlements/townsfolk_ai.js";
 import { registerImageTest } from "./settlements/ui_images.js";
 
 // Entry point. Keep this file small: register features from their own modules.
@@ -21,6 +22,7 @@ registerGarrisons();
 registerSoldierAi();
 registerCaptain();
 registerRaids();
+registerTownsfolkAi();
 registerPlacement();
 registerBanners();
 registerImageTest();

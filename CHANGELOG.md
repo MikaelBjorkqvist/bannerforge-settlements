@@ -5,7 +5,12 @@ All notable changes to this add-on. Format: [Keep a Changelog](https://keepachan
 ## [Unreleased]
 
 ### Changed
-- **Soldiers have duties instead of crowding the door:** the watchtower archer stands on top of the tower; a barracks keeps one soldier at its door, one patrolling through the town (like an iron golem) and the others on watch at the border on the four sides; the Keep has one at its door and one at the bell. A fallen soldier's replacement takes the same duty.
+- **Soldiers have duties instead of crowding the door:** Gate (where a path crosses the border), Border, Town patrol, Barracks, Tower (archers) and Bell (Keep). The Captain gives everyone a duty; a fallen soldier's replacement takes the same duty.
+- **The Captain** comes with the first barracks and walks around inside it. Talk to him for the **duty board**: pick any soldier and give him another duty (or the Captain's choice). The soldier walks to his new spot.
+- **Smarter soldiers:** they don't chase further than their duty allows (Gate/Barracks/Bell 16, Border 24, Tower 14, Town patrol up to the border + 8) and walk back; they don't chase into water and wade out if they end up there; a soldier who can't reach a monster (on a roof, across a ravine) gives up and leaves it to the archers; a stuck soldier is put back at his post when nobody is looking.
+- **Healing:** below 30 % health a soldier goes back to his post to heal. Out of combat soldiers heal slowly anywhere, faster at their post; you can see it — regeneration swirls and hearts over their head.
+- **Raids:** when 3 or more raiders (illagers, ravagers, witches) are inside the border the town is under attack: every soldier hunts raiders anywhere in town, and you hear when it starts and ends.
+- Townsfolk who wander far outside the border, or get stuck in water, find their way back near the bell (only when no player is around).
 - Monsters fight soldiers too (like they fight iron golems).
 - **The steward lives at the Town Hall** once it stands; ringing the bell still calls them over.
 - Creepers: archers shoot them and step back when one comes close; melee soldiers keep their distance.
