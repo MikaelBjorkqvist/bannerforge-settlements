@@ -71,6 +71,15 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "bannerforge_settlements:potions": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 2,
+          "client_sync": false
         }
       }
     },
@@ -650,18 +659,6 @@
             {
               "effect": "regeneration",
               "duration": 10,
-              "amplifier": 0,
-              "visible": true
-            }
-          ]
-        }
-      },
-      "healing_fast": {
-        "minecraft:spell_effects": {
-          "add_effects": [
-            {
-              "effect": "regeneration",
-              "duration": 8,
               "amplifier": 1,
               "visible": true
             }
@@ -1319,38 +1316,57 @@
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": false
-                },
-                {
-                  "test": "has_target",
-                  "subject": "self",
-                  "value": false
-                },
-                {
                   "test": "int_property",
-                  "domain": "bannerforge_settlements:rest",
-                  "operator": ">=",
-                  "value": 5
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
                   "test": "has_mob_effect",
                   "subject": "self",
                   "operator": "!=",
                   "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 1
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 15
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
             "remove": {
               "component_groups": [
-                "healing",
-                "healing_fast"
+                "healing"
               ]
             }
           },
@@ -1358,31 +1374,51 @@
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": false
-                },
-                {
-                  "test": "has_target",
-                  "subject": "self",
-                  "value": false
-                },
-                {
                   "test": "int_property",
-                  "domain": "bannerforge_settlements:rest",
-                  "operator": ">=",
-                  "value": 5
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
                   "test": "has_mob_effect",
                   "subject": "self",
                   "operator": "!=",
                   "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 1
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 15
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
@@ -1392,34 +1428,65 @@
               ]
             },
             "set_property": {
-              "bannerforge_settlements:drinking": true
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
             }
           },
           {
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
                   "test": "has_mob_effect",
                   "subject": "self",
                   "operator": "!=",
                   "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 2
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 18
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
             "remove": {
               "component_groups": [
-                "healing",
-                "healing_fast"
+                "healing"
               ]
             }
           },
@@ -1427,30 +1494,182 @@
             "filters": {
               "all_of": [
                 {
-                  "test": "is_missing_health",
-                  "subject": "self",
-                  "value": true
-                },
-                {
-                  "test": "bool_property",
-                  "domain": "bannerforge_settlements:falling_back",
-                  "value": true
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
                 },
                 {
                   "test": "has_mob_effect",
                   "subject": "self",
                   "operator": "!=",
                   "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 2
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 18
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
                 }
               ]
             },
             "add": {
               "component_groups": [
-                "healing_fast"
+                "healing"
               ]
             },
             "set_property": {
-              "bannerforge_settlements:drinking": true
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 3
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 24
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "remove": {
+              "component_groups": [
+                "healing"
+              ]
+            }
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:potions",
+                  "operator": ">",
+                  "value": 0
+                },
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": "regeneration"
+                },
+                {
+                  "test": "int_property",
+                  "domain": "bannerforge_settlements:rank",
+                  "value": 3
+                },
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<",
+                  "value": 24
+                },
+                {
+                  "any_of": [
+                    {
+                      "all_of": [
+                        {
+                          "test": "has_target",
+                          "subject": "self",
+                          "value": false
+                        },
+                        {
+                          "test": "int_property",
+                          "domain": "bannerforge_settlements:rest",
+                          "operator": ">=",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "test": "bool_property",
+                      "domain": "bannerforge_settlements:falling_back",
+                      "value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "add": {
+              "component_groups": [
+                "healing"
+              ]
+            },
+            "set_property": {
+              "bannerforge_settlements:drinking": true,
+              "bannerforge_settlements:potions": "math.max(query.property('bannerforge_settlements:potions') - 1, 0)"
             }
           },
           {
@@ -1814,6 +2033,11 @@
       "bannerforge:hurt": {
         "set_property": {
           "bannerforge_settlements:rest": 0
+        }
+      },
+      "bannerforge:restock": {
+        "set_property": {
+          "bannerforge_settlements:potions": 2
         }
       }
     }

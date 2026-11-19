@@ -111,6 +111,9 @@ export function maintain(s: Settlement, forceDawn = false): void {
   }
   if (keepCaptain(dim, s, dawn)) changed = true;
   if (dawn && s.garrisonDay !== day) {
+    // Each soldier carries two healing potions; the barracks restocks them every morning (soldier.json potions).
+    const r = BORDER_RADIUS[tier(s)] + 40;
+    for (const e of dim.getEntities({ type: SOLDIER_ID, location: s.center, maxDistance: r })) e.triggerEvent("bannerforge:restock");
     s.garrisonDay = day;
     changed = true;
   }
